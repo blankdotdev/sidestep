@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".SidestepApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:theme="@style/Theme.Sidestep"
+        android:usesCleartextTraffic="true">
+
+        <!-- Main Activity - handles UI and manual URL input -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            
+            <!-- Launcher intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Redirect Activity - handles all automated redirects silently -->
+        <activity
+            android:name=".RedirectActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true">
+
+            <!-- General URL Intent Filter -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
+                <!-- TikTok -->
+                <data android:host="tiktok.com" />
+                <data android:host="www.tiktok.com" />
+                <data android:host="v.tiktok.com" />
+                <data android:host="vt.tiktok.com" />
+                <data android:host="vm.tiktok.com" />
+
+                <!-- Twitter / X -->
+                <data android:host="twitter.com" />
+                <data android:host="www.twitter.com" />
+                <data android:host="x.com" />
+                <data android:host="www.x.com" />
+                <data android:host="t.co" />
+
+                <!-- Reddit -->
+                <data android:host="reddit.com" />
+                <data android:host="www.reddit.com" />
+                <data android:host="redd.it" />
+
+                <!-- YouTube -->
+                <data android:host="youtube.com" />
+                <data android:host="www.youtube.com" />
+                <data android:host="m.youtube.com" />
+                <data android:host="youtu.be" />
+
+                <!-- IMDb -->
+                <data android:host="imdb.com" />
+                <data android:host="www.imdb.com" />
+                <data android:host="m.imdb.com" />
+
+                <!-- Medium -->
+                <data android:host="medium.com" />
+                <data android:host="www.medium.com" />
+                <data android:host="link.medium.com" />
+
+                <!-- Wikipedia -->
+                <data android:host="wikipedia.org" />
+                <data android:host="www.wikipedia.org" />
+                <data android:host="en.wikipedia.org" />
+
+                <!-- Goodreads -->
+                <data android:host="goodreads.com" />
+                <data android:host="www.goodreads.com" />
+
+                <!-- Genius -->
+                <data android:host="genius.com" />
+                <data android:host="www.genius.com" />
+
+                <!-- GitHub -->
+                <data android:host="github.com" />
+                <data android:host="www.github.com" />
+
+                <!-- StackOverflow -->
+                <data android:host="stackoverflow.com" />
+                <data android:host="www.stackoverflow.com" />
+
+                <!-- Instagram -->
+                <data android:host="instagram.com" />
+                <data android:host="www.instagram.com" />
+
+                <!-- NYTimes -->
+                <data android:host="nytimes.com" />
+                <data android:host="www.nytimes.com" />
+
+                <!-- Tumblr -->
+                <data android:host="tumblr.com" />
+                <data android:host="www.tumblr.com" />
+
+                <!-- UrbanDictionary -->
+                <data android:host="urbandictionary.com" />
+                <data android:host="www.urbandictionary.com" />
+
+                <!-- Imgur -->
+                <data android:host="imgur.com" />
+                <data android:host="www.imgur.com" />
+            </intent-filter>
+
+            <!-- Google Maps Specific Intent Filter (to avoid intercepting all of google.com) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
+                <!-- maps.google.com matches any path -->
+                <data android:host="maps.google.com" />
+                <data android:host="www.maps.google.com" />
+            </intent-filter>
+
+            <!-- Share Intent Filter -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- Settings Activity -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:parentActivityName=".MainActivity">
+        </activity>
+
+        <activity
+            android:name=".WebViewActivity"
+            android:exported="false"
+            android:label="Sidestep"
+            android:parentActivityName=".MainActivity">
+        </activity>
+
+        <activity
+            android:name=".SettingsFrontendsActivity"
+            android:exported="false"
+            android:label="Alternative Frontends"
+            android:parentActivityName=".SettingsActivity"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <activity
+            android:name=".SettingsCustomRedirectsActivity"
+            android:exported="false"
+            android:label="Custom Redirects"
+            android:parentActivityName=".SettingsActivity"
+            android:windowSoftInputMode="adjustResize"/>
+
+        <activity
+            android:name=".SettingsPrivacyActivity"
+            android:exported="false"
+            android:label="History &amp; Privacy"
+            android:parentActivityName=".SettingsActivity"/>
+
+        <activity
+            android:name=".SettingsDisplayActivity"
+            android:exported="false"
+            android:label="Display"
+            android:parentActivityName=".SettingsActivity"/>
+
+    </application>
+
+</manifest>

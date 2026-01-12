@@ -1,0 +1,7 @@
+com.blankdev.sidestep.test.app-tracing-1.2.0-0 /Users/mohannad/.gradle/caches/9.0.0/transforms/374b1f1c9ec643978a2349c9c4c7f073/transformed/tracing-1.2.0/res
+com.blankdev.sidestep.test.app-core-1.6.1-1 /Users/mohannad/.gradle/caches/9.0.0/transforms/5a395352e1151bd0670bae2d0e104c53/transformed/core-1.6.1/res
+com.blankdev.sidestep.test.app-androidTest-2 /Users/mohannad/Sidestep/app/build/generated/res/resValues/androidTest/debug
+com.blankdev.sidestep.test.app-updated_navigation_xml-3 /Users/mohannad/Sidestep/app/build/generated/updated_navigation_xml/debugAndroidTest
+com.blankdev.sidestep.test.app-mergeDebugAndroidTestResources-4 /Users/mohannad/Sidestep/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/merged.dir
+com.blankdev.sidestep.test.app-mergeDebugAndroidTestResources-5 /Users/mohannad/Sidestep/app/build/intermediates/incremental/debugAndroidTest/mergeDebugAndroidTestResources/stripped.dir
+com.blankdev.sidestep.test.app-debugAndroidTest-6 /Users/mohannad/Sidestep/app/build/intermediates/merged_res/debugAndroidTest/mergeDebugAndroidTestResources

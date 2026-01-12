@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sidestep</string>
+    <string name="settings_title">Settings</string>
+    <string name="menu_share">Share</string>
+    <string name="menu_clear_item">Clear item</string>
+    <string name="menu_get_info">Get Info</string>
+    <string name="empty_state_text">Nothing here yet</string>
+    <string name="no_custom_redirects">No custom redirects added yet.</string>
+
+    <!-- Settings UI -->
+    <string name="automation_title">Automation</string>
+    <string name="btn_check_defaults">Check Defaults</string>
+    <string name="btn_set_default">Set as Default</string>
+    <string name="alt_frontends_title">Alternative Frontends</string>
+    <string name="btn_pick">Pick</string>
+    <string name="clean_and_sidestep">CLEAN &amp; SIDESTEP</string>
+    <string name="clean_only">CLEAN ONLY</string>
+    
+    <!-- Frontend Names -->
+    <string name="twitter_x">Twitter / X</string>
+    <string name="nitter_instance">Nitter Instance</string>
+    <string name="reddit">Reddit</string>
+    <string name="redlib_instance">Redlib Instance</string>
+    <string name="youtube">YouTube</string>
+    <string name="frontend_type">Frontend Type</string>
+    <string name="invidious">Invidious</string>
+    <string name="piped">Piped</string>
+    <string name="alt_instance">Alternative Instance</string>
+    <string name="imdb">IMDb</string>
+    <string name="libremdb_instance">LibreMDB Instance</string>
+    <string name="medium">Medium</string>
+    <string name="scribe_instance">Scribe Instance</string>
+    <string name="wikipedia">Wikipedia</string>
+    <string name="wikiless_instance">Wikiless Instance</string>
+    <string name="goodreads">Goodreads</string>
+    <string name="biblioreads_instance">BiblioReads Instance</string>
+    <string name="genius">Genius</string>
+    <string name="dumb">Dumb</string>
+    <string name="intellectual">Intellectual</string>
+    <string name="dumb_instance">Dumb Instance</string>
+    <string name="intellectual_instance">Intellectual Instance</string>
+    <string name="github">GitHub</string>
+    <string name="google_maps">Google Maps</string>
+    <string name="openstreetmap_instance">Routes to</string>
+    <string name="organic_maps_note">Great with the Organic Maps app</string>
+    <string name="urban_dictionary">UrbanDictionary</string>
+    <string name="rural_dictionary_instance">RuralDictionary Instance</string>
+    <string name="imgur">Imgur</string>
+    <string name="rimgo_instance">rimgo Instance</string>
+
+    
+    <plurals name="label_sidesteps_performed">
+        <item quantity="one">%1$d sidestep performed</item>
+        <item quantity="other">%1$d sidesteps performed</item>
+    </plurals>
+
+    <!-- Custom Redirect Dialog -->
+    <string name="hint_original_domain">Original Domain (e.g. nytimes.com)</string>
+    <string name="hint_redirect_url">Redirect URL (e.g. archive.ph)</string>
+    <string name="title_redirect_type">Redirect Type</string>
+    <string name="label_append_mode">Append Mode</string>
+    <string name="label_swap_mode">Domain Swap</string>
+
+    <!-- MainActivity strings -->
+    <string name="hint_url_input">Enter URL to bypass</string>
+    <string name="error_invalid_url">Please enter a valid URL</string>
+    <string name="guide_welcome_title">Welcome to Sidestep</string>
+    <string name="guide_step_1">1. Tap ‘Set as Default’</string>
+    <string name="guide_step_2">2. Select ‘Open in app’ - this allows Sidestep to redirect the navigation using your default browser</string>
+    <string name="guide_step_3">3. Add links for domains you’re interested in sidestepping - or simply of clearing from trackers</string>
+    <string name="guide_step_4">4. Done! Now when accessing the selected links, this app redirects automatically</string>
+    <string name="label_sidesteps_performed">sidesteps performed</string>
+    <string name="menu_details">Details</string>
+    <string name="label_title">Title</string>
+    <string name="label_original">Original</string>
+    <string name="label_unshortened">Unshortened</string>
+    <string name="label_cleaned">Cleaned</string>
+    <string name="label_sidestepped">Sidestep\'d</string>
+    <string name="toast_title_copied">Title copied</string>
+    <string name="toast_original_copied">Original URL copied</string>
+    <string name="toast_unshortened_copied">Unshortened URL copied</string>
+    <string name="toast_cleaned_copied">Cleaned URL copied</string>
+    <string name="dialog_clear_all_title">Clear All</string>
+    <string name="dialog_clear_all_message">Are you sure?</string>
+    <string name="toast_history_cleared">History cleared</string>
+    <string name="toast_item_removed">Item removed</string>
+    <string name="btn_delete">Delete</string>
+    <string name="privacy_title">History &amp; Previews</string>
+    <string name="enable_previews_title">Destination Previews</string>
+    <string name="enable_previews_desc">Fetch previews of the original URL using DuckDuckGo.</string>
+    <string name="about_title">About</string>
+
+    <!-- Automation Settings -->
+    <string name="unshorten_urls_title">Unshorten URLs</string>
+    <string name="unshorten_urls_desc">Resolve shortened links like bit.ly, t.co, etc.</string>
+    <string name="remove_tracking_title">Remove tracking parameters</string>
+    <string name="remove_tracking_desc">Strip UTM and other tracking tags from URLs.</string>
+    <string name="immediate_navigation_title">Immediate navigation</string>
+    <string name="immediate_navigation_desc">Automatically navigate after processing links</string>
+</resources>

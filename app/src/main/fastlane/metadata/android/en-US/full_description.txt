@@ -1,0 +1,1 @@
+Sidestep is an Android utility that intercepts links to popular social media and news sites, strips tracking parameters, and redirects them to privacy-respecting alternative frontends. It supports Twitter/X, Reddit, YouTube, IMDb, Medium, Wikipedia, and more.

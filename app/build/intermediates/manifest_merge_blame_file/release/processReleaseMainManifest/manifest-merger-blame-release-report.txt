@@ -1,0 +1,498 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.blankdev.sidestep"
+4    android:versionCode="2"
+5    android:versionName="1.1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="35" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:4:5-67
+11-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:4:22-64
+12
+13    <queries>
+13-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:6:5-17:15
+14        <intent>
+14-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:7:9-11:18
+15            <action android:name="android.intent.action.VIEW" />
+15-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:13-65
+15-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:21-62
+16
+17            <category android:name="android.intent.category.BROWSABLE" />
+17-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:13-74
+17-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:23-71
+18
+19            <data android:scheme="http" />
+19-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+19-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:19-40
+20        </intent>
+21        <intent>
+21-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:12:9-16:18
+22            <action android:name="android.intent.action.VIEW" />
+22-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:13-65
+22-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:21-62
+23
+24            <category android:name="android.intent.category.BROWSABLE" />
+24-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:13-74
+24-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:23-71
+25
+26            <data android:scheme="https" />
+26-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+26-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:19-40
+27        </intent>
+28    </queries>
+29
+30    <permission
+30-->[androidx.core:core:1.15.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/349e3051916c3aab8634bd7debc730d3/transformed/core-1.15.0/AndroidManifest.xml:22:5-24:47
+31        android:name="com.blankdev.sidestep.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+31-->[androidx.core:core:1.15.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/349e3051916c3aab8634bd7debc730d3/transformed/core-1.15.0/AndroidManifest.xml:23:9-81
+32        android:protectionLevel="signature" />
+32-->[androidx.core:core:1.15.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/349e3051916c3aab8634bd7debc730d3/transformed/core-1.15.0/AndroidManifest.xml:24:9-44
+33
+34    <uses-permission android:name="com.blankdev.sidestep.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+34-->[androidx.core:core:1.15.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/349e3051916c3aab8634bd7debc730d3/transformed/core-1.15.0/AndroidManifest.xml:26:5-97
+34-->[androidx.core:core:1.15.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/349e3051916c3aab8634bd7debc730d3/transformed/core-1.15.0/AndroidManifest.xml:26:22-94
+35
+36    <application
+36-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:19:5-198:19
+37        android:name="com.blankdev.sidestep.SidestepApplication"
+37-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:20:9-44
+38        android:allowBackup="true"
+38-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:21:9-35
+39        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+39-->[androidx.core:core:1.15.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/349e3051916c3aab8634bd7debc730d3/transformed/core-1.15.0/AndroidManifest.xml:28:18-86
+40        android:extractNativeLibs="false"
+41        android:icon="@mipmap/ic_launcher"
+41-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:22:9-43
+42        android:label="@string/app_name"
+42-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:24:9-41
+43        android:roundIcon="@mipmap/ic_launcher_round"
+43-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:23:9-54
+44        android:theme="@style/Theme.Sidestep"
+44-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:25:9-46
+45        android:usesCleartextTraffic="true" >
+45-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:26:9-44
+46
+47        <!-- Main Activity - handles UI and manual URL input -->
+48        <activity
+48-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:29:9-39:20
+49            android:name="com.blankdev.sidestep.MainActivity"
+49-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:30:13-41
+50            android:exported="true"
+50-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:31:13-36
+51            android:windowSoftInputMode="adjustResize" >
+51-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:32:13-55
+52
+53            <!-- Launcher intent -->
+54            <intent-filter>
+54-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:35:13-38:29
+55                <action android:name="android.intent.action.MAIN" />
+55-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:36:17-69
+55-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:36:25-66
+56
+57                <category android:name="android.intent.category.LAUNCHER" />
+57-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:37:17-77
+57-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:37:27-74
+58            </intent-filter>
+59        </activity>
+60
+61        <!-- Redirect Activity - handles all automated redirects silently -->
+62        <activity
+62-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:42:9-155:20
+63            android:name="com.blankdev.sidestep.RedirectActivity"
+63-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:43:13-45
+64            android:excludeFromRecents="true"
+64-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:46:13-46
+65            android:exported="true"
+65-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:44:13-36
+66            android:noHistory="true"
+66-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:47:13-37
+67            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+67-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:45:13-72
+68
+69            <!-- General URL Intent Filter -->
+70            <intent-filter android:autoVerify="true" >
+70-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:50:13-133:29
+70-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:50:28-53
+71                <action android:name="android.intent.action.VIEW" />
+71-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:13-65
+71-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:21-62
+72
+73                <category android:name="android.intent.category.DEFAULT" />
+73-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:52:17-76
+73-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:52:27-73
+74                <category android:name="android.intent.category.BROWSABLE" />
+74-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:13-74
+74-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:23-71
+75
+76                <data android:scheme="http" />
+76-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+76-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:19-40
+77                <data android:scheme="https" />
+77-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+77-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:19-40
+78
+79                <!-- TikTok -->
+80                <data android:host="tiktok.com" />
+80-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+80-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+81                <data android:host="www.tiktok.com" />
+81-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+81-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+82                <data android:host="v.tiktok.com" />
+82-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+82-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+83                <data android:host="vt.tiktok.com" />
+83-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+83-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+84                <data android:host="vm.tiktok.com" />
+84-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+84-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+85
+86                <!-- Twitter / X -->
+87                <data android:host="twitter.com" />
+87-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+87-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+88                <data android:host="www.twitter.com" />
+88-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+88-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+89                <data android:host="x.com" />
+89-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+89-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+90                <data android:host="www.x.com" />
+90-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+90-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+91                <data android:host="t.co" />
+91-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+91-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+92
+93                <!-- Reddit -->
+94                <data android:host="reddit.com" />
+94-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+94-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+95                <data android:host="www.reddit.com" />
+95-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+95-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+96                <data android:host="redd.it" />
+96-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+96-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+97
+98                <!-- YouTube -->
+99                <data android:host="youtube.com" />
+99-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+99-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+100                <data android:host="www.youtube.com" />
+100-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+100-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+101                <data android:host="m.youtube.com" />
+101-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+101-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+102                <data android:host="youtu.be" />
+102-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+102-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+103
+104                <!-- IMDb -->
+105                <data android:host="imdb.com" />
+105-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+105-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+106                <data android:host="www.imdb.com" />
+106-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+106-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+107                <data android:host="m.imdb.com" />
+107-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+107-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+108
+109                <!-- Medium -->
+110                <data android:host="medium.com" />
+110-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+110-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+111                <data android:host="www.medium.com" />
+111-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+111-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+112                <data android:host="link.medium.com" />
+112-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+112-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+113
+114                <!-- Wikipedia -->
+115                <data android:host="wikipedia.org" />
+115-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+115-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+116                <data android:host="www.wikipedia.org" />
+116-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+116-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+117                <data android:host="en.wikipedia.org" />
+117-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+117-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+118
+119                <!-- Goodreads -->
+120                <data android:host="goodreads.com" />
+120-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+120-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+121                <data android:host="www.goodreads.com" />
+121-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+121-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+122
+123                <!-- Genius -->
+124                <data android:host="genius.com" />
+124-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+124-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+125                <data android:host="www.genius.com" />
+125-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+125-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+126
+127                <!-- GitHub -->
+128                <data android:host="github.com" />
+128-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+128-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+129                <data android:host="www.github.com" />
+129-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+129-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+130
+131                <!-- StackOverflow -->
+132                <data android:host="stackoverflow.com" />
+132-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+132-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+133                <data android:host="www.stackoverflow.com" />
+133-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+133-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+134
+135                <!-- Instagram -->
+136                <data android:host="instagram.com" />
+136-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+136-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+137                <data android:host="www.instagram.com" />
+137-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+137-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+138
+139                <!-- NYTimes -->
+140                <data android:host="nytimes.com" />
+140-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+140-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+141                <data android:host="www.nytimes.com" />
+141-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+141-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+142
+143                <!-- Tumblr -->
+144                <data android:host="tumblr.com" />
+144-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+144-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+145                <data android:host="www.tumblr.com" />
+145-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+145-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+146
+147                <!-- UrbanDictionary -->
+148                <data android:host="urbandictionary.com" />
+148-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+148-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+149                <data android:host="www.urbandictionary.com" />
+149-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+149-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+150
+151                <!-- Imgur -->
+152                <data android:host="imgur.com" />
+152-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+152-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+153                <data android:host="www.imgur.com" />
+153-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+153-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+154            </intent-filter>
+155
+156            <!-- Google Maps Specific Intent Filter (to avoid intercepting all of google.com) -->
+157            <intent-filter android:autoVerify="true" >
+157-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:136:13-147:29
+157-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:136:28-53
+158                <action android:name="android.intent.action.VIEW" />
+158-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:13-65
+158-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:8:21-62
+159
+160                <category android:name="android.intent.category.DEFAULT" />
+160-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:52:17-76
+160-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:52:27-73
+161                <category android:name="android.intent.category.BROWSABLE" />
+161-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:13-74
+161-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:9:23-71
+162
+163                <data android:scheme="http" />
+163-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+163-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:19-40
+164                <data android:scheme="https" />
+164-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+164-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:19-40
+165
+166                <!-- maps.google.com matches any path -->
+167                <data android:host="maps.google.com" />
+167-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+167-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+168                <data android:host="www.maps.google.com" />
+168-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+168-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:59:23-48
+169            </intent-filter>
+170
+171            <!-- Share Intent Filter -->
+172            <intent-filter>
+172-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:150:13-154:29
+173                <action android:name="android.intent.action.SEND" />
+173-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:151:17-69
+173-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:151:25-66
+174
+175                <category android:name="android.intent.category.DEFAULT" />
+175-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:52:17-76
+175-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:52:27-73
+176
+177                <data android:mimeType="text/plain" />
+177-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:10:13-43
+177-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:153:23-52
+178            </intent-filter>
+179        </activity>
+180
+181        <!-- Settings Activity -->
+182        <activity
+182-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:158:9-163:20
+183            android:name="com.blankdev.sidestep.SettingsActivity"
+183-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:159:13-45
+184            android:exported="false"
+184-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:160:13-37
+185            android:label="@string/settings_title"
+185-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:161:13-51
+186            android:parentActivityName="com.blankdev.sidestep.MainActivity" >
+186-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:162:13-55
+187        </activity>
+188        <activity
+188-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:165:9-170:20
+189            android:name="com.blankdev.sidestep.WebViewActivity"
+189-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:166:13-44
+190            android:exported="false"
+190-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:167:13-37
+191            android:label="Sidestep"
+191-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:168:13-37
+192            android:parentActivityName="com.blankdev.sidestep.MainActivity" >
+192-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:169:13-55
+193        </activity>
+194        <activity
+194-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:172:9-177:57
+195            android:name="com.blankdev.sidestep.SettingsFrontendsActivity"
+195-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:173:13-54
+196            android:exported="false"
+196-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:174:13-37
+197            android:label="Alternative Frontends"
+197-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:175:13-50
+198            android:parentActivityName="com.blankdev.sidestep.SettingsActivity"
+198-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:176:13-59
+199            android:windowSoftInputMode="adjustResize" />
+199-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:177:13-55
+200        <activity
+200-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:179:9-184:57
+201            android:name="com.blankdev.sidestep.SettingsCustomRedirectsActivity"
+201-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:180:13-60
+202            android:exported="false"
+202-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:181:13-37
+203            android:label="Custom Redirects"
+203-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:182:13-45
+204            android:parentActivityName="com.blankdev.sidestep.SettingsActivity"
+204-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:183:13-59
+205            android:windowSoftInputMode="adjustResize" />
+205-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:184:13-55
+206        <activity
+206-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:186:9-190:61
+207            android:name="com.blankdev.sidestep.SettingsPrivacyActivity"
+207-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:187:13-52
+208            android:exported="false"
+208-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:188:13-37
+209            android:label="History &amp; Privacy"
+209-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:189:13-50
+210            android:parentActivityName="com.blankdev.sidestep.SettingsActivity" />
+210-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:190:13-59
+211        <activity
+211-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:192:9-196:61
+212            android:name="com.blankdev.sidestep.SettingsDisplayActivity"
+212-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:193:13-52
+213            android:exported="false"
+213-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:194:13-37
+214            android:label="Display"
+214-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:195:13-36
+215            android:parentActivityName="com.blankdev.sidestep.SettingsActivity" />
+215-->/Users/mohannad/Sidestep/app/src/main/AndroidManifest.xml:196:13-59
+216
+217        <provider
+217-->[androidx.emoji2:emoji2:1.3.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/f40e529c650edefa3f1c3b72f6197cc2/transformed/emoji2-1.3.0/AndroidManifest.xml:24:9-32:20
+218            android:name="androidx.startup.InitializationProvider"
+218-->[androidx.emoji2:emoji2:1.3.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/f40e529c650edefa3f1c3b72f6197cc2/transformed/emoji2-1.3.0/AndroidManifest.xml:25:13-67
+219            android:authorities="com.blankdev.sidestep.androidx-startup"
+219-->[androidx.emoji2:emoji2:1.3.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/f40e529c650edefa3f1c3b72f6197cc2/transformed/emoji2-1.3.0/AndroidManifest.xml:26:13-68
+220            android:exported="false" >
+220-->[androidx.emoji2:emoji2:1.3.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/f40e529c650edefa3f1c3b72f6197cc2/transformed/emoji2-1.3.0/AndroidManifest.xml:27:13-37
+221            <meta-data
+221-->[androidx.emoji2:emoji2:1.3.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/f40e529c650edefa3f1c3b72f6197cc2/transformed/emoji2-1.3.0/AndroidManifest.xml:29:13-31:52
+222                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+222-->[androidx.emoji2:emoji2:1.3.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/f40e529c650edefa3f1c3b72f6197cc2/transformed/emoji2-1.3.0/AndroidManifest.xml:30:17-75
+223                android:value="androidx.startup" />
+223-->[androidx.emoji2:emoji2:1.3.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/f40e529c650edefa3f1c3b72f6197cc2/transformed/emoji2-1.3.0/AndroidManifest.xml:31:17-49
+224            <meta-data
+224-->[androidx.lifecycle:lifecycle-process:2.8.7] /Users/mohannad/.gradle/caches/9.0.0/transforms/b57f77bf45ce47cfc1a242e926cac278/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:29:13-31:52
+225                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+225-->[androidx.lifecycle:lifecycle-process:2.8.7] /Users/mohannad/.gradle/caches/9.0.0/transforms/b57f77bf45ce47cfc1a242e926cac278/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:30:17-78
+226                android:value="androidx.startup" />
+226-->[androidx.lifecycle:lifecycle-process:2.8.7] /Users/mohannad/.gradle/caches/9.0.0/transforms/b57f77bf45ce47cfc1a242e926cac278/transformed/lifecycle-process-2.8.7/AndroidManifest.xml:31:17-49
+227            <meta-data
+227-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+228                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+228-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+229                android:value="androidx.startup" />
+229-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+230        </provider>
+231
+232        <uses-library
+232-->[androidx.window:window:1.0.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/3c90734b72f6b4f2c1c6a0776fb11777/transformed/window-1.0.0/AndroidManifest.xml:25:9-27:40
+233            android:name="androidx.window.extensions"
+233-->[androidx.window:window:1.0.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/3c90734b72f6b4f2c1c6a0776fb11777/transformed/window-1.0.0/AndroidManifest.xml:26:13-54
+234            android:required="false" />
+234-->[androidx.window:window:1.0.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/3c90734b72f6b4f2c1c6a0776fb11777/transformed/window-1.0.0/AndroidManifest.xml:27:13-37
+235        <uses-library
+235-->[androidx.window:window:1.0.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/3c90734b72f6b4f2c1c6a0776fb11777/transformed/window-1.0.0/AndroidManifest.xml:28:9-30:40
+236            android:name="androidx.window.sidecar"
+236-->[androidx.window:window:1.0.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/3c90734b72f6b4f2c1c6a0776fb11777/transformed/window-1.0.0/AndroidManifest.xml:29:13-51
+237            android:required="false" />
+237-->[androidx.window:window:1.0.0] /Users/mohannad/.gradle/caches/9.0.0/transforms/3c90734b72f6b4f2c1c6a0776fb11777/transformed/window-1.0.0/AndroidManifest.xml:30:13-37
+238
+239        <receiver
+239-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+240            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+240-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+241            android:directBootAware="false"
+241-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+242            android:enabled="true"
+242-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+243            android:exported="true"
+243-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+244            android:permission="android.permission.DUMP" >
+244-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+245            <intent-filter>
+245-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+246                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+246-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+246-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+247            </intent-filter>
+248            <intent-filter>
+248-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+249                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+249-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+249-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+250            </intent-filter>
+251            <intent-filter>
+251-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+252                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+252-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+252-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+253            </intent-filter>
+254            <intent-filter>
+254-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+255                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+255-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+255-->[androidx.profileinstaller:profileinstaller:1.3.1] /Users/mohannad/.gradle/caches/9.0.0/transforms/31181bf873770a442d03f0d371f7d7fc/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+256            </intent-filter>
+257        </receiver>
+258    </application>
+259
+260</manifest>

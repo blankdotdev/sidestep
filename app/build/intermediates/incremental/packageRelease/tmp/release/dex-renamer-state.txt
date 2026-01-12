@@ -1,0 +1,4 @@
+#Sun Jan 11 18:45:32 EST 2026
+base.0=/Users/mohannad/Sidestep/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex

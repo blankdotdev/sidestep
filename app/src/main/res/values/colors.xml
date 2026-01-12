@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="brand_blue">#FF42A5F5</color>
+    <color name="brand_blue_dark">#FF1976D2</color>
+    <color name="brand_purple">#FF6200EA</color>
+    
+    <!-- Dark mode colors -->
+    <color name="dark_background">#FF121212</color>
+    <color name="dark_surface">#FF1E1E1E</color>
+    <color name="dark_text_primary">#FFFFFFFF</color>
+    <color name="dark_text_secondary">#FFB3B3B3</color>
+    
+    <!-- Light mode colors -->
+    <color name="light_background">#FFFAFAFA</color>
+    <color name="light_surface">#FFFFFFFF</color>
+    <color name="light_text_primary">#FF212121</color>
+    <color name="light_text_secondary">#FF757575</color>
+    
+    <!-- Accent colors -->
+    <color name="accent_teal">#FF00BCD4</color>
+    
+    <!-- Status Colors (Pastel) -->
+    <color name="status_red_pastel">#FFEF9A9A</color>
+    <color name="status_yellow_pastel">#FFFFE082</color>
+    <color name="status_green_pastel">#FFA5D6A7</color>
+</resources>

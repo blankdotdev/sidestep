@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.blankdev.sidestep"
+    android:versionCode="2"
+    android:versionName="1.1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="24"
+        android:targetSdkVersion="35" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <category android:name="android.intent.category.BROWSABLE" />
+
+            <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+
+            <category android:name="android.intent.category.BROWSABLE" />
+
+            <data android:scheme="https" />
+        </intent>
+    </queries>
+
+    <permission
+        android:name="com.blankdev.sidestep.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="com.blankdev.sidestep.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+
+    <application
+        android:name="com.blankdev.sidestep.SidestepApplication"
+        android:allowBackup="true"
+        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+        android:extractNativeLibs="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:theme="@style/Theme.Sidestep"
+        android:usesCleartextTraffic="true" >
+
+        <!-- Main Activity - handles UI and manual URL input -->
+        <activity
+            android:name="com.blankdev.sidestep.MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize" >
+
+            <!-- Launcher intent -->
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Redirect Activity - handles all automated redirects silently -->
+        <activity
+            android:name="com.blankdev.sidestep.RedirectActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+
+            <!-- General URL Intent Filter -->
+            <intent-filter android:autoVerify="true" >
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
+                <!-- TikTok -->
+                <data android:host="tiktok.com" />
+                <data android:host="www.tiktok.com" />
+                <data android:host="v.tiktok.com" />
+                <data android:host="vt.tiktok.com" />
+                <data android:host="vm.tiktok.com" />
+
+                <!-- Twitter / X -->
+                <data android:host="twitter.com" />
+                <data android:host="www.twitter.com" />
+                <data android:host="x.com" />
+                <data android:host="www.x.com" />
+                <data android:host="t.co" />
+
+                <!-- Reddit -->
+                <data android:host="reddit.com" />
+                <data android:host="www.reddit.com" />
+                <data android:host="redd.it" />
+
+                <!-- YouTube -->
+                <data android:host="youtube.com" />
+                <data android:host="www.youtube.com" />
+                <data android:host="m.youtube.com" />
+                <data android:host="youtu.be" />
+
+                <!-- IMDb -->
+                <data android:host="imdb.com" />
+                <data android:host="www.imdb.com" />
+                <data android:host="m.imdb.com" />
+
+                <!-- Medium -->
+                <data android:host="medium.com" />
+                <data android:host="www.medium.com" />
+                <data android:host="link.medium.com" />
+
+                <!-- Wikipedia -->
+                <data android:host="wikipedia.org" />
+                <data android:host="www.wikipedia.org" />
+                <data android:host="en.wikipedia.org" />
+
+                <!-- Goodreads -->
+                <data android:host="goodreads.com" />
+                <data android:host="www.goodreads.com" />
+
+                <!-- Genius -->
+                <data android:host="genius.com" />
+                <data android:host="www.genius.com" />
+
+                <!-- GitHub -->
+                <data android:host="github.com" />
+                <data android:host="www.github.com" />
+
+                <!-- StackOverflow -->
+                <data android:host="stackoverflow.com" />
+                <data android:host="www.stackoverflow.com" />
+
+                <!-- Instagram -->
+                <data android:host="instagram.com" />
+                <data android:host="www.instagram.com" />
+
+                <!-- NYTimes -->
+                <data android:host="nytimes.com" />
+                <data android:host="www.nytimes.com" />
+
+                <!-- Tumblr -->
+                <data android:host="tumblr.com" />
+                <data android:host="www.tumblr.com" />
+
+                <!-- UrbanDictionary -->
+                <data android:host="urbandictionary.com" />
+                <data android:host="www.urbandictionary.com" />
+
+                <!-- Imgur -->
+                <data android:host="imgur.com" />
+                <data android:host="www.imgur.com" />
+            </intent-filter>
+
+            <!-- Google Maps Specific Intent Filter (to avoid intercepting all of google.com) -->
+            <intent-filter android:autoVerify="true" >
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
+                <!-- maps.google.com matches any path -->
+                <data android:host="maps.google.com" />
+                <data android:host="www.maps.google.com" />
+            </intent-filter>
+
+            <!-- Share Intent Filter -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
+        <!-- Settings Activity -->
+        <activity
+            android:name="com.blankdev.sidestep.SettingsActivity"
+            android:exported="false"
+            android:label="@string/settings_title"
+            android:parentActivityName="com.blankdev.sidestep.MainActivity" >
+        </activity>
+        <activity
+            android:name="com.blankdev.sidestep.WebViewActivity"
+            android:exported="false"
+            android:label="Sidestep"
+            android:parentActivityName="com.blankdev.sidestep.MainActivity" >
+        </activity>
+        <activity
+            android:name="com.blankdev.sidestep.SettingsFrontendsActivity"
+            android:exported="false"
+            android:label="Alternative Frontends"
+            android:parentActivityName="com.blankdev.sidestep.SettingsActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="com.blankdev.sidestep.SettingsCustomRedirectsActivity"
+            android:exported="false"
+            android:label="Custom Redirects"
+            android:parentActivityName="com.blankdev.sidestep.SettingsActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="com.blankdev.sidestep.SettingsPrivacyActivity"
+            android:exported="false"
+            android:label="History &amp; Privacy"
+            android:parentActivityName="com.blankdev.sidestep.SettingsActivity" />
+        <activity
+            android:name="com.blankdev.sidestep.SettingsDisplayActivity"
+            android:exported="false"
+            android:label="Display"
+            android:parentActivityName="com.blankdev.sidestep.SettingsActivity" />
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="com.blankdev.sidestep.androidx-startup"
+            android:exported="false" >
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                android:value="androidx.startup" />
+            <meta-data
+                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                android:value="androidx.startup" />
+            <meta-data
+                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+                android:value="androidx.startup" />
+        </provider>
+
+        <uses-library
+            android:name="androidx.window.extensions"
+            android:required="false" />
+        <uses-library
+            android:name="androidx.window.sidecar"
+            android:required="false" />
+
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            android:directBootAware="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.DUMP" >
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

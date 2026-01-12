@@ -1,0 +1,1423 @@
+package com.blankdev.sidestep
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.annotation.SuppressLint
+import android.view.Menu
+import android.view.MenuItem
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
+import android.widget.TextView
+import android.widget.Toast
+import android.widget.LinearLayout
+import android.widget.ImageButton
+import android.widget.FrameLayout
+import android.view.View
+import android.view.Gravity
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.ColorDrawable
+import android.graphics.Color
+import android.content.ClipboardManager
+import android.content.ClipData
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.PreferenceManager
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import okhttp3.OkHttpClient
+import androidx.activity.enableEdgeToEdge
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.color.DynamicColors
+import java.util.concurrent.TimeUnit
+import androidx.core.net.toUri
+import androidx.core.content.edit
+
+/**
+ * Shared OkHttpClient for connection pooling
+ */
+object NetworkClient {
+    val client = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(10, TimeUnit.SECONDS)
+        .build()
+}
+
+/**
+ * Main activity with URL input and history display
+ */
+class MainActivity : AppCompatActivity() {
+
+    private lateinit var urlInput: EditText
+    private lateinit var historyList: RecyclerView
+    private lateinit var historyAdapter: HistoryAdapter
+    private var validationJob: Job? = null
+    private lateinit var warningText: TextView
+    private lateinit var sidestepCounter: TextView
+    private lateinit var emptyStateGuide: LinearLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Apply theme before super.onCreate to ensure it takes effect immediately
+        applyTheme()
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        
+        // setup UI first to avoid crash when launched from intent
+        setupUI()
+        
+        // Apply history retention policy
+        lifecycleScope.launch {
+            HistoryManager.applyRetentionPolicy(this@MainActivity)
+        }
+        
+        loadHistory()
+        
+        loadHistory()
+    }
+
+
+    
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        val clearAllItem = menu.findItem(R.id.action_clear_all)
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val retentionMode = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
+        
+        val hasHistory = if (::historyAdapter.isInitialized && historyAdapter.currentList.isNotEmpty()) {
+            true
+        } else {
+            // Use sync check for menu prep to avoid delay/flashing, acceptable for small file
+            HistoryManager.getHistorySync(this).isNotEmpty()
+        }
+        
+        // Only show Clear All if history retention is not "never" AND there are items in history
+        clearAllItem?.isVisible = retentionMode != "never" && hasHistory
+        
+        return super.onPrepareOptionsMenu(menu)
+    }
+    
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
+            R.id.action_clear_all -> {
+                clearHistory()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+    
+    override fun onResume() {
+        super.onResume()
+        // Reload history when returning to app (also applies retention)
+        if (::historyList.isInitialized) {
+             lifecycleScope.launch {
+                HistoryManager.applyRetentionPolicy(this@MainActivity)
+                loadHistory()
+            }
+        }
+    }
+
+    private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
+
+    private fun setupUI() {
+        // Root Layout
+        val rootLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(getThemeColor(android.R.attr.colorBackground))
+        }
+
+        // Add explicit MaterialToolbar
+        val toolbar = com.google.android.material.appbar.MaterialToolbar(this).apply {
+            title = getString(R.string.app_name)
+            setTitleTextColor(getThemeColor(android.R.attr.textColorPrimary))
+            setBackgroundColor(getThemeColor(com.google.android.material.R.attr.colorSurface))
+            elevation = 4.dp().toFloat()
+        }
+        rootLayout.addView(toolbar)
+        setSupportActionBar(toolbar)
+
+        // Handle Window Insets for Edge-to-Edge
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            // Top padding for status bar handled by toolbar
+            toolbar.setPadding(0, bars.top, 0, 0)
+            // Navigation bar and horizontal bars handled by root padding
+            v.setPadding(bars.left, 0, bars.right, bars.bottom)
+            insets
+        }
+
+        val contentPadding = 16.dp()
+        // Content Container (to hold everything except toolbar)
+        val contentContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(contentPadding, contentPadding, contentPadding, 0)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        }
+        rootLayout.addView(contentContainer)
+        
+
+        // Sidestep Counter initialization (moved to end of setup)
+        sidestepCounter = TextView(this).apply {
+            textSize = 14f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+            gravity = Gravity.CENTER
+            setPadding(0, 16.dp(), 0, 8.dp())
+        }
+
+        // Input container
+        val inputContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(8.dp(), 4.dp(), 8.dp(), 4.dp())
+            background = createInputBackground()
+            elevation = 4f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(0, 8.dp(), 0, 16.dp())
+            }
+        }
+        
+        // TextInputLayout wrapper for URL input field
+        val textInputLayout = com.google.android.material.textfield.TextInputLayout(this).apply {
+            hint = getString(R.string.hint_url_input)
+            setHintTextColor(android.content.res.ColorStateList.valueOf(getThemeColor(android.R.attr.textColorSecondary)))
+            boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_NONE
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            ).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+        }
+
+        // URL input field
+        urlInput = EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or 
+                       android.text.InputType.TYPE_TEXT_VARIATION_URI
+            imeOptions = EditorInfo.IME_ACTION_GO
+            background = null
+            setPadding(12.dp(), 8.dp(), 8.dp(), 8.dp())
+            textSize = 16f
+            setTextColor(getThemeColor(android.R.attr.textColorPrimary))
+            
+            setOnEditorActionListener { _, actionId, _ ->
+                if (actionId == EditorInfo.IME_ACTION_GO) {
+                    processUrl()
+                    true
+                } else false
+            }
+            
+            // Add validation watcher
+            addTextChangedListener(object : android.text.TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: android.text.Editable?) {
+                    validateInput(s?.toString())
+                }
+            })
+        }
+        textInputLayout.addView(urlInput)
+        inputContainer.addView(textInputLayout)
+        
+        // Material Design FAB-style button with arrow icon (standard FAB size)
+        val processButton = android.widget.ImageButton(this).apply {
+            setImageResource(R.drawable.ic_go_slick)
+            background = createMaterialFabBackground()
+            elevation = 8f
+            scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+            setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
+            setColorFilter(0xFFFFFFFF.toInt()) // Pure white
+            layoutParams = LinearLayout.LayoutParams(
+                56.dp(),
+                56.dp()
+            ).apply {
+                setMargins(8.dp(), 0, 4.dp(), 0)
+            }
+            setOnClickListener { processUrl() }
+        }
+        inputContainer.addView(processButton)
+        
+        contentContainer.addView(inputContainer)
+        
+        // Warning Text with theme-aware color
+        warningText = TextView(this).apply {
+            text = getString(R.string.error_invalid_url)
+            textSize = 12f
+            // Use Material error color for better theme compatibility
+            setTextColor(getThemeColor(com.google.android.material.R.attr.colorError))
+            setPadding(8.dp(), 4.dp(), 8.dp(), 12.dp())
+            visibility = android.view.View.GONE
+        }
+        contentContainer.addView(warningText)
+        
+        // Empty State Guide
+        emptyStateGuide = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24.dp(), 32.dp(), 24.dp(), 32.dp())
+            gravity = Gravity.CENTER_HORIZONTAL
+            visibility = View.GONE
+            
+            val guideTitle = TextView(this@MainActivity).apply {
+                text = getString(R.string.guide_welcome_title)
+                textSize = 20f
+                setTypeface(null, Typeface.BOLD)
+                setTextColor(getThemeColor(android.R.attr.textColorPrimary))
+                setPadding(0, 0, 0, 24.dp())
+                gravity = Gravity.CENTER
+            }
+            addView(guideTitle)
+            
+            val steps = listOf(
+                getString(R.string.guide_step_1),
+                getString(R.string.guide_step_2),
+                getString(R.string.guide_step_3),
+                getString(R.string.guide_step_4)
+            )
+            
+            steps.forEach { stepText ->
+                val step = TextView(this@MainActivity).apply {
+                    text = stepText
+                    textSize = 15f
+                    setPadding(0, 0, 0, 16.dp())
+                    setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+                    setLineSpacing(0f, 1.3f)
+                    gravity = Gravity.CENTER
+                }
+                addView(step)
+            }
+            
+            // Set as Default button
+            val defaultButton = com.google.android.material.button.MaterialButton(this@MainActivity).apply {
+                text = getString(R.string.btn_set_default)
+                setOnClickListener { openDefaultHandlerSettings() }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topMargin = 16.dp()
+                }
+            }
+            addView(defaultButton)
+        }
+        contentContainer.addView(emptyStateGuide)
+
+        // History RecyclerView
+        historyAdapter = HistoryAdapter(
+            onItemClick = { entry ->
+                // Use the original URL to re-process through the standard pipeline
+                // This ensures consistent behavior with new URL inputs and proper loop detection
+                processAndNavigate(entry.originalUrl)
+            },
+            onMenuClick = { view, entry -> showHistoryMenu(view, entry) }
+        )
+        
+        historyList = RecyclerView(this).apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = historyAdapter
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        }
+        contentContainer.addView(historyList)
+        
+        // Add Sidestep Counter at the bottom
+        contentContainer.addView(sidestepCounter)
+        // Note: Initial counter update is handled by loadHistory()
+
+        
+        setContentView(rootLayout)
+    }
+    
+    private fun validateInput(text: String?) {
+        if (text.isNullOrEmpty()) {
+            warningText.visibility = android.view.View.GONE
+            return
+        }
+        
+        val isValid = android.util.Patterns.WEB_URL.matcher(text).matches()
+        warningText.visibility = if (isValid) android.view.View.GONE else android.view.View.VISIBLE
+    }
+    
+    private fun getThemeColor(attr: Int): Int {
+        val typedValue = android.util.TypedValue()
+        if (theme.resolveAttribute(attr, typedValue, true)) {
+            // Check if it's a color resource or a raw color data
+            return if (typedValue.resourceId != 0) {
+                try {
+                    androidx.core.content.ContextCompat.getColor(this, typedValue.resourceId)
+                } catch (e: Exception) {
+                    // Fallback for cases where resourceId is not a color (e.g. a drawable like listDivider)
+                    typedValue.data
+                }
+            } else {
+                typedValue.data
+            }
+        }
+        return android.graphics.Color.MAGENTA
+    }
+
+    private var isKpiMode: Boolean? = null
+    private var lastCountValue: Long? = null
+
+    private fun updateCounterUI(history: List<HistoryManager.HistoryEntry>) {
+        if (!::sidestepCounter.isInitialized) return
+        
+        val count = getSidestepCount()
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val retention = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
+        val historyEmpty = history.isEmpty() || retention == "never"
+        
+        // Avoid redundant updates if count and mode haven't changed
+        if (isKpiMode == historyEmpty && lastCountValue == count) return
+        
+        isKpiMode = historyEmpty
+        lastCountValue = count
+        
+        if (historyEmpty) {
+            // KPI Format
+            val countText = count.toString()
+            val label = "\n" + getString(R.string.label_sidesteps_performed)
+            val fullText = "$countText$label"
+            
+            val spannable = android.text.SpannableString(fullText)
+            
+            // Style the count: Much Larger (6x), Primary Color, BOLD
+            val primaryColor = getThemeColor(com.google.android.material.R.attr.colorPrimary)
+            
+            spannable.setSpan(
+                android.text.style.RelativeSizeSpan(6f), 
+                0, countText.length,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            spannable.setSpan(
+                android.text.style.ForegroundColorSpan(primaryColor),
+                0, countText.length,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            spannable.setSpan(
+                android.text.style.StyleSpan(Typeface.BOLD),
+                0, countText.length,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+            
+            sidestepCounter.text = spannable
+            sidestepCounter.setTypeface(null, Typeface.NORMAL) // Unbold the label (whole view normal, span handles bold count)
+            sidestepCounter.textSize = 14f // Base size for the label
+            sidestepCounter.setLineSpacing(0f, 1.2f)
+            sidestepCounter.setPadding(0, 32.dp(), 0, 32.dp())
+            sidestepCounter.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            ).apply {
+                gravity = Gravity.CENTER
+            }
+        } else {
+            // Standard Format
+            sidestepCounter.text = resources.getQuantityString(R.plurals.label_sidesteps_performed, count.toInt(), count)
+            sidestepCounter.textSize = 14f
+            sidestepCounter.setTypeface(null, Typeface.BOLD) // Keep footer bold
+            sidestepCounter.setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+            sidestepCounter.setPadding(0, 16.dp(), 0, 8.dp())
+            
+            sidestepCounter.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                0f
+            )
+        }
+    }
+    
+    private fun createInputBackground(): android.graphics.drawable.Drawable {
+        val shape = android.graphics.drawable.GradientDrawable()
+        shape.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+        shape.cornerRadius = 48f 
+        
+        // Use theme surface color
+        shape.setColor(getThemeColor(com.google.android.material.R.attr.colorSurface))
+        
+        // Border color based on theme (using textColorSecondary or similar for border)
+        val borderColor = getThemeColor(android.R.attr.textColorSecondary)
+        // Make border slightly transparent/lighter - INCREASED visibility (from 60 to 120)
+        val alphaBorder = androidx.core.graphics.ColorUtils.setAlphaComponent(borderColor, 120)
+        shape.setStroke(3, alphaBorder)
+        
+        return shape
+    }
+    
+    private fun createMaterialFabBackground(): android.graphics.drawable.Drawable {
+        val shape = android.graphics.drawable.GradientDrawable()
+        shape.shape = android.graphics.drawable.GradientDrawable.OVAL
+        // Use Primary Color
+        shape.setColor(getThemeColor(com.google.android.material.R.attr.colorPrimary))
+        return shape
+    }
+
+    private fun createSecondaryBackground(): android.graphics.drawable.Drawable {
+        val shape = android.graphics.drawable.GradientDrawable()
+        shape.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+        shape.cornerRadius = 32f
+        // Very subtle background color related to surface/secondary
+        val baseColor = getThemeColor(android.R.attr.textColorSecondary)
+        shape.setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(baseColor, 15))
+        return shape
+    }
+
+    private fun openDefaultHandlerSettings() {
+        try {
+            val intent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                Intent(android.provider.Settings.ACTION_APP_OPEN_BY_DEFAULT_SETTINGS, 
+                    "package:$packageName".toUri())
+            } else {
+                Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    "package:$packageName".toUri())
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun ensureProtocol(url: String): String {
+        return if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            "https://$url"
+        } else {
+            url
+        }
+    }
+
+
+    
+    
+    
+
+    private fun extractUrl(text: String): String? {
+        val pattern = android.util.Patterns.WEB_URL
+        val matcher = pattern.matcher(text)
+        return if (matcher.find()) {
+            matcher.group()
+        } else null
+    }
+
+    private fun processUrl() {
+        val url = urlInput.text.toString().trim()
+        if (url.isEmpty()) {
+            Toast.makeText(this, "Please enter a URL", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (!android.util.Patterns.WEB_URL.matcher(url).matches()) {
+            Toast.makeText(this, "Invalid URL format", Toast.LENGTH_SHORT).show()
+            return
+        }
+        processAndNavigate(url)
+    }
+
+    private fun processAndNavigate(url: String) {
+        val sanitizedUrl = ensureProtocol(url)
+        lifecycleScope.launch {
+            try {
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
+                
+                // Step 1: Unshorten (Network call) - Respect setting
+                val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
+                val unshortenedUrl = if (shouldUnshorten) {
+                    UrlUnshortener.unshorten(sanitizedUrl)
+                } else {
+                    sanitizedUrl
+                }
+                
+                val isPreviewEnabled = prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)
+
+                // Step 2: Extract initial title from resolved URL
+                val initialTitle = if (isPreviewEnabled) {
+                    when {
+                        UrlCleaner.isTwitterOrXUrl(unshortenedUrl) -> {
+                            val username = getTwitterUsername(unshortenedUrl)
+                            if (username != null) "@$username" else null
+                        }
+                        UrlCleaner.isTikTokUrl(unshortenedUrl) -> {
+                            val username = getTikTokUsername(unshortenedUrl)
+                            if (username != null) "@$username" else null
+                        }
+                        UrlCleaner.isRedditUrl(unshortenedUrl) -> getRedditTitle(unshortenedUrl)
+                        else -> null
+                    }
+                } else {
+                     UrlCleaner.getServiceName(unshortenedUrl)
+                }
+
+                // Step 3: Determine Redirect URL - Respect tracking setting
+                val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
+                val cleaned = if (shouldRemoveTracking) {
+                    UrlCleaner.cleanUrl(unshortenedUrl)
+                } else {
+                    unshortenedUrl
+                }
+                val redirectUrl = SettingsUtils.resolveTargetUrl(this@MainActivity, cleaned, unshortenedUrl)
+
+                // Step 4: Save to History (Background) - Move before navigation to ensure recording even if loop break occurs
+                val entry = HistoryManager.HistoryEntry(
+                    originalUrl = url,
+                    cleanedUrl = cleaned,
+                    processedUrl = redirectUrl,
+                    timestamp = System.currentTimeMillis(),
+                    title = initialTitle,
+                    unshortenedUrl = unshortenedUrl
+                )
+                
+                // Note: HistoryManager functions now handle Dispatchers.IO internally
+                HistoryManager.addToHistory(this@MainActivity, entry)
+                HistoryManager.applyRetentionPolicy(this@MainActivity)
+                
+                // Trigger preview fetch immediately after saving
+                if (PreferenceManager.getDefaultSharedPreferences(this@MainActivity).getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE) != "never") {
+                    val savedEntry = HistoryManager.getHistory(this@MainActivity).firstOrNull { 
+                        it.originalUrl == url && it.timestamp == entry.timestamp 
+                    }
+                    if (savedEntry != null) {
+                        fetchPreview(savedEntry)
+                    }
+                }
+
+                // Step 5: Open URL (Respect Immediate Navigation)
+                try {
+                    if (isDestroyed || isFinishing) return@launch
+                    
+                    val isImmediate = prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
+                    
+                    if (isImmediate) {
+                        val finalRedirectUrl = ensureProtocol(redirectUrl)
+                        
+                        // Determine if we should use in-app WebView
+                        if (shouldOpenInWebView(unshortenedUrl)) {
+                            val webIntent = Intent(this@MainActivity, WebViewActivity::class.java).apply {
+                                putExtra(WebViewActivity.EXTRA_URL, finalRedirectUrl)
+                            }
+                            startActivity(webIntent)
+                        } else {
+                            // Standard external redirect with loop detection
+                            val redirectIntent = Intent(Intent.ACTION_VIEW, finalRedirectUrl.toUri()).apply {
+                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                            }
+                            
+                            // Detection for loops - ONLY set package if we are one of the handlers
+                            val handlers = packageManager.queryIntentActivities(redirectIntent, 0)
+                            val selfHandler = handlers.find { it.activityInfo.packageName == packageName }
+                            
+                            if (selfHandler != null) {
+                                val otherHandler = handlers.firstOrNull { it.activityInfo.packageName != packageName }
+                                if (otherHandler != null) {
+                                    redirectIntent.setPackage(otherHandler.activityInfo.packageName)
+                                    startActivity(redirectIntent)
+                                } else {
+                                    // If we are the only handler, we have to use WebView to avoid loop
+                                    val webIntent = Intent(this@MainActivity, WebViewActivity::class.java).apply {
+                                        putExtra(WebViewActivity.EXTRA_URL, finalRedirectUrl)
+                                    }
+                                    startActivity(webIntent)
+                                }
+                            } else {
+                                // We are not a handler, just let the system handle it (Better for browser choice)
+                                startActivity(redirectIntent)
+                            }
+                        }
+                        
+                        // Increment sidestep counter ONLY if navigating
+                        incrementSidestepCount()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Link processed and added to history", Toast.LENGTH_SHORT).show()
+                    }
+                    
+                    updateCounterUI(HistoryManager.getHistory(this@MainActivity))
+                } catch (e: Exception) {
+                    if (!isDestroyed && !isFinishing) {
+                        Toast.makeText(this@MainActivity, "Could not open URL: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+
+                // Step 6: Handle UI cleanup
+                if (!isDestroyed && !isFinishing) {
+                    urlInput.text.clear()
+                    loadHistory()
+                    urlInput.clearFocus()
+                }
+
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+
+    private fun shouldOpenInWebView(unshortenedUrl: String): Boolean {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        
+        val isCleanOnly = when {
+            UrlCleaner.isTwitterOrXUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_TWITTER_CLEAN_ONLY, false)
+            UrlCleaner.isRedditUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_REDDIT_CLEAN_ONLY, false)
+            UrlCleaner.isYouTubeUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, false)
+            UrlCleaner.isImdbUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_IMDB_CLEAN_ONLY, false)
+            UrlCleaner.isMediumUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, false)
+            UrlCleaner.isWikipediaUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, false)
+            UrlCleaner.isGoodreadsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, false)
+            UrlCleaner.isGeniusUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GENIUS_CLEAN_ONLY, false)
+            UrlCleaner.isGitHubUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GITHUB_CLEAN_ONLY, false)
+            UrlCleaner.isStackOverflowUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, false)
+            UrlCleaner.isGoogleMapsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)
+            else -> false
+        }
+        
+        if (!isCleanOnly) return false
+        
+        // If it's clean only, we only open in WebView if we are the default handler for this domain
+        // to avoid the endless redirect loop that would happen if we sent a VIEW intent
+        return try {
+            SettingsUtils.checkDomain(this, unshortenedUrl)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private fun isAppDefaultHandlerForDomain(domain: String): Boolean {
+        return SettingsUtils.checkDomain(this, domain)
+    }
+
+
+
+    private fun loadHistory() {
+        lifecycleScope.launch {
+            val history = HistoryManager.getHistory(this@MainActivity)
+            val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
+            val retentionMode = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
+            
+            val sidestepCount = getSidestepCount()
+            
+            if (retentionMode == "never") {
+                historyAdapter.submitList(emptyList())
+                historyList.visibility = View.GONE
+                emptyStateGuide.visibility = if (sidestepCount == 0L) View.VISIBLE else View.GONE
+                updateCounterUI(emptyList())
+                invalidateOptionsMenu()
+                return@launch
+            }
+            
+            if (history.isEmpty()) {
+                historyList.visibility = View.GONE
+                emptyStateGuide.visibility = if (sidestepCount == 0L) View.VISIBLE else View.GONE
+            } else {
+                historyList.visibility = View.VISIBLE
+                emptyStateGuide.visibility = View.GONE
+            }
+            
+            historyAdapter.submitList(history) {
+                // Update menu visibility after the list has been updated and diffed
+                invalidateOptionsMenu()
+            }
+            updateCounterUI(history)
+        }
+    }
+
+    private fun updateHistoryItem(entry: HistoryManager.HistoryEntry) {
+        val currentList = historyAdapter.currentList.toMutableList()
+        val index = currentList.indexOfFirst { it.originalUrl == entry.originalUrl && it.timestamp == entry.timestamp }
+        if (index != -1) {
+            currentList[index] = entry
+            historyAdapter.submitList(currentList)
+        }
+    }
+
+    /**
+     * RecyclerView Adapter for History
+     */
+    inner class HistoryAdapter(
+        private val onItemClick: (HistoryManager.HistoryEntry) -> Unit,
+        private val onMenuClick: (android.view.View, HistoryManager.HistoryEntry) -> Unit
+    ) : androidx.recyclerview.widget.ListAdapter<HistoryManager.HistoryEntry, HistoryAdapter.ViewHolder>(
+        object : androidx.recyclerview.widget.DiffUtil.ItemCallback<HistoryManager.HistoryEntry>() {
+            override fun areItemsTheSame(oldItem: HistoryManager.HistoryEntry, newItem: HistoryManager.HistoryEntry): Boolean {
+                return oldItem.originalUrl == newItem.originalUrl && oldItem.timestamp == newItem.timestamp
+            }
+
+            override fun areContentsTheSame(oldItem: HistoryManager.HistoryEntry, newItem: HistoryManager.HistoryEntry): Boolean {
+                return oldItem == newItem
+            }
+        }
+    ) {
+
+        inner class ViewHolder(val view: android.view.View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view)
+
+        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
+            val context = parent.context
+            val itemContainer = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                setPadding(8.dp(), 10.dp(), 4.dp(), 10.dp())
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+            return ViewHolder(itemContainer)
+        }
+
+        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+            val entry = getItem(position)
+            val context = holder.view.context
+            val container = holder.view as LinearLayout
+            container.removeAllViews()
+
+            val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
+            val isTwitter = UrlCleaner.isTwitterOrXUrl(contentUrl)
+            val isTikTok = UrlCleaner.isTikTokUrl(contentUrl)
+            val isReddit = UrlCleaner.isRedditUrl(contentUrl)
+            val isYouTube = UrlCleaner.isYouTubeUrl(contentUrl)
+            val isMedium = UrlCleaner.isMediumUrl(contentUrl)
+            val isImdb = UrlCleaner.isImdbUrl(contentUrl)
+            val isWikipedia = UrlCleaner.isWikipediaUrl(contentUrl)
+            val isGoodreads = UrlCleaner.isGoodreadsUrl(contentUrl)
+            val isGenius = UrlCleaner.isGeniusUrl(contentUrl)
+            val isGitHub = UrlCleaner.isGitHubUrl(contentUrl)
+            val isStackOverflow = UrlCleaner.isStackOverflowUrl(contentUrl)
+            val isNYTimes = contentUrl.contains("nytimes.com")
+            val isInstagram = contentUrl.contains("instagram.com")
+            val isTumblr = UrlCleaner.isTumblrUrl(contentUrl)
+            val isImgur = UrlCleaner.isImgurUrl(contentUrl)
+            val isUrbanDictionary = UrlCleaner.isUrbanDictionaryUrl(contentUrl)
+            val isGoogleMaps = UrlCleaner.isGoogleMapsUrl(contentUrl)
+
+            val contentContainer = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                background = createRippleBackground()
+                setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
+                setOnClickListener { onItemClick(entry) }
+            }
+
+            val displayImage = when {
+                isTwitter -> R.drawable.ic_x_logo
+                isTikTok -> R.drawable.ic_tiktok_logo
+                isReddit -> R.drawable.ic_reddit_logo
+                isYouTube -> R.drawable.ic_youtube_logo
+                isMedium -> R.drawable.ic_medium_logo
+                isImdb -> R.drawable.ic_imdb_logo
+                isWikipedia -> R.drawable.ic_wikipedia_logo
+                isGoodreads -> R.drawable.ic_goodreads_logo
+                isGenius -> R.drawable.ic_genius_logo
+                isGitHub -> R.drawable.ic_github_logo
+                isStackOverflow -> R.drawable.ic_stackoverflow_logo
+                isNYTimes -> R.drawable.ic_nytimes_logo
+                isInstagram -> R.drawable.ic_instagram_logo
+                isTumblr -> R.drawable.ic_tumblr_logo
+                isImgur -> R.drawable.ic_imgur_logo
+                isUrbanDictionary -> R.drawable.ic_urbandictionary_logo
+                isGoogleMaps -> R.drawable.ic_google_maps_logo
+                else -> R.drawable.ic_generic_link
+            }
+
+            val imageView = android.widget.ImageView(context).apply {
+                layoutParams = FrameLayout.LayoutParams(40.dp(), 40.dp()).apply { gravity = Gravity.CENTER }
+                scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
+                setImageResource(displayImage)
+                setColorFilter(getThemeColor(com.google.android.material.R.attr.colorOnSurface))
+            }
+
+            val imageCard = androidx.cardview.widget.CardView(context).apply {
+                radius = 16f
+                cardElevation = 0f
+                setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
+                layoutParams = LinearLayout.LayoutParams(56.dp(), 56.dp()).apply { marginEnd = 16.dp() }
+                addView(imageView)
+            }
+            contentContainer.addView(imageCard)
+
+            val textLayout = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+
+            val titleText = TextView(context).apply {
+                text = getDisplayTitle(entry)
+                textSize = 16f
+                setTypeface(null, android.graphics.Typeface.BOLD)
+                setTextColor(getThemeColor(android.R.attr.textColorPrimary))
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+                visibility = if (!getDisplayTitle(entry).isBlank()) android.view.View.VISIBLE else android.view.View.GONE
+            }
+            textLayout.addView(titleText)
+
+            val subtitleText = TextView(context).apply {
+                text = getDisplaySubtitle(entry)
+                textSize = 14f
+                setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+            }
+            textLayout.addView(subtitleText)
+            contentContainer.addView(textLayout)
+            container.addView(contentContainer)
+
+            val menuButton = android.widget.ImageButton(context).apply {
+                setImageResource(R.drawable.ic_more_vert)
+                background = createRippleBackground()
+                setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
+                setColorFilter(getThemeColor(android.R.attr.textColorSecondary))
+                setOnClickListener { onMenuClick(it, entry) }
+            }
+            container.addView(menuButton)
+        }
+    }
+
+    private fun getDisplaySubtitle(entry: HistoryManager.HistoryEntry): String {
+        val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
+        
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (!prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)) {
+             return getFallbackSubtitle(entry, contentUrl)
+        }
+
+        val isTwitter = UrlCleaner.isTwitterOrXUrl(contentUrl)
+        val isTikTok = UrlCleaner.isTikTokUrl(contentUrl)
+        val isReddit = UrlCleaner.isRedditUrl(contentUrl)
+        val isYouTube = UrlCleaner.isYouTubeUrl(contentUrl)
+
+        return when {
+            isTwitter -> {
+                val timestamp = entry.postedTimestamp ?: getTwitterTimestamp(contentUrl)
+                if (timestamp != null) {
+                    val sdf = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
+                    "Posted on ${sdf.format(java.util.Date(timestamp))}"
+                } else getFallbackSubtitle(entry, contentUrl)
+            }
+            isTikTok -> {
+                val timestamp = entry.postedTimestamp ?: getTikTokTimestamp(contentUrl)
+                if (timestamp != null) {
+                    val sdf = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
+                    "Posted on ${sdf.format(java.util.Date(timestamp))}"
+                } else getFallbackSubtitle(entry, contentUrl)
+            }
+            isReddit -> {
+                val timestamp = entry.postedTimestamp
+                if (timestamp != null && timestamp > 0) {
+                    val sdf = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
+                    "Posted on ${sdf.format(java.util.Date(timestamp))}"
+                } else getFallbackSubtitle(entry, contentUrl)
+            }
+            isYouTube -> {
+                val timestamp = entry.postedTimestamp
+                val authorOrUrl = entry.author ?: getFallbackSubtitle(entry, contentUrl)
+                if (timestamp != null && timestamp > 0) {
+                    val sdf = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
+                    "$authorOrUrl • ${sdf.format(java.util.Date(timestamp))}"
+                } else authorOrUrl
+            }
+            else -> getFallbackSubtitle(entry, contentUrl)
+        }
+    }
+
+    private fun getFallbackSubtitle(entry: HistoryManager.HistoryEntry, contentUrl: String): String {
+        val title = getDisplayTitle(entry)
+        val serviceName = UrlCleaner.getServiceName(contentUrl)
+        return if (title == serviceName) {
+            UrlCleaner.getCleanedPath(contentUrl)
+        } else {
+            UrlCleaner.getCleanedDisplayUrl(contentUrl)
+        }
+    }
+
+
+    private fun getRedditTitle(url: String?): String? {
+        if (url == null) return null
+        return try {
+            val uri = url.toUri()
+            val pathSegments = uri.pathSegments
+            
+            // Patterns: 
+            // /r/Subreddit/comments/ID/post_title/
+            // /user/Username/comments/ID/post_title/
+            // /u/Username/
+            
+            val rIndex = pathSegments.indexOf("r")
+            val uIndex = if (rIndex == -1) pathSegments.indexOf("u").let { if (it == -1) pathSegments.indexOf("user") else it } else -1
+            
+            if (rIndex != -1 && rIndex + 1 < pathSegments.size) {
+                val subreddit = "r/${pathSegments[rIndex + 1]}"
+                val commentsIndex = pathSegments.indexOf("comments")
+                if (commentsIndex != -1 && commentsIndex + 2 < pathSegments.size) {
+                    // We have a post title
+                    val postTitle = pathSegments[commentsIndex + 2].replace("_", " ").replace("-", " ")
+                    "$postTitle ($subreddit)"
+                } else {
+                    subreddit
+                }
+            } else if (uIndex != -1 && uIndex + 1 < pathSegments.size) {
+                "u/${pathSegments[uIndex + 1]}"
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getRedditTimestamp(url: String?): Long? {
+        if (url == null) return null
+        return try {
+            val uri = url.toUri()
+            val pathSegments = uri.pathSegments
+            val commentsIndex = pathSegments.indexOf("comments")
+            if (commentsIndex != -1 && commentsIndex + 1 < pathSegments.size) {
+                // Return null for now as we don't use idLong
+                return null 
+            }
+            null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getYouTubeTitle(url: String?): String? {
+        if (url == null) return null
+        return try {
+            val uri = url.toUri()
+            // youtube.com/watch?v=VIDEO_ID
+            // youtu.be/VIDEO_ID
+            if (uri.host?.contains("youtube.com") == true) {
+                val v = uri.getQueryParameter("v")
+                if (v != null) "YouTube Video ($v)" else "YouTube Video"
+            } else if (uri.host?.contains("youtu.be") == true) {
+                val v = uri.pathSegments.firstOrNull()
+                if (v != null) "YouTube Video ($v)" else "YouTube Video"
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getYouTubeTimestamp(@Suppress("UNUSED_PARAMETER") url: String?): Long? {
+        // Can't easily get timestamp from YouTube URL without API
+        return null
+    }
+
+    private fun getTikTokTimestamp(url: String?): Long? {
+         if (url == null) return null
+         return try {
+             // tiktok.com/@user/video/VIDEO_ID
+             val uri = url.toUri()
+             val pathSegments = uri.pathSegments
+             // Find segment that is purely numeric and length > 15 (snowflake IDs are 19 digits usually)
+             // or simply the segment after "video"?
+             
+             // Path usually: /@username/video/7238472389472384
+             val videoIndex = pathSegments.indexOf("video")
+             if (videoIndex != -1 && videoIndex + 1 < pathSegments.size) {
+                 val idString = pathSegments[videoIndex + 1]
+                 val videoId = idString.toLongOrNull() ?: return null
+                 
+                 // TikTok Snowflake: first 32 bits are timestamp in seconds
+                 val timestampSeconds = videoId ushr 32
+                 return timestampSeconds * 1000L // Convert to millis
+             }
+             null
+         } catch (e: Exception) {
+             null
+         }
+    }
+
+    private fun fetchPreview(entry: HistoryManager.HistoryEntry) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (!prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)) return
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val fetchUrl = entry.cleanedUrl
+            val data = PreviewFetcher.fetchPreview(url = fetchUrl)
+            
+            // Protect manually extracted usernames from being overwritten by generic alternative frontend SEO titles
+            val isSocial = isTwitterOrXUrl(fetchUrl) || UrlCleaner.isTikTokUrl(fetchUrl) || 
+                          UrlCleaner.isRedditUrl(fetchUrl) || UrlCleaner.isYouTubeUrl(fetchUrl) ||
+                          UrlCleaner.isMediumUrl(fetchUrl) || UrlCleaner.isImdbUrl(fetchUrl)
+            val updatedTitle = if (isSocial && (entry.title?.startsWith("@") == true || entry.title?.contains("r/") == true)) {
+                entry.title // Keep our @username or post title
+            } else {
+                val fetchedTitle = data?.title
+                val validFetchedTitle = if (fetchedTitle.isNullOrBlank()) null else fetchedTitle
+                val validEntryTitle = if (entry.title.isNullOrBlank()) null else entry.title
+
+                validFetchedTitle ?: validEntryTitle ?: UrlCleaner.getServiceName(fetchUrl)
+            }
+
+            val updatedEntry = entry.copy(
+                title = updatedTitle,
+                author = data?.author ?: entry.author,
+                description = data?.description,
+                isPreviewFetched = true,
+                postedTimestamp = data?.timestamp ?: entry.postedTimestamp
+            )
+            
+            // Update in storage
+            HistoryManager.updateEntry(this@MainActivity, updatedEntry)
+            
+            // Refresh UI if still valid
+            withContext(Dispatchers.Main) {
+                if (!isDestroyed && !isFinishing) {
+                   updateHistoryItem(updatedEntry)
+                }
+            }
+        }
+    }
+
+    private fun getDisplayTitle(entry: HistoryManager.HistoryEntry): String {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (!prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)) {
+             val title = entry.title
+             return if (title.isNullOrBlank()) UrlCleaner.getServiceName(entry.unshortenedUrl ?: entry.originalUrl) else title
+        }
+
+        val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
+        val isYouTube = UrlCleaner.isYouTubeUrl(contentUrl)
+        val isTwitter = UrlCleaner.isTwitterOrXUrl(contentUrl)
+        val isTikTok = UrlCleaner.isTikTokUrl(contentUrl)
+        val isReddit = UrlCleaner.isRedditUrl(contentUrl)
+        val isMedium = UrlCleaner.isMediumUrl(contentUrl)
+        val isImdb = UrlCleaner.isImdbUrl(contentUrl)
+        val isWikipedia = UrlCleaner.isWikipediaUrl(contentUrl)
+        val isGoodreads = UrlCleaner.isGoodreadsUrl(contentUrl)
+        val isGoogleMaps = UrlCleaner.isGoogleMapsUrl(contentUrl)
+
+        val title = entry.title
+        val validTitle = if (title.isNullOrBlank()) null else title
+
+        return when {
+            isTwitter -> validTitle ?: getTwitterUsername(contentUrl) ?: "Twitter"
+            isTikTok -> validTitle ?: getTikTokUsername(contentUrl) ?: "TikTok"
+            isReddit -> validTitle ?: getRedditTitle(contentUrl) ?: "Reddit"
+            isYouTube -> validTitle ?: getYouTubeTitle(contentUrl) ?: "YouTube"
+            isMedium -> validTitle ?: "Medium"
+            isImdb -> validTitle ?: "IMDb"
+            isWikipedia -> validTitle ?: "Wikipedia"
+            isGoodreads -> validTitle ?: "Goodreads"
+            isGoogleMaps -> validTitle ?: "Google Maps"
+            UrlCleaner.isGeniusUrl(contentUrl) -> validTitle ?: "Genius"
+            UrlCleaner.isGitHubUrl(contentUrl) -> validTitle ?: "GitHub"
+            UrlCleaner.isStackOverflowUrl(contentUrl) -> validTitle ?: "StackOverflow"
+            contentUrl.contains("nytimes.com") -> validTitle ?: "The New York Times"
+            contentUrl.contains("instagram.com") -> validTitle ?: "Instagram"
+            else -> validTitle ?: UrlCleaner.getServiceName(contentUrl)
+        }
+    }
+
+    private fun extractDomain(url: String): String {
+        return try {
+            url.toUri().host ?: url
+        } catch (e: Exception) {
+            url
+        }
+    }
+    
+    // Check methods
+    private fun isTwitterOrXUrl(url: String?): Boolean {
+        return UrlCleaner.isTwitterOrXUrl(url)
+    }
+    
+    private fun getTwitterUsername(url: String?): String? {
+        if (url == null) return null
+        return try {
+            val uri = url.toUri()
+            val pathSegments = uri.pathSegments
+            if (pathSegments.size >= 1) {
+                pathSegments[0]
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    private fun getTikTokUsername(url: String?): String? {
+        if (url == null) return null
+        return try {
+            val uri = url.toUri()
+            val pathSegments = uri.pathSegments
+            pathSegments.find { it.startsWith("@") }?.substring(1)
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    private fun getTwitterTimestamp(url: String?): Long? {
+        if (url == null) return null
+        return try {
+            val pattern = java.util.regex.Pattern.compile("status/(\\d+)")
+            val matcher = pattern.matcher(url)
+            if (matcher.find()) {
+                val tweetId = matcher.group(1)?.toLongOrNull() ?: return null
+                (tweetId shr 22) + 1288834974657L
+            } else null
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    private fun showHistoryMenu(view: android.view.View, entry: HistoryManager.HistoryEntry) {
+        val popup = android.widget.PopupMenu(this, view)
+        
+        // Add menu items with icons
+        // Add menu items with icons
+        val shareItem = popup.menu.add(0, MENU_ITEM_SHARE, 0, getString(R.string.menu_share)).apply {
+            setIcon(R.drawable.ic_share)
+        }
+        val clearItem = popup.menu.add(0, MENU_ITEM_CLEAR, 1, getString(R.string.menu_clear_item)).apply {
+            setIcon(R.drawable.ic_check)
+        }
+        val infoItem = popup.menu.add(0, MENU_ITEM_INFO, 2, getString(R.string.menu_get_info)).apply {
+            setIcon(R.drawable.ic_info)
+        }
+        
+        // Tint all icons to ensure consistency and visibility in all themes
+        val itemsToTint = listOf(shareItem, clearItem, infoItem)
+        val tintColor = getThemeColor(android.R.attr.textColorPrimary)
+        
+        itemsToTint.forEach { item ->
+            val icon = item.icon
+            if (icon != null) {
+                val wrapped = androidx.core.graphics.drawable.DrawableCompat.wrap(icon)
+                androidx.core.graphics.drawable.DrawableCompat.setTint(wrapped, tintColor)
+                item.icon = wrapped
+            }
+        }
+        
+        // Force icons to show (Reflection hack for standard PopupMenu)
+        // Note: Using DiscouragedPrivateApi to show icons in PopupMenu. 
+        // This is documented to work in current Android versions but may break in the future.
+        @SuppressLint("DiscouragedPrivateApi")
+        try {
+            val fieldMPopup = android.widget.PopupMenu::class.java.getDeclaredField("mPopup")
+            fieldMPopup.isAccessible = true
+            val mPopup = fieldMPopup.get(popup)
+            mPopup.javaClass.getDeclaredMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
+                .invoke(mPopup, true)
+        } catch (e: Exception) {
+            // Ignore if fails, icons just won't show
+        }
+        
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_ITEM_SHARE -> {
+                    shareUrl(entry.processedUrl)
+                    true
+                }
+                MENU_ITEM_CLEAR -> {
+                    clearHistoryItem(entry)
+                    true
+                }
+                MENU_ITEM_INFO -> {
+                    showUrlInfo(entry)
+                    true
+                }
+                else -> false
+            }
+        }
+        
+        popup.show()
+    }
+    
+    private fun showUrlInfo(entry: HistoryManager.HistoryEntry) {
+        val rootLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val p = 24.dp()
+            setPadding(p, 0, p, 16.dp())
+        }
+
+        val scrollView = android.widget.ScrollView(this).apply {
+            addView(rootLayout)
+        }
+
+        fun addDetailRow(label: String, content: String, actionIcon: Int, onAction: () -> Unit) {
+            val labelView = TextView(this).apply {
+                text = label
+                textSize = 12f
+                setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+                setPadding(0, 12.dp(), 0, 4.dp())
+            }
+            rootLayout.addView(labelView)
+
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+
+            val contentView = TextView(this).apply {
+                text = content
+                textSize = 15f
+                setTextColor(getThemeColor(android.R.attr.textColorPrimary))
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            row.addView(contentView)
+
+            val actionBtn = android.widget.ImageButton(this).apply {
+                setImageResource(actionIcon)
+                background = createRippleBackground()
+                setColorFilter(getThemeColor(com.google.android.material.R.attr.colorPrimary))
+                setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
+                setOnClickListener { onAction() }
+            }
+            row.addView(actionBtn)
+            rootLayout.addView(row)
+
+            val divider = android.view.View(this).apply {
+                setBackgroundColor(getThemeColor(com.google.android.material.R.attr.colorOutlineVariant))
+                alpha = 0.2f
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1).apply {
+                    topMargin = 8.dp()
+                }
+            }
+            rootLayout.addView(divider)
+        }
+        
+        val displayTitle = getDisplayTitle(entry)
+        addDetailRow(getString(R.string.label_title), displayTitle, R.drawable.ic_content_copy) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Page Title", displayTitle))
+            Toast.makeText(this, getString(R.string.toast_title_copied), Toast.LENGTH_SHORT).show()
+        }
+
+        val displayOriginal = entry.originalUrl
+        addDetailRow(getString(R.string.label_original), displayOriginal, R.drawable.ic_content_copy) {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Original URL", displayOriginal))
+            Toast.makeText(this, getString(R.string.toast_original_copied), Toast.LENGTH_SHORT).show()
+        }
+
+        val displayUnshortened = entry.unshortenedUrl ?: entry.originalUrl
+        if (displayUnshortened != displayOriginal) {
+            addDetailRow(getString(R.string.label_unshortened), displayUnshortened, R.drawable.ic_content_copy) {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Unshortened URL", displayUnshortened))
+                Toast.makeText(this, getString(R.string.toast_unshortened_copied), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val displayCleaned = entry.cleanedUrl
+        if (displayCleaned != displayOriginal && displayCleaned != displayUnshortened) {
+            addDetailRow(getString(R.string.label_cleaned), displayCleaned, R.drawable.ic_content_copy) {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Cleaned URL", displayCleaned))
+                Toast.makeText(this, getString(R.string.toast_cleaned_copied), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
+        val effectiveProcessedUrl = SettingsUtils.resolveTargetUrl(this, entry.cleanedUrl, contentUrl)
+        if (effectiveProcessedUrl != displayCleaned) {
+            addDetailRow(getString(R.string.label_sidestepped), effectiveProcessedUrl, R.drawable.ic_open_in_new) {
+                 val intent = Intent(Intent.ACTION_VIEW, effectiveProcessedUrl.toUri())
+                 startActivity(intent)
+            }
+        }
+
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.menu_details))
+            .setView(scrollView)
+            .setPositiveButton("Done", null)
+            .show()
+    }
+    
+    private fun clearHistory() {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.dialog_clear_all_title))
+            .setMessage(getString(R.string.dialog_clear_all_message))
+            .setPositiveButton("Clear") { _, _ ->
+                lifecycleScope.launch {
+                    HistoryManager.clearHistory(this@MainActivity)
+                    loadHistory()
+                }
+                Toast.makeText(this, getString(R.string.toast_history_cleared), Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun createRippleBackground(): android.graphics.drawable.Drawable {
+        val shape = android.graphics.drawable.GradientDrawable()
+        shape.shape = android.graphics.drawable.GradientDrawable.OVAL
+        shape.setColor(0x00000000) // Transparent
+        return shape
+    }
+    
+    private fun shareUrl(url: String) {
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, url)
+        }
+        startActivity(Intent.createChooser(shareIntent, "Share URL"))
+    }
+    
+    private fun clearHistoryItem(entry: HistoryManager.HistoryEntry) {
+        lifecycleScope.launch {
+            HistoryManager.removeFromHistory(this@MainActivity, entry)
+            loadHistory()
+        }
+        Toast.makeText(this, getString(R.string.toast_item_removed), Toast.LENGTH_SHORT).show()
+    }
+
+    
+    private fun applyTheme() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val themeValue = prefs.getString(SettingsActivity.KEY_THEME_PREF, "system")
+        val mode = when (themeValue) {
+            "light" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            "dark" -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            else -> androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(mode)
+    }
+    
+    private fun getSidestepCount(): Long {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        return prefs.getLong("sidestep_count", 0L)
+    }
+    
+    private fun incrementSidestepCount() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val currentCount = prefs.getLong("sidestep_count", 0L)
+        prefs.edit()
+            .putLong("sidestep_count", currentCount + 1)
+            .putBoolean("has_processed_url", true)
+            .apply()
+    }
+    
+    companion object {
+        private const val MENU_ITEM_SHARE = 100
+        private const val MENU_ITEM_CLEAR = 101
+        private const val MENU_ITEM_INFO = 102
+    }
+}

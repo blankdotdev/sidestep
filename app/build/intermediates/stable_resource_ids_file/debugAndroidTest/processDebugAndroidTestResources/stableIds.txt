@@ -1,0 +1,2 @@
+com.blankdev.sidestep.test:style/WhiteBackgroundTheme = 0x7f010001
+com.blankdev.sidestep.test:style/WhiteBackgroundDialogTheme = 0x7f010000
