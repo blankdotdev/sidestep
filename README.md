@@ -149,6 +149,19 @@ Sidestep is designed with privacy as the core principle:
 - **Optional Metadata Fetching**: URL previews are fetched via DuckDuckGo search **only when history is enabled**. Set history retention to "Never" in settings to disable all metadata fetching and operate in pure URL-cleaning mode with zero external requests.
 - **Open Source**: Fully auditable code
 
+## Verification
+
+To ensure your Sidestep build is genuine and hasn't been tampered with, you can verify it using [AppVerifier](https://github.com/soupslurpr/AppVerifier).
+
+**Package Name:** `com.blankdev.sidestep`
+**SHA-256 Hash:** `D5:69:98:17:CC:CE:5F:F6:0B:8C:4B:1A:FA:A7:E8:A8:61:E3:A6:EA:C0:BF:40:C6:FC:EA:21:0E:FC:57:40:56`
+
+### How to Verify
+1. Copy the SHA-256 hash above.
+2. In AppVerifier, select **Verify from clipboard**.
+3. Choose the installed Sidestep app or the APK file.
+4. AppVerifier will confirm if the hashes match.
+
 ## Acknowledgments
 
 Sidestep is built upon the work of many privacy-focused developers:
