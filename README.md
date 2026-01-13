@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="fastlane/metadata/android/en-US/images/featureGraphic.png" width="100%" />
-</p>
-
-# Sidestep - Redirect to Alternative Frontends
+# <img src="fastlane/metadata/android/en-US/images/featureGraphic.png" width="10%" style="vertical-align: middle; margin-right: 10px;" /> Sidestep - Redirect to Alternative Frontends
 
 Privacy-focused Android app that intercepts social media URLs and redirects them to privacy-friendly alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.
 
