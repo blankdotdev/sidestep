@@ -3,13 +3,13 @@
 Privacy-focused Android app that intercepts social media URLs and redirects them to privacy-friendly alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/Sidestep-navigate.gif" width="40%" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/Sidestep-navigate.gif" width="40%" />
 </p>
 
 <p align="center">
-  <img src="fastlane/metadata/android/en-US/images/screenshot_history.png" width="32%" />
-  <img src="fastlane/metadata/android/en-US/images/screenshot_frontends.png" width="32%" />
-  <img src="fastlane/metadata/android/en-US/images/screenshot_custom_redirects.png" width="32%" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot_history.png" width="32%" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot_frontends.png" width="32%" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot_custom_redirects.png" width="32%" />
 </p>
 
 <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.blankdev.sidestep%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fblankdotdev%2Fsidestep%22%2C%22name%22%3A%22Sidestep%22%7D" target="_blank" rel="noopener">
