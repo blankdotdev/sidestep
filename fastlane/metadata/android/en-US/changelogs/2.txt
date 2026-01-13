@@ -1,0 +1,7 @@
+Initial public release.
+- Privacy-focused redirects to alternative frontends.
+- Smart URL cleaning to remove tracking parameters.
+- Automation features for unshortening and immediate navigation.
+- Support for Twitter, Reddit, YouTube, and more.
+- Privacy-respecting metadata previews.
+- Custom domain redirects.
