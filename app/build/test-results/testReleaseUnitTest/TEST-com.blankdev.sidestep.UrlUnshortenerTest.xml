@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.blankdev.sidestep.UrlUnshortenerTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-01-08T03:35:21.135Z" hostname="Mac-mini.local" time="0.006">
-  <properties/>
-  <testcase name="testIsShortenedUrl_nonShortened" classname="com.blankdev.sidestep.UrlUnshortenerTest" time="0.006"/>
-  <testcase name="testIsShortenedUrl_allServices" classname="com.blankdev.sidestep.UrlUnshortenerTest" time="0.0"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

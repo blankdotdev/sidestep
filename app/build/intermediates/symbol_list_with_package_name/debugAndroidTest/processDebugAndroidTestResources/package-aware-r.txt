@@ -1,3 +1,0 @@
-com.blankdev.sidestep.test
-style WhiteBackgroundDialogTheme
-style WhiteBackgroundTheme

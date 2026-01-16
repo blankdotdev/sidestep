@@ -1,20 +1,52 @@
+# Built artifacts
+bin/
+gen/
+out/
+app/build/
+build/
+
+# Kotlin
+.kotlin/
+kotlin-daemon-embeddable-*.jar
+
+# Android Studio / IntelliJ
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea
+*.iws
+*.ipr
+.gradle/
+local.properties
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+cmake-build-*/
+.gradletasknamecache
+
+# Keystore
+*.jks
+*.keystore
+!debug.keystore
+
+# Google Services
+google-services.json
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/metadata/android/en-US/images/phoneScreenshots/*.png
+!fastlane/metadata/android/en-US/images/phoneScreenshots/Sidestep-navigate.gif
+
+# OS-specific
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+Thumbs.db
+
+# Misc
 *.apk
 *.ap_
 *.dex
 *.class
-bin/
-gen/
-out/
 gradle-app.setting
 !gradle-wrapper.jar
 !gradle-wrapper.properties
-.gradletasknamecache
