@@ -1,24 +1,30 @@
 Privacy-focused Android app that intercepts social media URLs and redirects them to privacy-friendly alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.
 
-### Smart URL Cleaning
+<p><b>Smart URL Cleaning</b></p>
 Automatically removes tracking parameters from all URLs:
-- UTM parameters (utm_source, utm_medium, etc.)
-- Platform-specific trackers (Twitter s/t, YouTube si, Instagram igsh)
-- E-commerce tracking (Amazon, affiliate links)
-- Analytics parameters
+<ul>
+  <li>UTM parameters (utm_source, utm_medium, etc.)</li>
+  <li>Platform-specific trackers (Twitter s/t, YouTube si, Instagram igsh)</li>
+  <li>E-commerce tracking (Amazon, affiliate links)</li>
+  <li>Analytics parameters</li>
+</ul>
 
-### Automation
+<p><b>Automation</b></p>
 Granular control over how URLs are processed:
-- Unshorten URLs: Automatically resolves shortened links (bit.ly, t.co, etc.)
-- Remove Tracking: Strip analytics and tracking parameters
-- Immediate Navigation: Automatically open the processed URL in your browser
+<ul>
+  <li>Unshorten URLs: Automatically resolves shortened links (bit.ly, t.co, etc.)</li>
+  <li>Remove Tracking: Strip analytics and tracking parameters</li>
+  <li>Immediate Navigation: Automatically open the processed URL in your browser</li>
+</ul>
 
-### Privacy-Focused Redirects
+<p><b>Privacy-Focused Redirects</b></p>
 Alternative frontends create a less cluttered web experience; bypassing closed ecosystems and promoting a more open internet. Sidestep supports several major platforms with configurable alternative frontends: Twitter/X (Nitter), Reddit (Redlib), YouTube (Invidious, Piped), Google Maps (OpenStreetMap), IMDb (LibreMDB), Medium (Scribe), Wikipedia (Wikiless), Goodreads (BiblioReads), Genius (Dumb, Intellectual), Tumblr (Priviblur), UrbanDictionary (RuralDictionary), Imgur (Rimgo), GitHub (GotHub), and StackOverflow (AnonymousOverflow).
 
-### Features
-- Clean Only Mode: Remove tracking without redirecting
-- Clean & Sidestep Mode: Remove tracking AND redirect to alternative frontend
-- Custom Redirects: Add your own domain mappings
-- Instance Picker: Fetch live, healthy instances sorted by uptime
-- History & Previews: Track processed links with rich metadata fetched via DuckDuckGo (optional)
+<p><b>Features</b></p>
+<ul>
+  <li>Clean Only Mode: Remove tracking without redirecting</li>
+  <li>Clean & Sidestep Mode: Remove tracking AND redirect to alternative frontend</li>
+  <li>Custom Redirects: Add your own domain mappings</li>
+  <li>Instance Picker: Fetch live, healthy instances sorted by uptime</li>
+  <li>History & Previews: Track processed links with rich metadata fetched via DuckDuckGo (optional)</li>
+</ul>
