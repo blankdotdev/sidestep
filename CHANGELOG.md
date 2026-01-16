@@ -1,0 +1,19 @@
+# Changelog
+
+## [1.1.1] - 2026-01-16
+
+### Fixed
+- "Add to Obtainium" button in README (resolved type cast error and missing fields).
+- Repository bloat: removed over 2,800 accidentally tracked build artifacts.
+- Synchronization issues between GitHub and GitLab mirrors.
+
+### Added
+- Tracking parameter removal for `gaa_` headers (specifically for *The Times* and other Google Analytics attributed URLs).
+- Comprehensive `.gitignore` to prevent future build artifact leaks.
+
+## [1.1.0] - 2026-01-15
+
+### Added
+- Initial release with alternative frontends, URL cleaning, and history.
+- License change to GNU AGPLv3.
+- F-Droid metadata preparation.
