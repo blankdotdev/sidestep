@@ -81,7 +81,8 @@ object UrlCleaner {
                                name.startsWith("ref_") || 
                                name.startsWith("utm_") || 
                                name.startsWith("pf_rd_") ||
-                               name.startsWith("pd_rd_")
+                               name.startsWith("pd_rd_") ||
+                               name.startsWith("gaa_")
                 
                 // UrbanDictionary requires the 'term' parameter to function
                 val isPseudoTracking = isTracking && isUrbanDictionaryUrl(inputUrl) && name == "term"
@@ -326,15 +327,14 @@ object UrlCleaner {
         return host.contains("facebook.com")
     }
 
-    /**
-     * Check if a URL is an Imgur URL
-     */
+     /**
+      * Check if a URL is an Imgur URL
+      */
     fun isImgurUrl(url: String?): Boolean {
         if (url == null) return false
         val host = getHost(url)
         return host.contains("imgur.com")
     }
-
     /**
      * Convert Google Maps URL to OpenStreetMap URL
      */

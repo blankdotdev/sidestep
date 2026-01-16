@@ -236,4 +236,18 @@ class UrlCleanerTest {
         assertFalse(result.contains("vanity=thedailyshow"))
         assertFalse(result.contains("ref=share"))
     }
+
+    @Test
+    fun testCleanUrl_removesGaaParams_TheTimes() {
+        val url = "https://www.thetimes.com/uk/education/article/uae-limiting-students-coming-to-uk-over-muslim-brotherhood-concerns-zvpdd6fqn?gaa_at=eafs&gaa_n=AWEtsqc0spmJcNYZeBEucErTMHQ6iCtJvanCklgSsjJVRIPJkxogu-avozTFkR7BLeA=&gaa_ts=69614113&gaa_sig=x99uGKXW3xO6B_uGNZmdUxz5pYJC1gGhnk9JUc1JonAZRoUl214i01hAbTNmpH4l83LoQwIrCt4TWeQlfzIvjg=="
+        val result = UrlCleaner.cleanUrl(url)
+        
+        assertFalse(result.contains("gaa_at"))
+        assertFalse(result.contains("gaa_n"))
+        assertFalse(result.contains("gaa_ts"))
+        assertFalse(result.contains("gaa_sig"))
+        
+        // Ensure path is preserved
+        assertTrue(result.contains("/uk/education/article/uae-limiting-students-coming-to-uk-over-muslim-brotherhood-concerns-zvpdd6fqn"))
+    }
 }
