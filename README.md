@@ -1,6 +1,6 @@
-# <img src="fastlane/metadata/android/en-US/images/featureGraphic.png" width="10%" style="vertical-align: middle; margin-right: 10px;" /> Sidestep - Redirect to Alternative Frontends
+# Sidestep - Redirect to Alternative Frontends
 
-Privacy-focused Android app that intercepts social media URLs and redirects them to privacy-friendly alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.
+Privacy-focused Android app that intercepts social media URLs and redirects them to alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.
 
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/Sidestep-navigate.gif" width="40%" />
@@ -12,7 +12,7 @@ Privacy-focused Android app that intercepts social media URLs and redirects them
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot_custom_redirects.png" width="32%" />
 </p>
 
-<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.blankdev.sidestep%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fblankdotdev%2Fsidestep%22%2C%22name%22%3A%22Sidestep%22%7D" target="_blank" rel="noopener">
+<a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.blankdev.sidestep%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fblankdotdev%2Fsidestep%22%2C%22name%22%3A%22Sidestep%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22sortMethodChoice%5C%22%3A%5C%22date%5C%22%2C%5C%22versionDetection%5C%22%3Atrue%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22dontSortReleasesList%5C%22%3Afalse%7D%22%7D" target="_blank" rel="noopener">
   <img src="fastlane/metadata/android/en-US/images/badge_obtainium.png" alt="Get it on Obtainium" style="margin:0;vertical-align:middle;height:80px;">
 </a>
 
