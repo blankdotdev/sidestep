@@ -37,6 +37,12 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/metadata/android/en-US/images/phoneScreenshots/*.png
 !fastlane/metadata/android/en-US/images/phoneScreenshots/Sidestep-navigate.gif
+!fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot_history.png
+!fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot_frontends.png
+!fastlane/metadata/android/en-US/images/phoneScreenshots/screenshot_custom_redirects.png
+
+# Temporary folders
+fdroiddata_fix_v2/
 
 # OS-specific
 .DS_Store
