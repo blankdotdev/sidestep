@@ -154,7 +154,7 @@ Sidestep is designed with privacy as the core principle:
 To ensure your Sidestep build is genuine and hasn't been tampered with, you can verify it using [AppVerifier](https://github.com/soupslurpr/AppVerifier).
 
 **Package Name:** `com.blankdev.sidestep`
-**SHA-256 Hash:** `D5:69:98:17:CC:CE:5F:F6:0B:8C:4B:1A:FA:A7:E8:A8:61:E3:A6:EA:C0:BF:40:C6:FC:EA:21:0E:FC:57:40:56`
+**SHA-256 Hash:** `fee2660f246e313181ee0bf371bf0f1c16a048744af1218fbcd483c865da40e4`
 
 ### How to Verify
 1. Copy the SHA-256 hash above.
