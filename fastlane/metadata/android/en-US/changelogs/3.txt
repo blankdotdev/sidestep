@@ -1,3 +1,6 @@
-- Fix "Add to Obtainium" button in README
-- Remove "gaa_" tracking parameters from URLs (e.g., from The Times)
-- Improved repository cleanliness and project metadata
+<ul>
+  <li>Fix "Add to Obtainium" button in README</li>
+  <li>Remove "gaa_" tracking parameters from URLs (e.g., from The Times)</li>
+  <li>Improved repository cleanliness and project metadata</li>
+</ul>
+

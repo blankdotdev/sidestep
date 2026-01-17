@@ -1,4 +1,5 @@
-Privacy-focused Android app that intercepts social media URLs and redirects them to privacy-friendly alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.
+<p>Privacy-focused Android app that intercepts social media URLs and redirects them to privacy-friendly alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.</p>
+
 
 <p><b>Smart URL Cleaning</b></p>
 Automatically removes tracking parameters from all URLs:
