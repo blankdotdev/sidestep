@@ -2,7 +2,7 @@
 
 
 <p><b>Smart URL Cleaning</b></p>
-Automatically removes tracking parameters from all URLs:
+<p>Automatically removes tracking parameters from all URLs:</p>
 <ul>
   <li>UTM parameters (utm_source, utm_medium, etc.)</li>
   <li>Platform-specific trackers (Twitter s/t, YouTube si, Instagram igsh)</li>
@@ -11,7 +11,7 @@ Automatically removes tracking parameters from all URLs:
 </ul>
 
 <p><b>Automation</b></p>
-Granular control over how URLs are processed:
+<p>Granular control over how URLs are processed:</p>
 <ul>
   <li>Unshorten URLs: Automatically resolves shortened links (bit.ly, t.co, etc.)</li>
   <li>Remove Tracking: Strip analytics and tracking parameters</li>
@@ -19,7 +19,7 @@ Granular control over how URLs are processed:
 </ul>
 
 <p><b>Privacy-Focused Redirects</b></p>
-Alternative frontends create a less cluttered web experience; bypassing closed ecosystems and promoting a more open internet. Sidestep supports several major platforms with configurable alternative frontends: Twitter/X (Nitter), Reddit (Redlib), YouTube (Invidious, Piped), Google Maps (OpenStreetMap), IMDb (LibreMDB), Medium (Scribe), Wikipedia (Wikiless), Goodreads (BiblioReads), Genius (Dumb, Intellectual), Tumblr (Priviblur), UrbanDictionary (RuralDictionary), Imgur (Rimgo), GitHub (GotHub), and StackOverflow (AnonymousOverflow).
+<p>Alternative frontends create a less cluttered web experience; bypassing closed ecosystems and promoting a more open internet. Sidestep supports several major platforms with configurable alternative frontends: Twitter/X (Nitter), Reddit (Redlib), YouTube (Invidious, Piped), Google Maps (OpenStreetMap), IMDb (LibreMDB), Medium (Scribe), Wikipedia (Wikiless), Goodreads (BiblioReads), Genius (Dumb, Intellectual), Tumblr (Priviblur), UrbanDictionary (RuralDictionary), Imgur (Rimgo), GitHub (GotHub), and StackOverflow (AnonymousOverflow).</p>
 
 <p><b>Features</b></p>
 <ul>
