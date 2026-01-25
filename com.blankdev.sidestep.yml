@@ -8,14 +8,9 @@ IssueTracker: https://github.com/blankdotdev/sidestep/issues
 
 AutoName: Sidestep
 Summary: Privacy-focused Android app that redirects social media URLs to privacy-friendly alternative frontends.
-Description: |-
-  Privacy-focused Android app that intercepts social media URLs and redirects them
-  to privacy-friendly alternative frontends while removing tracking parameters.
-  No apps or accounts needed to access the content shared with you.
 
 RepoType: git
 Repo: https://github.com/blankdotdev/sidestep
-Fastlane: yes
 
 Builds:
   - versionName: 1.1.0
