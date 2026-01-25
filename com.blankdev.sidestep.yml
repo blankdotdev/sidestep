@@ -1,12 +1,13 @@
 Categories:
-  - Security
   - Internet
+  - Security
 License: AGPL-3.0-or-later
 AuthorName: blankdotdev
 SourceCode: https://github.com/blankdotdev/sidestep
 IssueTracker: https://github.com/blankdotdev/sidestep/issues
 
 AutoName: Sidestep
+Summary: Privacy-focused Android app that redirects social media URLs to privacy-friendly alternative frontends.
 Description: |-
   Privacy-focused Android app that intercepts social media URLs and redirects them
   to privacy-friendly alternative frontends while removing tracking parameters.
@@ -14,6 +15,7 @@ Description: |-
 
 RepoType: git
 Repo: https://github.com/blankdotdev/sidestep
+Fastlane: yes
 
 Builds:
   - versionName: 1.1.0
@@ -21,14 +23,14 @@ Builds:
     commit: v1.1.0
     subdir: app
     gradle:
-      - release
+      - yes
 
   - versionName: 1.1.1
     versionCode: 3
     commit: v1.1.1
     subdir: app
     gradle:
-      - release
+      - yes
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
