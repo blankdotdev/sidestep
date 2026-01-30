@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.3] - 2026-01-29
+
+### Security
+- Removed `usesCleartextTraffic` flag from Manifest.
+- Disabled `dependenciesInfo` blob generation in build config to prevent metadata leakage.
+
+### Fixed
+- Resolved double redirect delay for Reddit links.
+
 ## [1.1.2] - 2026-01-29
 
 ### Added
