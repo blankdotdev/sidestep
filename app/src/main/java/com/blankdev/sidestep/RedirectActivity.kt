@@ -69,14 +69,16 @@ class RedirectActivity : AppCompatActivity() {
         kotlinx.coroutines.CoroutineScope(Dispatchers.Main).launch {
             try {
                 val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
-                val sanitizedUrl = ensureProtocol(url)
+                val sanitizedUrl = UrlCleaner.ensureProtocol(url)
 
                 // Step 1: Unshorten with timeout (Network call) - Respect setting
                 val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
+                val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
+
                 val unshortenedUrl = if (shouldUnshorten) {
                     try {
                         kotlinx.coroutines.withTimeout(5000) {  // 5 second timeout
-                            UrlUnshortener.unshorten(sanitizedUrl)
+                            UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
                         }
                     } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
                         sanitizedUrl  // Use original URL if timeout
@@ -93,7 +95,7 @@ class RedirectActivity : AppCompatActivity() {
                     unshortenedUrl
                 }
                 val redirectUrl = SettingsUtils.resolveTargetUrl(appContext, cleaned, unshortenedUrl)
-                val finalUrl = ensureProtocol(redirectUrl)
+                val finalUrl = UrlCleaner.ensureProtocol(redirectUrl)
 
                 // Step 3: Save to History (Background)
                 withContext(Dispatchers.IO) {
@@ -226,11 +228,4 @@ class RedirectActivity : AppCompatActivity() {
         return SettingsUtils.checkDomain(context, url)
     }
 
-    private fun ensureProtocol(url: String): String {
-        return if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            "https://$url"
-        } else {
-            url
-        }
-    }
 }

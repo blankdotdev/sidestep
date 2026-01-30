@@ -142,6 +142,17 @@ class UrlCleanerTest {
         
         assertEquals("https://example.com/page", cleaned)
     }
+
+    @Test
+    fun testCleanUrl_removesShopAppParams() {
+        val url = "https://shop.app/p/4809742778417?variantId=32563652558897&utm_source=shop_app&link_alias=J9gp0loQ93Zxr"
+        val cleaned = UrlCleaner.cleanUrl(url)
+        
+        assertEquals("https://shop.app/p/4809742778417", cleaned)
+        assertFalse(cleaned.contains("variantId"))
+        assertFalse(cleaned.contains("link_alias"))
+        assertFalse(cleaned.contains("utm_source"))
+    }
     @Test
     fun testIsWikipediaUrl_subdomain() {
         assertTrue(UrlCleaner.isWikipediaUrl("https://en.wikipedia.org/wiki/Main_Page"))
@@ -219,6 +230,20 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun testNormalizeFacebookUrl_video_withTitle() {
+        val url = "https://www.facebook.com/thedailyshow/videos/trump-wants-that-sweet-venezuelan-oil/2359858081104781/"
+        val result = UrlCleaner.normalizeFacebookUrl(url)
+        assertEquals("https://www.facebook.com/watch?v=2359858081104781", result)
+    }
+
+    @Test
+    fun testNormalizeFacebookUrl_reel_noTrailingSlash() {
+        val url = "https://www.facebook.com/reel/2359858081104781"
+        val result = UrlCleaner.normalizeFacebookUrl(url)
+        assertEquals("https://www.facebook.com/watch?v=2359858081104781", result)
+    }
+
+    @Test
     fun testCleanUrl_facebookNormalization() {
         val url = "https://www.facebook.com/reel/2359858081104781/?ref=share"
         val result = UrlCleaner.cleanUrl(url)
@@ -249,5 +274,58 @@ class UrlCleanerTest {
         
         // Ensure path is preserved
         assertTrue(result.contains("/uk/education/article/uae-limiting-students-coming-to-uk-over-muslim-brotherhood-concerns-zvpdd6fqn"))
+    }
+
+    @Test
+    fun testCleanUrl_removesYahooFinanceParams() {
+        val url = "https://finance.yahoo.com/news/no-reasons-own-software-stocks-140000103.html?guce_referrer=aHR0cHM6Ly93d3cuZ29vZ2xlLmNvbS8&guce_referrer_sig=AQAAADxZ3Kl8GXgKMmTJgB8mCd599Vstr2JrlTBO6dDBdbXaH2CunZdP6nPkrcdFAnJzLK6_zyF6LyO3zitRzzSAZ_HmVG164_wP524AhTwLniT9YVRmPzKtB9CQQlInnsbgHwzOXk6xZ62t4AGfbXGHYs-7v5mblpW0UPVyduyRiPvN&_guc_consent_skip=1769715675"
+        val result = UrlCleaner.cleanUrl(url)
+        
+        assertFalse(result.contains("guce_referrer"))
+        assertFalse(result.contains("guce_referrer_sig"))
+        assertFalse(result.contains("_guc_consent_skip"))
+        
+        assertEquals("https://finance.yahoo.com/news/no-reasons-own-software-stocks-140000103.html", result)
+    }
+
+    @Test
+    fun testCleanUrl_removesRobustTrackingParams() {
+        val url = "https://example.com/page?utm_campaign=legacy&pk_campaign=piwik&sc_lid=emarsys&vero_id=vero&_hsenc=hubspot&mkt_tok=marketo"
+        val clean = UrlCleaner.cleanUrl(url)
+        assertEquals("https://example.com/page", clean)
+    }
+
+    @Test
+    fun testCleanUrl_removesAmazonSocialShareParams() {
+        val url = "https://www.amazon.ca/dp/B07DD7PDGH?ref=cm_sw_r_cso_cp_apan_dp_ES1C45KPVMYJQ0QS883D&ref_=cm_sw_r_cso_cp_apan_dp_ES1C45KPVMYJQ0QS883D&social_share=cm_sw_r_cso_cp_apan_dp_ES1C45KPVMYJQ0QS883D"
+        val result = UrlCleaner.cleanUrl(url)
+        
+        assertFalse(result.contains("social_share"))
+        assertFalse(result.contains("cm_sw_r"))
+        assertFalse(result.contains("ref="))
+        assertFalse(result.contains("ref_="))
+        
+        assertEquals("https://www.amazon.ca/dp/B07DD7PDGH", result)
+    }
+
+    @Test
+    fun testCleanUrl_removesAmazonPathParams() {
+        val url = "https://www.amazon.ca/COSORI-TurboBlaze-Technology-Airfryer-Dishwasher/dp/B0D1KQKZM2/ref=sr_1_1_sspa"
+        val result = UrlCleaner.cleanUrl(url)
+        assertEquals("https://www.amazon.ca/COSORI-TurboBlaze-Technology-Airfryer-Dishwasher/dp/B0D1KQKZM2", result)
+    }
+
+    @Test
+    fun testCleanUrl_removesGenericPathParams() {
+        val url = "https://example.com/article/source=rss/title"
+        val result = UrlCleaner.cleanUrl(url)
+        assertEquals("https://example.com/article/title", result)
+    }
+
+    @Test
+    fun testCleanUrl_removesImdbPathParams() {
+        val url = "https://www.imdb.com/title/tt1234567/ref_=tt_sims_tt_i_1"
+        val result = UrlCleaner.cleanUrl(url)
+        assertEquals("https://www.imdb.com/title/tt1234567", result)
     }
 }

@@ -129,4 +129,5 @@ class SettingsPrivacyActivity : AppCompatActivity() {
             prefs.edit { putBoolean(SettingsActivity.KEY_PREVIEW_FETCH, isChecked) }
         }
     }
+
 }

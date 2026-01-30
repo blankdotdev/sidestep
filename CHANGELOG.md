@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.2] - 2026-01-29
+
+### Added
+- Enhanced URL cleaning (Amazon, TikTok, etc.).
+- Introduced "Fetch canonical links" toggle for deep link resolution.
+- Added default custom redirects for Spotify and Apple Podcasts.
+
+### Changed
+- Improved UX and fixed bugs.
+
 ## [1.1.1] - 2026-01-16
 
 ### Fixed

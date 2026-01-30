@@ -130,6 +130,17 @@
                 <!-- Imgur -->
                 <data android:host="imgur.com" />
                 <data android:host="www.imgur.com" />
+
+                <!-- Google Share -->
+                <data android:host="share.google" />
+
+                <!-- MSN -->
+                <data android:host="msn.com" />
+                <data android:host="www.msn.com" />
+
+                <!-- Apple News -->
+                <data android:host="apple.news" />
+                <data android:host="news.apple.com" />
             </intent-filter>
 
             <!-- Google Maps Specific Intent Filter (to avoid intercepting all of google.com) -->

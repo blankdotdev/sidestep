@@ -91,10 +91,25 @@ class SettingsActivity : AppCompatActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         
         // Unshorten URLs
-        findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchUnshortenUrls)?.apply {
+        val switchUnshorten = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchUnshortenUrls)
+        val switchResolveHtml = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchResolveHtml)
+
+        switchUnshorten?.apply {
             isChecked = prefs.getBoolean(KEY_UNSHORTEN_URLS, true)
             setOnCheckedChangeListener { _, isChecked ->
                 prefs.edit { putBoolean(KEY_UNSHORTEN_URLS, isChecked) }
+                // Disable dependent toggle
+                switchResolveHtml?.isEnabled = isChecked
+            }
+        }
+
+        // Fetch Canonical Links (Resolve HTML)
+        switchResolveHtml?.apply {
+            val isUnshortenEnabled = prefs.getBoolean(KEY_UNSHORTEN_URLS, true)
+            isChecked = prefs.getBoolean(KEY_RESOLVE_HTML_REDIRECTS, true)
+            isEnabled = isUnshortenEnabled
+            setOnCheckedChangeListener { _, isChecked ->
+                prefs.edit { putBoolean(KEY_RESOLVE_HTML_REDIRECTS, isChecked) }
             }
         }
 
@@ -138,11 +153,11 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showDomainStatusDialog() {
-        val dialogView = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val padding = SettingsUtils.dp(this@SettingsActivity, 24)
-            setPadding(padding, 0, padding, 0)
-        }
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_domain_status, null)
+        bottomSheetDialog.setContentView(view)
+
+        val container = view.findViewById<LinearLayout>(R.id.domainStatusContainer)
 
         val platforms = listOf(
             "Twitter / X" to "x.com",
@@ -166,7 +181,7 @@ class SettingsActivity : AppCompatActivity() {
             
             val itemLayout = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
-                setPadding(0, SettingsUtils.dp(this@SettingsActivity, 12), 0, SettingsUtils.dp(this@SettingsActivity, 12))
+                setPadding(0, SettingsUtils.dp(this@SettingsActivity, 16), 0, SettingsUtils.dp(this@SettingsActivity, 16))
                 gravity = Gravity.CENTER_VERTICAL
             }
 
@@ -199,18 +214,10 @@ class SettingsActivity : AppCompatActivity() {
             }
             itemLayout.addView(statusText)
 
-            dialogView.addView(itemLayout)
+            container.addView(itemLayout)
         }
 
-        val scrollView = NestedScrollView(this).apply {
-            addView(dialogView)
-        }
-
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("Default Handler Status")
-            .setView(scrollView)
-            .setPositiveButton("OK", null)
-            .show()
+        bottomSheetDialog.show()
     }
 
     private fun showGuidedTour() {
@@ -331,6 +338,8 @@ class SettingsActivity : AppCompatActivity() {
         const val KEY_RURAL_DICTIONARY_DOMAIN = "rural_dictionary_domain"
         const val DEFAULT_RURAL_DICTIONARY_DOMAIN = "rd.vern.cc"
         const val KEY_RURAL_DICTIONARY_CLEAN_ONLY = "rural_dictionary_clean_only"
+        
+        const val KEY_RESOLVE_HTML_REDIRECTS = "resolve_html_redirects"
 
         const val KEY_RIMGO_DOMAIN = "rimgo_domain"
         const val DEFAULT_RIMGO_DOMAIN = "imgur.artemislena.eu"

@@ -23,6 +23,7 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.Dispatchers
+import com.blankdev.sidestep.BuildConfig
 
 data class CustomRedirect(
     val id: String,
@@ -47,7 +48,9 @@ object SettingsUtils {
                 CustomRedirect("default_nytimes", "nytimes.com", "https://archive.ph/", true, true),
                 CustomRedirect("default_tiktok_swap", "tiktok.com", "offtiktok.com", false, true),
                 CustomRedirect("default_tiktok_append", "tiktok.com", "https://anydownloader.com/en/#url=", true, false),
-                CustomRedirect("default_instagram", "instagram.com", "https://snapinsta.to/en2?q=", true, false)
+                CustomRedirect("default_instagram", "instagram.com", "https://snapinsta.to/en2?q=", true, false),
+                CustomRedirect("default_spotify", "open.spotify.com", "song.link", true, true),
+                CustomRedirect("default_apple_podcasts", "podcasts.apple.com", "pods.link", true, true)
             )
         }
         return try {
@@ -65,14 +68,25 @@ object SettingsUtils {
             }
             
             // Enforce default order if it matches the default set (hack for stale data)
-            if (list.size == 4 && list.any { it.originalDomain == "nytimes.com" } && list.count { it.originalDomain == "tiktok.com" } == 2) {
-                return list.sortedWith(compareBy<CustomRedirect> { 
+            if ((list.size == 4 || list.size == 6) && list.any { it.originalDomain == "nytimes.com" } && list.count { it.originalDomain == "tiktok.com" } == 2) {
+                val updatedList = if (list.size == 4) {
+                    list.toMutableList().apply {
+                        if (none { it.id == "default_spotify" }) add(CustomRedirect("default_spotify", "open.spotify.com", "song.link", true, true))
+                        if (none { it.id == "default_apple_podcasts" }) add(CustomRedirect("default_apple_podcasts", "podcasts.apple.com", "pods.link", true, true))
+                    }
+                } else {
+                    list
+                }
+
+                return updatedList.sortedWith(compareBy<CustomRedirect> { 
                     when {
                         it.originalDomain == "nytimes.com" -> 0
                         it.originalDomain == "tiktok.com" && !it.isAppend -> 1 // Domain Swap
                         it.originalDomain == "tiktok.com" && it.isAppend -> 2 // Append
                         it.originalDomain == "instagram.com" -> 3
-                        else -> 4
+                        it.originalDomain == "open.spotify.com" -> 4
+                        it.originalDomain == "podcasts.apple.com" -> 5
+                        else -> 6
                     }
                 })
             }
@@ -355,6 +369,11 @@ object SettingsUtils {
             
             // Match if host contains the original domain (e.g. "www.tiktok.com" contains "tiktok.com")
             if (host.contains(originalDomain) || unshortenedUrl.contains(originalDomain, ignoreCase = true)) {
+                // Special handling to avoid matching shortener subdomains for main domains
+                // This prevents broken redirects when unshortening fails
+                if (originalDomain == "tiktok.com" && (host.contains("vt.tiktok.com") || host.contains("vm.tiktok.com"))) {
+                    continue
+                }
                 if (isAppend) {
                     var base = redirectDomain
                     if (!base.startsWith("http")) base = "https://$base"
@@ -460,6 +479,15 @@ object SettingsUtils {
 
     fun showAboutDialog(activity: AppCompatActivity) {
         val context = activity
+        val bottomSheetDialog = com.google.android.material.bottomsheet.BottomSheetDialog(activity)
+        val view = activity.layoutInflater.inflate(R.layout.bottom_sheet_about, null)
+        bottomSheetDialog.setContentView(view)
+
+        val versionText = view.findViewById<TextView>(R.id.aboutVersion)
+        versionText.text = "Version ${BuildConfig.VERSION_NAME}"
+
+        val creditsText = view.findViewById<TextView>(R.id.aboutCredits)
+        
         val creditsHtml = """
             Sidestep is built upon the labor of many privacy-focused developers whose work adds a layer of protection from the surveillance industry. Alternative frontends allow for a less cluttered web experience; bypassing closed ecosystems and promoting a more open internet.
             <br><br>
@@ -516,6 +544,7 @@ object SettingsUtils {
                     } catch (e: Exception) {
                         android.widget.Toast.makeText(context, "Could not open URL", android.widget.Toast.LENGTH_SHORT).show()
                     }
+                    bottomSheetDialog.dismiss()
                 }
             }
             
@@ -523,13 +552,19 @@ object SettingsUtils {
             spanned.setSpan(clickableSpan, start, end, spanFlags)
         }
 
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
-            .setTitle("About")
-            .setMessage(spanned)
-            .setPositiveButton("Respect", null)
-            .show()
+        creditsText.text = spanned
+        creditsText.movementMethod = LinkMovementMethod.getInstance()
 
-        // Make the links clickable
-        dialog.findViewById<TextView>(android.R.id.message)?.movementMethod = LinkMovementMethod.getInstance()
+        view.findViewById<TextView>(R.id.btnAboutGithub).setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW, "https://github.com/blankdotdev".toUri())
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                android.widget.Toast.makeText(context, "Could not open GitHub", android.widget.Toast.LENGTH_SHORT).show()
+            }
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.show()
     }
 }

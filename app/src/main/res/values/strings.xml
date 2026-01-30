@@ -65,11 +65,12 @@
     <!-- MainActivity strings -->
     <string name="hint_url_input">Enter URL to bypass</string>
     <string name="error_invalid_url">Please enter a valid URL</string>
-    <string name="guide_welcome_title">Welcome to Sidestep</string>
-    <string name="guide_step_1">1. Tap ‘Set as Default’</string>
-    <string name="guide_step_2">2. Select ‘Open in app’ - this allows Sidestep to redirect the navigation using your default browser</string>
-    <string name="guide_step_3">3. Add links for domains you’re interested in sidestepping - or simply of clearing from trackers</string>
-    <string name="guide_step_4">4. Done! Now when accessing the selected links, this app redirects automatically</string>
+    <string name="guide_welcome_label">WELCOME GUIDE</string>
+    <string name="guide_welcome_title">Sidestep</string>
+    <string name="guide_step_1">Tap ‘Set as Default’</string>
+    <string name="guide_step_2">Select ‘Open in app’ - this allows Sidestep to redirect the navigation using your default browser</string>
+    <string name="guide_step_3">Add links for domains you’re interested in sidestepping - or simply of clearing from trackers</string>
+    <string name="guide_step_4">Done! Now when accessing the selected links, this app redirects automatically</string>
     <string name="label_sidesteps_performed">sidesteps performed</string>
     <string name="menu_details">Details</string>
     <string name="label_title">Title</string>
@@ -89,13 +90,15 @@
     <string name="privacy_title">History &amp; Previews</string>
     <string name="enable_previews_title">Destination Previews</string>
     <string name="enable_previews_desc">Fetch previews of the original URL using DuckDuckGo.</string>
+    <string name="resolve_html_title">Fetch canonical links</string>
+    <string name="resolve_html_desc">Unshorten thoroughly; reads page in background</string>
     <string name="about_title">About</string>
 
     <!-- Automation Settings -->
     <string name="unshorten_urls_title">Unshorten URLs</string>
-    <string name="unshorten_urls_desc">Resolve shortened links like bit.ly, t.co, etc.</string>
+    <string name="unshorten_urls_desc">Resolve shortened links like bit.ly, t.co, etc</string>
     <string name="remove_tracking_title">Remove tracking parameters</string>
-    <string name="remove_tracking_desc">Strip UTM and other tracking tags from URLs.</string>
+    <string name="remove_tracking_desc">Strip UTM and other tracking tags from URLs</string>
     <string name="immediate_navigation_title">Immediate navigation</string>
     <string name="immediate_navigation_desc">Automatically navigate after processing links</string>
 </resources>

@@ -27,7 +27,7 @@ object HistoryManager {
     private fun getPrefs(context: Context): android.content.SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
-    
+
     /**
      * Add a processed URL to history
      */
@@ -46,9 +46,11 @@ object HistoryManager {
      */
     suspend fun addToHistory(context: Context, entry: HistoryEntry) = withContext(Dispatchers.IO) {
         val history = getHistoryInternal(context).toMutableList()
+        val normalizedOriginal = UrlCleaner.ensureProtocol(entry.originalUrl)
         
-        // Remove duplicate if exists by original URL
-        history.removeAll { it.originalUrl == entry.originalUrl }
+        // Remove duplicate if exists by normalized original URL
+        // This ensures google.com and https://google.com are treated as the same entry
+        history.removeAll { UrlCleaner.ensureProtocol(it.originalUrl) == normalizedOriginal }
         
         // Add to front
         history.add(0, entry)
@@ -90,14 +92,14 @@ object HistoryManager {
         
         if (jsonString.isEmpty()) return emptyList()
         
-        try {
+        val list = try {
             // Try parsing as JSON Array first
             val jsonArray = org.json.JSONArray(jsonString)
-            val list = mutableListOf<HistoryEntry>()
+            val mutableList = mutableListOf<HistoryEntry>()
             
             for (i in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(i)
-                list.add(HistoryEntry(
+                mutableList.add(HistoryEntry(
                     originalUrl = obj.getString("originalUrl"),
                     cleanedUrl = if (obj.has("cleanedUrl")) obj.getString("cleanedUrl") else obj.getString("originalUrl"),
                     processedUrl = obj.getString("processedUrl"),
@@ -110,11 +112,11 @@ object HistoryManager {
                     unshortenedUrl = if (obj.has("unshortenedUrl")) obj.getString("unshortenedUrl") else null
                 ))
             }
-            return list
+            mutableList
         } catch (e: Exception) {
             // Fallback: Try parsing legacy pipe-delimited format
-            return try {
-                val list = jsonString.split("\n")
+            try {
+                val legacyList = jsonString.split("\n")
                     .filter { it.isNotEmpty() }
                     .mapNotNull { line ->
                         val parts = line.split("|")
@@ -128,16 +130,18 @@ object HistoryManager {
                         } else null
                     }
                 // Determine if we should migrate immediately
-                if (list.isNotEmpty()) {
-                    saveHistoryInternal(context, list) // Migrate to JSON
+                if (legacyList.isNotEmpty()) {
+                    saveHistoryInternal(context, legacyList) // Migrate to JSON
                 }
-                list
+                legacyList
             } catch (e2: Exception) {
                 emptyList()
             }
         }
+        
+        return list.sortedByDescending { it.timestamp }
     }
-    
+
     private fun saveHistoryInternal(context: Context, history: List<HistoryEntry>) {
         // Limit size
         val entriesToSave = if (history.size > MAX_HISTORY_SIZE) {

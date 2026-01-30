@@ -180,13 +180,36 @@ object PreviewFetcher {
 
     private fun decodeHtml(input: String?): String? {
         if (input == null) return null
-        return input.replace("&amp;", "&")
+        
+        // Handle common entities manually for speed and efficiency
+        var result = input.replace("&amp;", "&")
             .replace("&quot;", "\"")
             .replace("&apos;", "'")
             .replace("&lt;", "<")
             .replace("&gt;", ">")
             .replace("&#39;", "'")
-            .trim()
+            .replace("&#x27;", "'") // Specifically added as requested by screenshot
+            .replace("&#039;", "'")
+            .replace("&ndash;", "–")
+            .replace("&mdash;", "—")
+            
+        // If it still looks like it has entities, use a more comprehensive approach
+        if (result.contains("&#") || result.contains("&")) {
+            try {
+                // androidx.core.text.HtmlCompat is the best way to handle this in modern Android
+                // but since we want to avoid complex dependencies in this utility if possible, 
+                // we'll stick to basic decoding or use the standard Html.fromHtml if available.
+                result = android.text.Html.fromHtml(result, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
+            } catch (e: Exception) {
+                // Fallback to simpler Html.fromHtml for older APIs or if it fails
+                try {
+                    @Suppress("DEPRECATION")
+                    result = android.text.Html.fromHtml(result).toString()
+                } catch (e2: Exception) {}
+            }
+        }
+        
+        return result.trim()
     }
 
     private fun parseIsoDate(dateStr: String?): Long? {

@@ -1,7 +1,11 @@
+package com.blankdev.sidestep
+
+
 import java.net.URI
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Locale
+import java.util.regex.Pattern
 
 /**
  * Utility for cleaning URLs by removing tracking parameters and normalizing formats.
@@ -9,47 +13,135 @@ import java.util.Locale
  */
 object UrlCleaner {
     
-    // Common tracking parameters to remove
+    /**
+     * Ensures the URL has a protocol (defaults to https)
+     */
+    fun ensureProtocol(url: String): String {
+        return if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            "https://$url"
+        } else {
+            url
+        }
+    }
+    
+    // Comprehensive tracking parameters covering all major platforms
+    // Updated to be thorough and eliminate need for individual reports
     private val TRACKING_PARAMS = setOf(
-        // Generic tracking
-        "s", "t", "ref_src", "ref_url", "ref",
+        // ===== UTM Parameters (Universal) =====
         "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
-        "fbclid", "gclid", "msclkid", "mc_cid", "mc_eid",
+        "utm_id", "utm_source_platform", "utm_creative_format", "utm_marketing_tactic",
         
-        // Amazon
-        "dib", "dib_tag", "qid", "sr", "sp_csd", "psc", "keywords",
-        "pd_rd_i", "pd_rd_r", "pd_rd_w", "pd_rd_wg", "pf_rd_i", "pf_rd_m",
-        "pf_rd_p", "pf_rd_r", "pf_rd_s", "pf_rd_t", "psc", "refRID",
-        "th", "psc", "_encoding", "smid", "tag", "linkCode", "creativeASIN",
-        "creative", "linkId", "ascsubtag", "asc_campaign", "asc_refurl", "asc_source",
+        // ===== Platform Click IDs =====
+        "fbclid", "fbc", "fbp",  // Facebook/Meta
+        "gclid", "gclsrc", "gad_source", "gad_campaignid",  // Google Ads
+        "msclkid",  // Microsoft/Bing Ads
+        "gbraid", "wbraid",  // Google enhanced conversions
+        "dclid",  // DoubleClick
+        "yclid",  // Yandex
+        "ttclid",  // TikTok
+        "twclid",  // Twitter/X
+        "li_fat_id",  // LinkedIn
+        "mc_cid", "mc_eid",  // Mailchimp
+        "soc_src", "soc_trk",  // Social tracking
         
-        // TikTok
-        "_r", "_t", "checksum", "share_app_id", "share_author_id", "share_link_id", 
-        "social_sharing", "sec_user_id", "u_code", "timestamp", "browser_name", 
-        "browser_version", "browser_online", "browser_platform", "browser_language",
+        // ===== Amazon Tracking =====
+        "tag", "linkCode", "linkId", "creativeASIN", "creative",
+        "ascsubtag", "asc_campaign", "asc_refurl", "asc_source",
+        "ref", "ref_", "refRID", "ref_src", "ref_url",
+        "pf_rd_i", "pf_rd_m", "pf_rd_p", "pf_rd_r", "pf_rd_s", "pf_rd_t",
+        "pd_rd_i", "pd_rd_r", "pd_rd_w", "pd_rd_wg",
+        "qid", "sr", "keywords", "dib", "dib_tag", "sp_csd", "psc",
+        "th", "_encoding", "smid",
+        "social_share", "cm_sw_r_cso_cp_apan_dp",
         
-        // Reddit
-        "rdt", "ref_source", "app_name", "user_id",
+        // ===== TikTok Tracking =====
+        "_r", "_t", "checksum", "share_app_id", "share_author_id", "share_link_id",
+        "social_sharing", "sec_user_id", "u_code", "timestamp",
+        "browser_name", "browser_version", "browser_online", "browser_platform", "browser_language",
+        "tt_medium", "tt_content",
         
-        // YouTube
-        "si", "pp", "feature",
+        // ===== Twitter/X Tracking =====
+        "s", "t", "twsrc", "twgr", "tweetid",
         
-        // General e-commerce and analytics
+        // ===== Facebook/Instagram/Meta Tracking =====
+        "igshid", "igsh", "ig_rid", "ig_web_copy_link",
+        "vanity", "mibextid", "rdid", "share_url",
+        "action_object_map", "action_ref_map", "action_type_map",
+        
+        // ===== LinkedIn Tracking =====
+        "trk", "trkCampaign", "trkEmail", "trkInfo",
+        "lipi", "licu", "midToken", "midSig",
+        
+        // ===== Reddit Tracking =====
+        "rdt", "ref_source", "app_name", "user_id", "rb_clickid",
+        "share_id",
+        
+        // ===== YouTube Tracking =====
+        "si", "pp", "feature", "kw", "app",
+        
+        // ===== Pinterest Tracking =====
+        "epik", "pinterest_share",
+        
+        // ===== Snapchat Tracking =====
+        "ScCid", "sc_referrer", "sc_llid", "sc_uid", "sc_lid", "sc_eh",
+        
+        // ===== Email Marketing =====
+        "vero_id", "vero_conv",  // Vero
+        "oly_anon_id", "oly_enc_id",  // Olytics
+        "dm_i", "dm_t",  // Dotdigital
+        "mkt_tok",  // Marketo
+        "_hsenc", "_hsmi",  // HubSpot
+        "bsft_clkid", "bsft_eid", "bsft_aaid", "bsft_uid",  // Blueshift
+        
+        // ===== Analytics & Attribution =====
+        "_ga", "_gl", "_gac", "_gid",  // Google Analytics
+        "pk_campaign", "pk_kwd", "pk_source", "pk_medium", "pk_content",  // Piwik/Matomo
+        "at_custom1", "at_custom2", "at_custom3", "at_custom4",  // Adobe Target
+        "s_kwcid",  // Adobe Analytics
+        "wickedid", "wickedsource",  // Wicked Reports
+        
+        // ===== Affiliate & E-commerce =====
+        "affiliate", "aff_id", "affid", "aff", "affiliate_id",
+        "click_id", "clickid", "transaction_id",
+        "link_alias", "variantId", "variant",
+        "offer_id", "offer", "sub_id", "sub1", "sub2", "sub3",
+        
+        // ===== General Tracking =====
         "source", "medium", "campaign", "content", "term",
-        "affiliate", "aff_id", "affid", "click_id", "clickid",
         "referrer", "referral", "referer",
+        "cid", "cmpid", "campaign_id", "ad_id", "adset_id",
+        "glid", "ef_id",
+        "srsltid",  // Google Shopping
         
-        // IMDb tracking
-        "ref_", "ref",
+        // ===== Apple Tracking =====
+        "itscg", "itsct", "ct", "mt", "pt",
         
-        // Instagram
-        "igsh", "igshid",
-
-        // Apple News / General
-        "itscg",
-
-        // Facebook
-        "vanity"
+        // ===== Yahoo/Verizon =====
+        "guce_referrer", "guce_referrer_sig", "_guc_consent_skip",
+        
+        // ===== Shopify =====
+        "selling_plan",
+        
+        // ===== Misc Platform-Specific =====
+        "cmplz_region_redirect",  // Complianz
+        "age-verified",  // Age verification
+        "redirect_log_mongoid", "redirect_mongo_id",  // Redirect tracking
+        "nb_sb_ss_i", "nb_sb_ss_c",  // Navigation breadcrumbs
+        
+        // ===== Mobile App Tracking =====
+        "deep_link_value", "deep_link_sub1",
+        "af_dp", "af_force_deeplink", "af_sub1", "af_sub2",  // AppsFlyer
+        "adjust_campaign", "adjust_adgroup",  // Adjust
+        
+        // ===== HubSpot Extended =====
+        "hsa_acc", "hsa_ad", "hsa_cam", "hsa_grp", "hsa_kw",
+        "hsa_mt", "hsa_net", "hsa_src", "hsa_tgt", "hsa_ver",
+        
+        // ===== Misc Tracking =====
+        "_ke", "_kx", "_sm_byp", "_sp", "_szp", "__s",
+        "ncid", "spm", "scm", "algo_expid", "algo_pvid",
+        "bxid", "chn", "sendId", "oid",
+        "ns_campaign", "ns_mchannel", "ns_source", "ns_linkname", "ns_fee"
     )
     
     /**
@@ -66,6 +158,9 @@ object UrlCleaner {
         var inputUrl = if (isYouTubeUrl(url)) normalizeYouTubeUrl(url) else url
         inputUrl = if (isFacebookUrl(inputUrl)) normalizeFacebookUrl(inputUrl) else inputUrl
         
+        // Clean path segments first
+        inputUrl = cleanPathSegments(inputUrl)
+        
         try {
             val uri = URI(inputUrl)
             val query = uri.query ?: return inputUrl
@@ -78,11 +173,43 @@ object UrlCleaner {
                 val name = parts[0]
                 
                 val isTracking = TRACKING_PARAMS.contains(name) || 
+                               // Amazon
                                name.startsWith("ref_") || 
-                               name.startsWith("utm_") || 
                                name.startsWith("pf_rd_") ||
                                name.startsWith("pd_rd_") ||
-                               name.startsWith("gaa_")
+                               name.startsWith("cm_sw_") ||
+                               name.startsWith("asc_") ||
+                               // UTM variants
+                               name.startsWith("utm_") ||
+                               // Analytics
+                               name.startsWith("_ga") ||
+                               name.startsWith("_gl") ||
+                               name.startsWith("gaa_") ||
+                               name.startsWith("pk_") || // Piwik/Matomo
+                               name.startsWith("matomo_") ||
+                               name.startsWith("at_") || // Adobe Target
+                               name.startsWith("sc_") || // Snapchat/Emarsys
+                               // Email marketing
+                               name.startsWith("oly_") || // Olytics
+                               name.startsWith("vero_") || // Vero
+                               name.startsWith("_hs") || // HubSpot
+                               name.startsWith("hsa_") || // HubSpot Ads
+                               name.startsWith("mkt_") || // Marketo
+                               name.startsWith("bsft_") || // Blueshift
+                               name.startsWith("dm_") || // Dotdigital
+                               // Social media
+                               name.startsWith("tw") || // Twitter
+                               name.startsWith("fb") || // Facebook
+                               name.startsWith("ig_") || // Instagram
+                               name.startsWith("li_") || // LinkedIn
+                               name.startsWith("trk") || // LinkedIn tracking
+                               // Affiliate
+                               name.startsWith("aff_") ||
+                               name.startsWith("sub") || // sub1, sub2, etc.
+                               name.startsWith("af_") || // AppsFlyer
+                               // Misc
+                               name.startsWith("wicked") || // Wicked Reports
+                               name.startsWith("ns_") // Nielsen/Navigation
                 
                 // UrbanDictionary requires the 'term' parameter to function
                 val isPseudoTracking = isTracking && isUrbanDictionaryUrl(inputUrl) && name == "term"
@@ -142,8 +269,8 @@ object UrlCleaner {
             if (host.contains("facebook.com")) {
                 val path = uri.path ?: ""
                 
-                // Pattern 1: /username/videos/ID/
-                val videoPattern = """/[^/]+/videos/(\d+)/?""".toRegex()
+                // Pattern 1: /username/videos/ID/ or /username/videos/some-title/ID/
+                val videoPattern = """/videos/(?:[^/]+/)?(\d+)/?""".toRegex()
                 val videoMatch = videoPattern.find(path)
                 if (videoMatch != null) {
                     val videoId = videoMatch.groupValues[1]
@@ -152,13 +279,12 @@ object UrlCleaner {
                 }
                 
                 // Pattern 2: /reel/ID/
-                if (path.contains("/reel/")) {
-                    val segments = path.split("/").filter { it.isNotEmpty() }
-                    val videoId = segments.lastOrNull() ?: return url
-                    if (videoId.all { it.isDigit() }) {
-                        val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
-                        return URI("https", "www.facebook.com", "/watch", newQuery, uri.fragment).toString()
-                    }
+                val reelPattern = """/reel/(\d+)/?""".toRegex()
+                val reelMatch = reelPattern.find(path)
+                if (reelMatch != null) {
+                    val videoId = reelMatch.groupValues[1]
+                    val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
+                    return URI("https", "www.facebook.com", "/watch", newQuery, uri.fragment).toString()
                 }
             }
         } catch (e: Exception) {}
@@ -497,6 +623,9 @@ object UrlCleaner {
             host.contains("tumblr.com") -> "Tumblr"
             host.contains("urbandictionary.com") -> "UrbanDictionary"
             host.contains("imgur.com") -> "Imgur"
+            host.contains("msn.com") -> "MSN"
+            host.contains("spotify.com") -> "Spotify"
+            host.contains("podcasts.apple.com") -> "Apple Podcasts"
             else -> {
                 var cleanHost = host
                 val prefixes = listOf("www.", "m.", "mobile.")
@@ -569,6 +698,42 @@ object UrlCleaner {
             
         } catch (e: Exception) {
             return cleanedFull
+        }
+    }
+
+    /**
+     * Clean path segments by removing those that look like tracking parameters.
+     * e.g. /dp/B0D1KQKZM2/ref=sr_1_1 -> /dp/B0D1KQKZM2
+     */
+    private fun cleanPathSegments(url: String): String {
+        try {
+            val uri = URI(url)
+            val path = uri.path ?: return url
+            
+            // Should loop through segments and filter out tracking ones
+            // But standard URI parsing can be tricky with encoded slashes
+            // Let's use a simpler string manipulation approach safely
+            
+            val segments = path.split("/")
+            val cleanSegments = segments.filter { segment ->
+                val lower = segment.lowercase()
+                !lower.startsWith("ref=") && 
+                !lower.startsWith("ref_") &&
+                !lower.startsWith("source=") &&
+                !lower.startsWith("src=") &&
+                !lower.startsWith("pf_rd_") &&
+                !lower.startsWith("pd_rd_") &&
+                !lower.startsWith("cm_sw_")
+            }
+            
+            if (cleanSegments.size == segments.size) {
+                return url
+            }
+            
+            val newPath = cleanSegments.joinToString("/")
+            return URI(uri.scheme, uri.authority, newPath, uri.query, uri.fragment).toString()
+        } catch (e: Exception) {
+            return url
         }
     }
 }

@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var warningText: TextView
     private lateinit var sidestepCounter: TextView
     private lateinit var emptyStateGuide: LinearLayout
+    private lateinit var contentContainer: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Apply theme before super.onCreate to ensure it takes effect immediately
@@ -83,7 +84,7 @@ class MainActivity : AppCompatActivity() {
         
         loadHistory()
         
-        loadHistory()
+
     }
 
 
@@ -145,29 +146,39 @@ class MainActivity : AppCompatActivity() {
             setBackgroundColor(getThemeColor(android.R.attr.colorBackground))
         }
 
-        // Add explicit MaterialToolbar
+        // MaterialToolbar for Header
         val toolbar = com.google.android.material.appbar.MaterialToolbar(this).apply {
-            title = getString(R.string.app_name)
-            setTitleTextColor(getThemeColor(android.R.attr.textColorPrimary))
-            setBackgroundColor(getThemeColor(com.google.android.material.R.attr.colorSurface))
-            elevation = 4.dp().toFloat()
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                80.dp()
+            )
+            setPadding(8.dp(), 16.dp(), 0, 0) // Adjusted to align title with content
+            setBackgroundColor(getThemeColor(android.R.attr.colorBackground))
+            
+            // Custom Title View to match the original 28f size and alignment
+            val titleTextView = TextView(context).apply {
+                text = getString(R.string.app_name)
+                textSize = 28f
+                setTypeface(null, Typeface.BOLD)
+                setTextColor(getThemeColor(android.R.attr.textColorPrimary))
+            }
+            addView(titleTextView)
         }
-        rootLayout.addView(toolbar)
+        
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayShowTitleEnabled(false) // Use our custom TextView instead
+        rootLayout.addView(toolbar)
 
         // Handle Window Insets for Edge-to-Edge
         ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            // Top padding for status bar handled by toolbar
-            toolbar.setPadding(0, bars.top, 0, 0)
-            // Navigation bar and horizontal bars handled by root padding
-            v.setPadding(bars.left, 0, bars.right, bars.bottom)
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
 
         val contentPadding = 16.dp()
         // Content Container (to hold everything except toolbar)
-        val contentContainer = LinearLayout(this).apply {
+        contentContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(contentPadding, contentPadding, contentPadding, 0)
             layoutParams = LinearLayout.LayoutParams(
@@ -186,6 +197,7 @@ class MainActivity : AppCompatActivity() {
             setTextColor(getThemeColor(android.R.attr.textColorSecondary))
             gravity = Gravity.CENTER
             setPadding(0, 16.dp(), 0, 8.dp())
+            visibility = View.GONE // Default to GONE
         }
 
         // Input container
@@ -245,19 +257,18 @@ class MainActivity : AppCompatActivity() {
         textInputLayout.addView(urlInput)
         inputContainer.addView(textInputLayout)
         
-        // Material Design FAB-style button with arrow icon (standard FAB size)
+        // Material Design button with arrow icon in input field
         val processButton = android.widget.ImageButton(this).apply {
             setImageResource(R.drawable.ic_go_slick)
-            background = createMaterialFabBackground()
-            elevation = 8f
+            background = null // Remove circle background for now to match screenshot "arrow_forward" style
             scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
             setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
-            setColorFilter(0xFFFFFFFF.toInt()) // Pure white
+            setColorFilter(getThemeColor(com.google.android.material.R.attr.colorPrimary)) 
             layoutParams = LinearLayout.LayoutParams(
-                56.dp(),
-                56.dp()
+                48.dp(),
+                48.dp()
             ).apply {
-                setMargins(8.dp(), 0, 4.dp(), 0)
+                gravity = Gravity.CENTER_VERTICAL
             }
             setOnClickListener { processUrl() }
         }
@@ -279,20 +290,29 @@ class MainActivity : AppCompatActivity() {
         // Empty State Guide
         emptyStateGuide = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24.dp(), 32.dp(), 24.dp(), 32.dp())
-            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(24.dp(), 0.dp(), 24.dp(), 16.dp())
             visibility = View.GONE
             
-            val guideTitle = TextView(this@MainActivity).apply {
-                text = getString(R.string.guide_welcome_title)
-                textSize = 20f
+            val guideLabel = TextView(this@MainActivity).apply {
+                text = getString(R.string.guide_welcome_label)
+                textSize = 12f
                 setTypeface(null, Typeface.BOLD)
-                setTextColor(getThemeColor(android.R.attr.textColorPrimary))
-                setPadding(0, 0, 0, 24.dp())
-                gravity = Gravity.CENTER
+                setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+                setPadding(0, 32.dp(), 0, 24.dp())
+                letterSpacing = 0.1f
             }
-            addView(guideTitle)
-            
+            addView(guideLabel)
+
+            // Step container
+            val stepsList = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    0,
+                    1f
+                )
+            }
+
             val steps = listOf(
                 getString(R.string.guide_step_1),
                 getString(R.string.guide_step_2),
@@ -300,30 +320,98 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.guide_step_4)
             )
             
-            steps.forEach { stepText ->
-                val step = TextView(this@MainActivity).apply {
-                    text = stepText
-                    textSize = 15f
-                    setPadding(0, 0, 0, 16.dp())
-                    setTextColor(getThemeColor(android.R.attr.textColorSecondary))
-                    setLineSpacing(0f, 1.3f)
-                    gravity = Gravity.CENTER
+            steps.forEachIndexed { index, stepText ->
+                val stepRow = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.TOP
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        0,
+                        1f
+                    )
                 }
-                addView(step)
+
+                // Left column for circle and line segment
+                val leftColumn = LinearLayout(this@MainActivity).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER_HORIZONTAL
+                    layoutParams = LinearLayout.LayoutParams(24.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
+                }
+
+                val circleSize = 24.dp()
+                val stepCircle = TextView(this@MainActivity).apply {
+                    text = (index + 1).toString()
+                    textSize = 12f
+                    setTypeface(null, Typeface.BOLD)
+                    gravity = Gravity.CENTER
+                    val bgColor = if (index == 0) {
+                        getThemeColor(com.google.android.material.R.attr.colorPrimary)
+                    } else {
+                        androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), 40)
+                    }
+                    val textColor = if (index == 0) {
+                        getThemeColor(com.google.android.material.R.attr.colorOnPrimary)
+                    } else {
+                        getThemeColor(android.R.attr.textColorSecondary)
+                    }
+                    setTextColor(textColor)
+                    
+                    val bg = android.graphics.drawable.GradientDrawable().apply {
+                        shape = android.graphics.drawable.GradientDrawable.OVAL
+                        setColor(bgColor)
+                    }
+                    background = bg
+                    layoutParams = LinearLayout.LayoutParams(circleSize, circleSize)
+                }
+                leftColumn.addView(stepCircle)
+
+                // Add line segment if not the last step
+                if (index < steps.size - 1) {
+                    val lineSegment = View(this@MainActivity).apply {
+                        setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), 40))
+                        layoutParams = LinearLayout.LayoutParams(2.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
+                    }
+                    leftColumn.addView(lineSegment)
+                }
+                stepRow.addView(leftColumn)
+
+                val stepTextView = TextView(this@MainActivity).apply {
+                    text = stepText
+                    textSize = 16f
+                    setPadding(24.dp(), 0, 0, 0) 
+                    setTextColor(if (index == 0) getThemeColor(android.R.attr.textColorPrimary) else getThemeColor(android.R.attr.textColorSecondary))
+                    setLineSpacing(0f, 1.2f)
+                }
+                stepRow.addView(stepTextView)
+
+                stepsList.addView(stepRow)
             }
+            addView(stepsList)
             
-            // Set as Default button
+            // For the last step, add the button below the steps list
+            val buttonContainer = LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(0, 16.dp(), 0, 0)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+
             val defaultButton = com.google.android.material.button.MaterialButton(this@MainActivity).apply {
                 text = getString(R.string.btn_set_default)
+                cornerRadius = 28.dp()
+                insetTop = 0
+                insetBottom = 0
+                minHeight = 56.dp()
                 setOnClickListener { openDefaultHandlerSettings() }
                 layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = 16.dp()
-                }
+                )
             }
-            addView(defaultButton)
+            buttonContainer.addView(defaultButton)
+            addView(buttonContainer)
         }
         contentContainer.addView(emptyStateGuide)
 
@@ -394,6 +482,15 @@ class MainActivity : AppCompatActivity() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val retention = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
         val historyEmpty = history.isEmpty() || retention == "never"
+        val showWelcome = shouldShowWelcomeGuide()
+        
+        // Hide counter if welcome guide is visible
+        if (historyEmpty && showWelcome) {
+            sidestepCounter.visibility = View.GONE
+            return
+        }
+        
+        sidestepCounter.visibility = View.VISIBLE
         
         // Avoid redundant updates if count and mode haven't changed
         if (isKpiMode == historyEmpty && lastCountValue == count) return
@@ -459,14 +556,14 @@ class MainActivity : AppCompatActivity() {
     private fun createInputBackground(): android.graphics.drawable.Drawable {
         val shape = android.graphics.drawable.GradientDrawable()
         shape.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-        shape.cornerRadius = 48f 
+        shape.cornerRadius = 64.dp().toFloat() // Pill shape
         
         // Use theme surface color
         shape.setColor(getThemeColor(com.google.android.material.R.attr.colorSurface))
         
         // Border color based on theme (using textColorSecondary or similar for border)
         val borderColor = getThemeColor(android.R.attr.textColorSecondary)
-        // Make border slightly transparent/lighter - INCREASED visibility (from 60 to 120)
+        // Revert to thicker border (3dp) and higher alpha (120) per user feedback
         val alphaBorder = androidx.core.graphics.ColorUtils.setAlphaComponent(borderColor, 120)
         shape.setStroke(3, alphaBorder)
         
@@ -506,13 +603,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun ensureProtocol(url: String): String {
-        return if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            "https://$url"
-        } else {
-            url
-        }
-    }
 
 
     
@@ -541,15 +631,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun processAndNavigate(url: String) {
-        val sanitizedUrl = ensureProtocol(url)
+        // Mark that a URL has been processed
+        PreferenceManager.getDefaultSharedPreferences(this).edit {
+            putBoolean("has_processed_url", true)
+        }
+        val sanitizedUrl = UrlCleaner.ensureProtocol(url)
         lifecycleScope.launch {
             try {
                 val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
                 
                 // Step 1: Unshorten (Network call) - Respect setting
                 val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
+                val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
                 val unshortenedUrl = if (shouldUnshorten) {
-                    UrlUnshortener.unshorten(sanitizedUrl)
+                    UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
                 } else {
                     sanitizedUrl
                 }
@@ -614,7 +709,7 @@ class MainActivity : AppCompatActivity() {
                     val isImmediate = prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
                     
                     if (isImmediate) {
-                        val finalRedirectUrl = ensureProtocol(redirectUrl)
+                        val finalRedirectUrl = UrlCleaner.ensureProtocol(redirectUrl)
                         
                         // Determine if we should use in-app WebView
                         if (shouldOpenInWebView(unshortenedUrl)) {
@@ -666,7 +761,10 @@ class MainActivity : AppCompatActivity() {
                 // Step 6: Handle UI cleanup
                 if (!isDestroyed && !isFinishing) {
                     urlInput.text.clear()
-                    loadHistory()
+                    // Scroll to top after history reloads to show the new item
+                    loadHistory {
+                        historyList.smoothScrollToPosition(0)
+                    }
                     urlInput.clearFocus()
                 }
 
@@ -712,35 +810,75 @@ class MainActivity : AppCompatActivity() {
 
 
 
-    private fun loadHistory() {
+    private fun shouldShowWelcomeGuide(): Boolean {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (prefs.getBoolean("has_processed_url", false)) {
+            return false
+        }
+        
+        val commonDomains = listOf("twitter.com", "reddit.com", "instagram.com", "tiktok.com", "youtube.com", "open.spotify.com")
+        for (domain in commonDomains) {
+            if (isAppDefaultHandlerForDomain(domain)) {
+                return false
+            }
+        }
+        
+        return true
+    }
+
+    private fun loadHistory(runAfterUpdate: (() -> Unit)? = null) {
         lifecycleScope.launch {
             val history = HistoryManager.getHistory(this@MainActivity)
             val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
             val retentionMode = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
             
             val sidestepCount = getSidestepCount()
+            val showWelcome = shouldShowWelcomeGuide() && history.isEmpty()
             
             if (retentionMode == "never") {
-                historyAdapter.submitList(emptyList())
+                historyAdapter.submitList(emptyList()) {
+                    // Ensure menu is invalidated after list clears
+                    invalidateOptionsMenu()
+                    runAfterUpdate?.invoke()
+                }
                 historyList.visibility = View.GONE
-                emptyStateGuide.visibility = if (sidestepCount == 0L) View.VISIBLE else View.GONE
+                emptyStateGuide.visibility = if (showWelcome) View.VISIBLE else View.GONE
+                
+                // If Welcome Guide is VISIBLE, set weight to 1, else 0 wrapping content
+                val params = emptyStateGuide.layoutParams as LinearLayout.LayoutParams
+                params.height = if (showWelcome) 0 else LinearLayout.LayoutParams.WRAP_CONTENT
+                params.weight = if (showWelcome) 1f else 0f
+                emptyStateGuide.layoutParams = params
+                
                 updateCounterUI(emptyList())
-                invalidateOptionsMenu()
                 return@launch
             }
             
             if (history.isEmpty()) {
                 historyList.visibility = View.GONE
-                emptyStateGuide.visibility = if (sidestepCount == 0L) View.VISIBLE else View.GONE
+                emptyStateGuide.visibility = if (showWelcome) View.VISIBLE else View.GONE
+                
+                // If Welcome Guide is VISIBLE, set weight to 1
+                val params = emptyStateGuide.layoutParams as LinearLayout.LayoutParams
+                params.height = if (showWelcome) 0 else LinearLayout.LayoutParams.WRAP_CONTENT
+                params.weight = if (showWelcome) 1f else 0f
+                emptyStateGuide.layoutParams = params
+                
+                 historyAdapter.submitList(emptyList()) {
+                     // Ensure menu is invalidated after list clears
+                     invalidateOptionsMenu()
+                     runAfterUpdate?.invoke()
+                 }
             } else {
                 historyList.visibility = View.VISIBLE
                 emptyStateGuide.visibility = View.GONE
+                historyAdapter.submitList(history) {
+                    // Update menu visibility after the list has been updated and diffed
+                    invalidateOptionsMenu()
+                    runAfterUpdate?.invoke()
+                }
             }
             
-            historyAdapter.submitList(history) {
-                // Update menu visibility after the list has been updated and diffed
-                invalidateOptionsMenu()
-            }
             updateCounterUI(history)
         }
     }

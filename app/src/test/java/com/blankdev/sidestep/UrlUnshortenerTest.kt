@@ -25,7 +25,10 @@ class UrlUnshortenerTest {
             "https://snip.ly/foo",
             "https://t.ly/bar",
             "https://dub.sh/baz",
-            "https://rb.gy/qux"
+            "https://rb.gy/qux",
+            "https://shop.app/p/123",
+            "https://www.msn.com/en-us/health/other/our-oral-microbiome/ar-AA1UKmZh",
+            "https://a.co/d/0jZk7S7"
         )
         
         for (url in shortenable) {
@@ -47,9 +50,80 @@ class UrlUnshortenerTest {
     }
 
     @Test
+    fun testHeuristicDetection_unknownShorteners() {
+        // These are hypothetical shorteners not in the known list
+        // They should be detected by heuristics (short domain + short path + shortener TLD)
+        val likelyShortened = listOf(
+            "https://xyz.link/abc",      // Short domain + .link TLD + short path
+            "https://go.example.io/x1",  // go. subdomain + .io TLD + short path
+            "https://short.ly/test123",  // short. subdomain + .ly TLD
+            "https://mylink.to/abc123"   // .to TLD + short path + short domain
+        )
+        
+        for (url in likelyShortened) {
+            assertTrue("Should detect as likely shortened: $url", UrlUnshortener_isShortenedUrl(url))
+        }
+    }
+
+    @Test
+    fun testHeuristicDetection_edgeCases() {
+        // These should NOT be detected as shorteners despite having some characteristics
+        val notShortened = listOf(
+            "https://github.com/user",           // Excluded domain
+            "https://youtube.com/watch",         // Excluded domain
+            "https://verylongdomainname.co/abc", // Long domain despite .co TLD
+            "https://example.com/very-long-path-that-is-not-short"  // Long path
+        )
+        
+        for (url in notShortened) {
+            assertFalse("Should not detect as shortened: $url", UrlUnshortener_isShortenedUrl(url))
+        }
+    }
+
+    @Test
+    fun testHeuristicDetection_pathPatterns() {
+        // Test detection based on common shortener path patterns
+        val patterned = listOf(
+            "https://example.link/share/abc123",  // /share/ pattern + .link TLD
+            "https://mysite.io/d/xyz",            // /d/ pattern + .io TLD
+            "https://link.me/p/12345"             // /p/ pattern + .me TLD
+        )
+        
+        for (url in patterned) {
+            assertTrue("Should detect pattern-based shortener: $url", UrlUnshortener_isShortenedUrl(url))
+        }
+    }
+
+    @Test
     fun testUnshorten_tinyCc() = runBlocking {
         val result = UrlUnshortener.unshorten("http://tiny.cc/qicx001")
         assertTrue("Expected Wikipedia but got: $result", result.contains("wikipedia.org"))
+    }
+
+    @Test
+    fun testParseHtmlRedirect_msnCanonical() {
+        val msnHtml = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <link rel="canonical" href="https://www.newscientist.com/article/2512970-our-oral-microbiome-could-hold-the-key-to-preventing-obesity/">
+            </head>
+            <body></body>
+            </html>
+        """.trimIndent()
+        
+        val result = UrlUnshortener.parseHtmlRedirect(msnHtml)
+        assertEquals("https://www.newscientist.com/article/2512970-our-oral-microbiome-could-hold-the-key-to-preventing-obesity/", result)
+    }
+
+    @Test
+    fun testParseHtmlRedirect_msnCanonicalSwapped() {
+        val msnHtml = """
+            <link href="https://www.example.com/article" rel="canonical">
+        """.trimIndent()
+        
+        val result = UrlUnshortener.parseHtmlRedirect(msnHtml)
+        assertEquals("https://www.example.com/article", result)
     }
 
     // Helper to call private method for testing (since it's an object)
