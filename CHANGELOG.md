@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.4] - 2026-01-30
+
+### Fixed
+- Custom redirects now work correctly with TikTok short links (e.g., `vt.tiktok.com`, `vm.tiktok.com`).
+- Removed special case that was preventing custom redirects from being applied after URL unshortening.
+
 ## [1.1.3] - 2026-01-29
 
 ### Security
