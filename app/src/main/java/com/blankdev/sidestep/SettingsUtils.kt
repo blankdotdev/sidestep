@@ -369,11 +369,6 @@ object SettingsUtils {
             
             // Match if host contains the original domain (e.g. "www.tiktok.com" contains "tiktok.com")
             if (host.contains(originalDomain) || unshortenedUrl.contains(originalDomain, ignoreCase = true)) {
-                // Special handling to avoid matching shortener subdomains for main domains
-                // This prevents broken redirects when unshortening fails
-                if (originalDomain == "tiktok.com" && (host.contains("vt.tiktok.com") || host.contains("vm.tiktok.com"))) {
-                    continue
-                }
                 if (isAppend) {
                     var base = redirectDomain
                     if (!base.startsWith("http")) base = "https://$base"

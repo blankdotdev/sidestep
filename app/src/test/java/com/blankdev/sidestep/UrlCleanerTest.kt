@@ -328,4 +328,14 @@ class UrlCleanerTest {
         val result = UrlCleaner.cleanUrl(url)
         assertEquals("https://www.imdb.com/title/tt1234567", result)
     }
+
+    @Test
+    fun testCleanUrl_removesTikTokTrackingParams() {
+        val url = "https://www.tiktok.com/@whitewoodmac/video/7600787341246090518?_r=1&_t=ZS-93Ujdr9rNH6"
+        val result = UrlCleaner.cleanUrl(url)
+        
+        assertFalse(result.contains("_r="))
+        assertFalse(result.contains("_t="))
+        assertEquals("https://www.tiktok.com/@whitewoodmac/video/7600787341246090518", result)
+    }
 }
