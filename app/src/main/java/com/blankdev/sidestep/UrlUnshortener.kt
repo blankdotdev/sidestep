@@ -32,6 +32,8 @@ object UrlUnshortener {
                     .url(currentUrl)
                     .get() // Always use GET for better compatibility (e.g. tiny.cc, share.google)
                     .header("User-Agent", userAgent)
+                    .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+                    .header("Accept-Language", "en-US,en;q=0.5")
                     .build()
                 
                 val response = NetworkClient.client.newBuilder()
@@ -60,13 +62,21 @@ object UrlUnshortener {
                         break
                     }
                 } else if (response.code == 200 && isShortenedUrl(currentUrl)) {
-                    response.close()
                     // Respect the resolveHtml flag
                     if (!resolveHtml) {
+                         response.close()
                          break
                     }
-                    val resolved = resolveHtmlRedirect(currentUrl)
-                    if (resolved != currentUrl) {
+                    
+                    val html = try {
+                        response.body?.string() ?: ""
+                    } catch (e: Exception) {
+                        ""
+                    }
+                    response.close()
+
+                    val resolved = parseHtmlRedirect(html)
+                    if (resolved != null && resolved != currentUrl) {
                         currentUrl = resolved
                         hops++
                         continue
@@ -86,26 +96,7 @@ object UrlUnshortener {
         }
     }
     
-    private suspend fun resolveHtmlRedirect(url: String): String = withContext(Dispatchers.IO) {
-        try {
-            val request = okhttp3.Request.Builder()
-                .url(url)
-                .get() // Need GET to parse HTML
-                .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
-                .header("Accept-Language", "en-US,en;q=0.5")
-                .build()
-            
-            val response = NetworkClient.client.newCall(request).execute()
-            val html = response.body?.string() ?: ""
-            response.close()
-            
-            val resolved = parseHtmlRedirect(html)
-            resolved ?: url
-        } catch (e: Exception) {
-            url
-        }
-    }
+
 
     /**
      * Parses HTML to find redirection URLs (Meta refresh, JS, etc.)
