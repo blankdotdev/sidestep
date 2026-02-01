@@ -1,9 +1,3 @@
-# GNU Affero General Public License v3.0 or later
-# <Sidestep - Redirect social media links to private alternative frontends.> Copyright (C) 2026 blankdotdev
-# This program is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.
-# You should have received a copy of the GNU Affero General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-
 Categories:
   - Internet
   - Security
@@ -55,7 +49,7 @@ Builds:
 
   - versionName: 1.1.5
     versionCode: 7
-    commit: 0ab9f10f60ad3c3d6faaa84f1e6561820554c4f5
+    commit: f58ab7e9491461b531e0e1165bf778c216c84ff5
     subdir: app
     gradle:
       - yes
