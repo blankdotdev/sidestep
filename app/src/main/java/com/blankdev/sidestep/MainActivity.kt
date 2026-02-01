@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var historyList: RecyclerView
     private lateinit var historyAdapter: HistoryAdapter
     private var validationJob: Job? = null
+    private var loadHistoryJob: Job? = null
     private lateinit var warningText: TextView
     private lateinit var sidestepCounter: TextView
     private lateinit var emptyStateGuide: LinearLayout
@@ -420,14 +421,21 @@ class MainActivity : AppCompatActivity() {
             onItemClick = { entry ->
                 // Use the original URL to re-process through the standard pipeline
                 // This ensures consistent behavior with new URL inputs and proper loop detection
-                processAndNavigate(entry.originalUrl)
+                processAndNavigate(entry.originalUrl, skipImmediateCheck = true, skipHistoryUpdate = true)
             },
-            onMenuClick = { view, entry -> showHistoryMenu(view, entry) }
+            onMenuClick = { view, entry -> showHistoryMenu(view, entry) },
+            themeColorProvider = { attr -> getThemeColor(attr) },
+            rippleDrawableProvider = { createRippleBackground() },
+            dpProvider = { value -> value.dp() },
+            titleProvider = { entry -> getDisplayTitle(entry) },
+            subtitleProvider = { entry -> getDisplaySubtitle(entry) }
         )
         
         historyList = RecyclerView(this).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = historyAdapter
+            // Disable animations to prevent old items from flashing during updates
+            itemAnimator = null 
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 0,
@@ -609,13 +617,6 @@ class MainActivity : AppCompatActivity() {
     
     
 
-    private fun extractUrl(text: String): String? {
-        val pattern = android.util.Patterns.WEB_URL
-        val matcher = pattern.matcher(text)
-        return if (matcher.find()) {
-            matcher.group()
-        } else null
-    }
 
     private fun processUrl() {
         val url = urlInput.text.toString().trim()
@@ -630,7 +631,7 @@ class MainActivity : AppCompatActivity() {
         processAndNavigate(url)
     }
 
-    private fun processAndNavigate(url: String) {
+    private fun processAndNavigate(url: String, skipImmediateCheck: Boolean = false, skipHistoryUpdate: Boolean = false) {
         // Mark that a URL has been processed
         PreferenceManager.getDefaultSharedPreferences(this).edit {
             putBoolean("has_processed_url", true)
@@ -644,7 +645,11 @@ class MainActivity : AppCompatActivity() {
                 val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
                 val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
                 val unshortenedUrl = if (shouldUnshorten) {
-                    UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
+                    try {
+                        UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
+                    } catch (e: Exception) {
+                        sanitizedUrl
+                    }
                 } else {
                     sanitizedUrl
                 }
@@ -688,17 +693,19 @@ class MainActivity : AppCompatActivity() {
                     unshortenedUrl = unshortenedUrl
                 )
                 
-                // Note: HistoryManager functions now handle Dispatchers.IO internally
-                HistoryManager.addToHistory(this@MainActivity, entry)
-                HistoryManager.applyRetentionPolicy(this@MainActivity)
-                
-                // Trigger preview fetch immediately after saving
-                if (PreferenceManager.getDefaultSharedPreferences(this@MainActivity).getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE) != "never") {
-                    val savedEntry = HistoryManager.getHistory(this@MainActivity).firstOrNull { 
-                        it.originalUrl == url && it.timestamp == entry.timestamp 
-                    }
-                    if (savedEntry != null) {
-                        fetchPreview(savedEntry)
+                if (!skipHistoryUpdate) {
+                    // Note: HistoryManager functions now handle Dispatchers.IO internally
+                    HistoryManager.addToHistory(this@MainActivity, entry)
+                    HistoryManager.applyRetentionPolicy(this@MainActivity)
+                    
+                    // Trigger preview fetch immediately after saving
+                    if (PreferenceManager.getDefaultSharedPreferences(this@MainActivity).getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE) != "never") {
+                        val savedEntry = HistoryManager.getHistory(this@MainActivity).firstOrNull { 
+                            it.originalUrl == url && it.timestamp == entry.timestamp 
+                        }
+                        if (savedEntry != null) {
+                            fetchPreview(savedEntry)
+                        }
                     }
                 }
 
@@ -706,13 +713,14 @@ class MainActivity : AppCompatActivity() {
                 try {
                     if (isDestroyed || isFinishing) return@launch
                     
-                    val isImmediate = prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
+                    val isImmediate = skipImmediateCheck || prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
                     
                     if (isImmediate) {
                         val finalRedirectUrl = UrlCleaner.ensureProtocol(redirectUrl)
                         
                         // Determine if we should use in-app WebView
-                        if (shouldOpenInWebView(unshortenedUrl)) {
+                        // Determine if we should use in-app WebView
+                        if (SettingsUtils.shouldOpenInWebView(this@MainActivity, unshortenedUrl)) {
                             val webIntent = Intent(this@MainActivity, WebViewActivity::class.java).apply {
                                 putExtra(WebViewActivity.EXTRA_URL, finalRedirectUrl)
                             }
@@ -775,38 +783,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun shouldOpenInWebView(unshortenedUrl: String): Boolean {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        
-        val isCleanOnly = when {
-            UrlCleaner.isTwitterOrXUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_TWITTER_CLEAN_ONLY, false)
-            UrlCleaner.isRedditUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_REDDIT_CLEAN_ONLY, false)
-            UrlCleaner.isYouTubeUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, false)
-            UrlCleaner.isImdbUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_IMDB_CLEAN_ONLY, false)
-            UrlCleaner.isMediumUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, false)
-            UrlCleaner.isWikipediaUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, false)
-            UrlCleaner.isGoodreadsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, false)
-            UrlCleaner.isGeniusUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GENIUS_CLEAN_ONLY, false)
-            UrlCleaner.isGitHubUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GITHUB_CLEAN_ONLY, false)
-            UrlCleaner.isStackOverflowUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, false)
-            UrlCleaner.isGoogleMapsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)
-            else -> false
-        }
-        
-        if (!isCleanOnly) return false
-        
-        // If it's clean only, we only open in WebView if we are the default handler for this domain
-        // to avoid the endless redirect loop that would happen if we sent a VIEW intent
-        return try {
-            SettingsUtils.checkDomain(this, unshortenedUrl)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun isAppDefaultHandlerForDomain(domain: String): Boolean {
-        return SettingsUtils.checkDomain(this, domain)
-    }
 
 
 
@@ -818,7 +794,7 @@ class MainActivity : AppCompatActivity() {
         
         val commonDomains = listOf("twitter.com", "reddit.com", "instagram.com", "tiktok.com", "youtube.com", "open.spotify.com")
         for (domain in commonDomains) {
-            if (isAppDefaultHandlerForDomain(domain)) {
+            if (SettingsUtils.isAppDefaultHandlerForDomain(this, domain)) {
                 return false
             }
         }
@@ -827,7 +803,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadHistory(runAfterUpdate: (() -> Unit)? = null) {
-        lifecycleScope.launch {
+        loadHistoryJob?.cancel()
+        loadHistoryJob = lifecycleScope.launch {
             val history = HistoryManager.getHistory(this@MainActivity)
             val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
             val retentionMode = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
@@ -870,9 +847,10 @@ class MainActivity : AppCompatActivity() {
                      runAfterUpdate?.invoke()
                  }
             } else {
-                historyList.visibility = View.VISIBLE
                 emptyStateGuide.visibility = View.GONE
                 historyAdapter.submitList(history) {
+                    // Set visible only AFTER the list is applied to avoid flashing old state
+                    historyList.visibility = View.VISIBLE
                     // Update menu visibility after the list has been updated and diffed
                     invalidateOptionsMenu()
                     runAfterUpdate?.invoke()
@@ -895,148 +873,6 @@ class MainActivity : AppCompatActivity() {
     /**
      * RecyclerView Adapter for History
      */
-    inner class HistoryAdapter(
-        private val onItemClick: (HistoryManager.HistoryEntry) -> Unit,
-        private val onMenuClick: (android.view.View, HistoryManager.HistoryEntry) -> Unit
-    ) : androidx.recyclerview.widget.ListAdapter<HistoryManager.HistoryEntry, HistoryAdapter.ViewHolder>(
-        object : androidx.recyclerview.widget.DiffUtil.ItemCallback<HistoryManager.HistoryEntry>() {
-            override fun areItemsTheSame(oldItem: HistoryManager.HistoryEntry, newItem: HistoryManager.HistoryEntry): Boolean {
-                return oldItem.originalUrl == newItem.originalUrl && oldItem.timestamp == newItem.timestamp
-            }
-
-            override fun areContentsTheSame(oldItem: HistoryManager.HistoryEntry, newItem: HistoryManager.HistoryEntry): Boolean {
-                return oldItem == newItem
-            }
-        }
-    ) {
-
-        inner class ViewHolder(val view: android.view.View) : androidx.recyclerview.widget.RecyclerView.ViewHolder(view)
-
-        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
-            val context = parent.context
-            val itemContainer = LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                setPadding(8.dp(), 10.dp(), 4.dp(), 10.dp())
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                gravity = android.view.Gravity.CENTER_VERTICAL
-            }
-            return ViewHolder(itemContainer)
-        }
-
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val entry = getItem(position)
-            val context = holder.view.context
-            val container = holder.view as LinearLayout
-            container.removeAllViews()
-
-            val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
-            val isTwitter = UrlCleaner.isTwitterOrXUrl(contentUrl)
-            val isTikTok = UrlCleaner.isTikTokUrl(contentUrl)
-            val isReddit = UrlCleaner.isRedditUrl(contentUrl)
-            val isYouTube = UrlCleaner.isYouTubeUrl(contentUrl)
-            val isMedium = UrlCleaner.isMediumUrl(contentUrl)
-            val isImdb = UrlCleaner.isImdbUrl(contentUrl)
-            val isWikipedia = UrlCleaner.isWikipediaUrl(contentUrl)
-            val isGoodreads = UrlCleaner.isGoodreadsUrl(contentUrl)
-            val isGenius = UrlCleaner.isGeniusUrl(contentUrl)
-            val isGitHub = UrlCleaner.isGitHubUrl(contentUrl)
-            val isStackOverflow = UrlCleaner.isStackOverflowUrl(contentUrl)
-            val isNYTimes = contentUrl.contains("nytimes.com")
-            val isInstagram = contentUrl.contains("instagram.com")
-            val isTumblr = UrlCleaner.isTumblrUrl(contentUrl)
-            val isImgur = UrlCleaner.isImgurUrl(contentUrl)
-            val isUrbanDictionary = UrlCleaner.isUrbanDictionaryUrl(contentUrl)
-            val isGoogleMaps = UrlCleaner.isGoogleMapsUrl(contentUrl)
-
-            val contentContainer = LinearLayout(context).apply {
-                orientation = LinearLayout.HORIZONTAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                background = createRippleBackground()
-                setPadding(8.dp(), 8.dp(), 8.dp(), 8.dp())
-                setOnClickListener { onItemClick(entry) }
-            }
-
-            val displayImage = when {
-                isTwitter -> R.drawable.ic_x_logo
-                isTikTok -> R.drawable.ic_tiktok_logo
-                isReddit -> R.drawable.ic_reddit_logo
-                isYouTube -> R.drawable.ic_youtube_logo
-                isMedium -> R.drawable.ic_medium_logo
-                isImdb -> R.drawable.ic_imdb_logo
-                isWikipedia -> R.drawable.ic_wikipedia_logo
-                isGoodreads -> R.drawable.ic_goodreads_logo
-                isGenius -> R.drawable.ic_genius_logo
-                isGitHub -> R.drawable.ic_github_logo
-                isStackOverflow -> R.drawable.ic_stackoverflow_logo
-                isNYTimes -> R.drawable.ic_nytimes_logo
-                isInstagram -> R.drawable.ic_instagram_logo
-                isTumblr -> R.drawable.ic_tumblr_logo
-                isImgur -> R.drawable.ic_imgur_logo
-                isUrbanDictionary -> R.drawable.ic_urbandictionary_logo
-                isGoogleMaps -> R.drawable.ic_google_maps_logo
-                else -> R.drawable.ic_generic_link
-            }
-
-            val imageView = android.widget.ImageView(context).apply {
-                layoutParams = FrameLayout.LayoutParams(40.dp(), 40.dp()).apply { gravity = Gravity.CENTER }
-                scaleType = android.widget.ImageView.ScaleType.CENTER_CROP
-                setImageResource(displayImage)
-                setColorFilter(getThemeColor(com.google.android.material.R.attr.colorOnSurface))
-            }
-
-            val imageCard = androidx.cardview.widget.CardView(context).apply {
-                radius = 16f
-                cardElevation = 0f
-                setCardBackgroundColor(android.graphics.Color.TRANSPARENT)
-                layoutParams = LinearLayout.LayoutParams(56.dp(), 56.dp()).apply { marginEnd = 16.dp() }
-                addView(imageView)
-            }
-            contentContainer.addView(imageCard)
-
-            val textLayout = LinearLayout(context).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT, 
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
-
-            val titleText = TextView(context).apply {
-                text = getDisplayTitle(entry)
-                textSize = 16f
-                setTypeface(null, android.graphics.Typeface.BOLD)
-                setTextColor(getThemeColor(android.R.attr.textColorPrimary))
-                maxLines = 1
-                ellipsize = android.text.TextUtils.TruncateAt.END
-                visibility = if (!getDisplayTitle(entry).isBlank()) android.view.View.VISIBLE else android.view.View.GONE
-            }
-            textLayout.addView(titleText)
-
-            val subtitleText = TextView(context).apply {
-                text = getDisplaySubtitle(entry)
-                textSize = 14f
-                setTextColor(getThemeColor(android.R.attr.textColorSecondary))
-                maxLines = 1
-                ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
-            }
-            textLayout.addView(subtitleText)
-            contentContainer.addView(textLayout)
-            container.addView(contentContainer)
-
-            val menuButton = android.widget.ImageButton(context).apply {
-                setImageResource(R.drawable.ic_more_vert)
-                background = createRippleBackground()
-                setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
-                setColorFilter(getThemeColor(android.R.attr.textColorSecondary))
-                setOnClickListener { onMenuClick(it, entry) }
-            }
-            container.addView(menuButton)
-        }
-    }
 
     private fun getDisplaySubtitle(entry: HistoryManager.HistoryEntry): String {
         val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
@@ -1494,6 +1330,18 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.dialog_clear_all_title))
             .setMessage(getString(R.string.dialog_clear_all_message))
             .setPositiveButton("Clear") { _, _ ->
+                // Immediate UI update to prevent any flashing from background jobs or stale data
+                // We hide the list instantly, then submit null to the adapter to clear it immediately
+                historyList.visibility = View.GONE
+                emptyStateGuide.visibility = View.VISIBLE
+                
+                // Clear adapter and recycler pool to be absolutely sure nothing is cached
+                historyAdapter.submitList(null)
+                historyList.recycledViewPool.clear()
+                
+                invalidateOptionsMenu()
+                updateCounterUI(emptyList())
+                
                 lifecycleScope.launch {
                     HistoryManager.clearHistory(this@MainActivity)
                     loadHistory()

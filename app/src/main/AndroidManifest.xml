@@ -66,7 +66,6 @@
                 <data android:host="www.twitter.com" />
                 <data android:host="x.com" />
                 <data android:host="www.x.com" />
-                <data android:host="t.co" />
 
                 <!-- Reddit -->
                 <data android:host="reddit.com" />

@@ -14,55 +14,56 @@ object UrlUnshortener {
      * Resolves a shortened URL to its final destination using HEAD requests to follow redirects.
      */
     suspend fun unshorten(url: String, resolveHtml: Boolean = true): String = withContext(Dispatchers.IO) {
-        if (!isShortenedUrl(url)) return@withContext url
+        var currentUrl = ensureProtocol(url)
+        if (!isShortenedUrl(currentUrl)) return@withContext currentUrl
+        
+        println("Sidestep: Unshortening $url")
+        var lastReferer: String? = null
         
         try {
-            var currentUrl = ensureProtocol(url)
             var hops = 0
-            val maxHops = 10
+            val maxHops = 10 // Increase max hops to 10 for more complex redirect chains
             
             while (hops < maxHops) {
+                // Efficiency check: if we're already on a full video/post page, don't keep unshortening
+                if (currentUrl.contains("/video/") || currentUrl.contains("/reels/") || currentUrl.contains("/watch?v=")) {
+                    break
+                }
+
                 val userAgent = if (currentUrl.contains("facebook.com")) {
                     "Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1"
                 } else {
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    // Standard mobile User-Agent
+                    "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
                 }
                 
-                val request = okhttp3.Request.Builder()
+                val requestBuilder = okhttp3.Request.Builder()
                     .url(currentUrl)
-                    .get() // Always use GET for better compatibility (e.g. tiny.cc, share.google)
+                    .get()
                     .header("User-Agent", userAgent)
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
                     .header("Accept-Language", "en-US,en;q=0.5")
-                    .build()
                 
                 val response = NetworkClient.client.newBuilder()
-                    .followRedirects(false)
+                    .followRedirects(true)
                     .build()
-                    .newCall(request)
+                    .newCall(requestBuilder.build())
                     .execute()
                 
-                if (response.code in 300..399) {
-                    val location = response.header("Location")
-                    if (location != null) {
-                        // Handle relative redirects
-                        currentUrl = if (location.startsWith("/")) {
-                            try {
-                                val uri = java.net.URI(currentUrl)
-                                "${uri.scheme}://${uri.host}$location"
-                            } catch (e: Exception) {
-                                location
-                            }
-                        } else {
-                            location
-                        }
-                        hops++
-                    } else {
-                        response.close()
-                        break
-                    }
-                } else if (response.code == 200 && isShortenedUrl(currentUrl)) {
-                    // Respect the resolveHtml flag
+                if (!response.isSuccessful) {
+                    response.close()
+                    break
+                }
+
+                // Update currentUrl to the final one after OkHttp followed redirects
+                val finalUrl = response.request.url.toString()
+                if (finalUrl != currentUrl) {
+                    println("Sidestep: Redirected to $finalUrl")
+                    currentUrl = finalUrl
+                }
+
+                // If we're at a 200 OK but still look like a shortened URL (interstitial/canonical), resolve HTML
+                if (response.code == 200 && isShortenedUrl(currentUrl)) {
                     if (!resolveHtml) {
                          response.close()
                          break
@@ -87,12 +88,11 @@ object UrlUnshortener {
                     response.close()
                     break
                 }
-                response.close()
             }
             currentUrl
         } catch (e: Exception) {
-            // If resolution fails, return original or last known URL
-            url
+            println("Sidestep: Unshortening error for $url: ${e.message}")
+            currentUrl
         }
     }
     
@@ -103,9 +103,14 @@ object UrlUnshortener {
      */
     internal fun parseHtmlRedirect(html: String): String? {
         // 1. Look for Meta Refresh
-        val metaRefreshPattern = """<meta\s+http-equiv=["']refresh["']\s+content=["']\d+;\s*url=([^"']+)["']""".toRegex(RegexOption.IGNORE_CASE)
-        val metaMatch = metaRefreshPattern.find(html)
-        if (metaMatch != null) return metaMatch.groupValues[1]
+        val metaRefreshPatterns = listOf(
+            """<meta\s+http-equiv=["']refresh["']\s+content=["']\d+;\s*url=([^"']+)["']""".toRegex(RegexOption.IGNORE_CASE),
+            """<meta\s+content=["']\d+;\s*url=([^"']+)["']\s+http-equiv=["']refresh["']""".toRegex(RegexOption.IGNORE_CASE)
+        )
+        for (pattern in metaRefreshPatterns) {
+            val match = pattern.find(html)
+            if (match != null) return match.groupValues[1]
+        }
 
         // 2. Look for og:url meta tag
         val ogUrlPatterns = listOf(
@@ -119,7 +124,7 @@ object UrlUnshortener {
             if (match != null) return match.groupValues[1]
         }
 
-        // 3. Look for canonical link tag - Handles both rel="canonical" href="..." and href="..." rel="canonical"
+        // 3. Look for canonical link tag
         val canonicalPatterns = listOf(
             """<link\s+[^>]*rel=["']canonical["'][^>]*href=["']([^"']+)["']""".toRegex(RegexOption.IGNORE_CASE),
             """<link\s+[^>]*href=["']([^"']+)["'][^>]*rel=["']canonical["']""".toRegex(RegexOption.IGNORE_CASE)
@@ -129,15 +134,13 @@ object UrlUnshortener {
             if (match != null) return match.groupValues[1]
         }
         
-        // Debug: try a very simple search if everything else fails
-        if (html.contains("rel=\"canonical\"", ignoreCase = true)) {
-             println("Debug: HTML contains rel=\"canonical\" but regex failed")
-        }
-        
-        // 4. Look for JavaScript redirection
+        // 4. Look for JavaScript redirection - handles various syntaxes
         val jsPatterns = listOf(
             """window\.location\.replace\(["']([^"']+)["']\)""".toRegex(RegexOption.IGNORE_CASE),
             """window\.location\.href\s*=\s*["']([^"']+)["']""".toRegex(RegexOption.IGNORE_CASE),
+            """location\.replace\(["']([^"']+)["']\)""".toRegex(RegexOption.IGNORE_CASE),
+            """location\.href\s*=\s*["']([^"']+)["']""".toRegex(RegexOption.IGNORE_CASE),
+            """window\[["']location["']\]\[["']replace["']\]\(["']([^"']+)["']\)""".toRegex(RegexOption.IGNORE_CASE),
             """redirectToUrl\(["']([^"']+)["']\)""".toRegex(RegexOption.IGNORE_CASE),
             """redirectToUrlAfterTimeout\(["']([^"']+)["']\s*,\s*\d+\)""".toRegex(RegexOption.IGNORE_CASE)
         )
@@ -161,7 +164,7 @@ object UrlUnshortener {
         // Fast path: Check known shorteners first
         val knownShorteners = listOf(
             "bit.ly", "bitly.com", "tinyurl.com", "goo.gl",
-            "vm.tiktok.com", "vt.tiktok.com", "youtu.be", "t.co",
+            "vm.tiktok.com", "vt.tiktok.com", "v.tiktok.com", "youtu.be", "t.co",
             "ow.ly", "is.gd", "rebrandly.com", "shorturl.at",
             "amzn.to", "shopify.link", "y2u.be", "fb.me",
             "apple.co", "lnkd.in", "share.google", "apple.news",
@@ -174,6 +177,9 @@ object UrlUnshortener {
         if (knownShorteners.any { lowerUrl.contains(it) }) {
             return true
         }
+        
+        // Always try to unshorten TikTok links regardless of heuristic
+        if (lowerUrl.contains("tiktok.com")) return true
         
         // Heuristic detection for unknown shorteners
         return isLikelyShortened(url)
@@ -228,7 +234,7 @@ object UrlUnshortener {
             }
             
             // Criterion 4: Known shortener patterns
-            val shortenerPatterns = listOf("/share/", "/p/", "/d/", "/s/", "/r/")
+            val shortenerPatterns = listOf("/share/", "/p/", "/d/", "/s/", "/r/", "/t/", "/link/")
             val hasPattern = shortenerPatterns.any { path.startsWith(it) }
             if (hasPattern) {
                 score++

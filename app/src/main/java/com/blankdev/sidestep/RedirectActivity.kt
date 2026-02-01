@@ -36,7 +36,7 @@ class RedirectActivity : AppCompatActivity() {
 
         val url = when {
             Intent.ACTION_VIEW == action && data != null -> data
-            Intent.ACTION_SEND == action && sharedText != null -> extractUrl(sharedText) ?: sharedText
+            Intent.ACTION_SEND == action && sharedText != null -> SettingsUtils.extractUrl(sharedText) ?: sharedText
             else -> null
         }
 
@@ -53,13 +53,6 @@ class RedirectActivity : AppCompatActivity() {
         }
     }
 
-    private fun extractUrl(text: String): String? {
-        val pattern = android.util.Patterns.WEB_URL
-        val matcher = pattern.matcher(text)
-        return if (matcher.find()) {
-            matcher.group()
-        } else null
-    }
 
     private fun processAndRedirect(url: String) {
         val appContext = applicationContext // Capture for coroutine usage
@@ -77,11 +70,11 @@ class RedirectActivity : AppCompatActivity() {
 
                 val unshortenedUrl = if (shouldUnshorten) {
                     try {
-                        kotlinx.coroutines.withTimeout(5000) {  // 5 second timeout
-                            UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
-                        }
-                    } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-                        sanitizedUrl  // Use original URL if timeout
+                        kotlinx.coroutines.withTimeout(10000) {  // 10 second timeout
+                             UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
+                         }
+                    } catch (e: Exception) {
+                        sanitizedUrl  // Use original URL if timeout/error
                     }
                 } else {
                     sanitizedUrl
@@ -122,7 +115,7 @@ class RedirectActivity : AppCompatActivity() {
                 val isImmediate = prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
                 
                 if (isImmediate) {
-                    if (shouldOpenInWebView(appContext, unshortenedUrl)) {
+                    if (SettingsUtils.shouldOpenInWebView(appContext, unshortenedUrl)) {
                         val webIntent = Intent(appContext, WebViewActivity::class.java).apply {
                             putExtra(WebViewActivity.EXTRA_URL, finalUrl)
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -181,51 +174,5 @@ class RedirectActivity : AppCompatActivity() {
     }
 
 
-    private fun shouldOpenInWebView(context: android.content.Context, unshortenedUrl: String): Boolean {
-        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-        
-        // Match domain handling in MainActivity/UrlCleaner
-        val isTwitter = UrlCleaner.isTwitterOrXUrl(unshortenedUrl)
-        val isReddit = UrlCleaner.isRedditUrl(unshortenedUrl)
-        val isYouTube = UrlCleaner.isYouTubeUrl(unshortenedUrl)
-        val isImdb = UrlCleaner.isImdbUrl(unshortenedUrl)
-        val isMedium = UrlCleaner.isMediumUrl(unshortenedUrl)
-        val isWikipedia = UrlCleaner.isWikipediaUrl(unshortenedUrl)
-        val isGoodreads = UrlCleaner.isGoodreadsUrl(unshortenedUrl)
-        val isGenius = UrlCleaner.isGeniusUrl(unshortenedUrl)
-        val isGitHub = UrlCleaner.isGitHubUrl(unshortenedUrl)
-        val isStackOverflow = UrlCleaner.isStackOverflowUrl(unshortenedUrl)
-
-        val isCleanOnly = when {
-            isTwitter -> prefs.getBoolean(SettingsActivity.KEY_TWITTER_CLEAN_ONLY, false)
-            isReddit -> prefs.getBoolean(SettingsActivity.KEY_REDDIT_CLEAN_ONLY, false)
-            isYouTube -> prefs.getBoolean(SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, false)
-            isImdb -> prefs.getBoolean(SettingsActivity.KEY_IMDB_CLEAN_ONLY, false)
-            isMedium -> prefs.getBoolean(SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, false)
-            isWikipedia -> prefs.getBoolean(SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, false)
-            isGoodreads -> prefs.getBoolean(SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, false)
-            isGenius -> prefs.getBoolean(SettingsActivity.KEY_GENIUS_CLEAN_ONLY, false)
-            isGitHub -> prefs.getBoolean(SettingsActivity.KEY_GITHUB_CLEAN_ONLY, false)
-            isStackOverflow -> prefs.getBoolean(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, false)
-            UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, false)
-            UrlCleaner.isGoogleMapsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)
-            else -> false
-        }
-
-        if (!isCleanOnly) return false
-
-        // Only open in WebView if we are the default handler for this domain
-        // to avoid the endless redirect loop that would happen if we sent a VIEW intent
-        return try {
-            val host = unshortenedUrl.toUri().host?.lowercase() ?: ""
-            isAppDefaultHandlerForDomain(context, unshortenedUrl)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    private fun isAppDefaultHandlerForDomain(context: android.content.Context, url: String): Boolean {
-        return SettingsUtils.checkDomain(context, url)
-    }
 
 }

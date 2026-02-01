@@ -204,6 +204,44 @@ object SettingsUtils {
 
     fun dp(context: Context, value: Int): Int = (value * context.resources.displayMetrics.density).toInt()
 
+    fun extractUrl(text: String): String? {
+        val pattern = android.util.Patterns.WEB_URL
+        val matcher = pattern.matcher(text)
+        return if (matcher.find()) {
+            matcher.group()
+        } else null
+    }
+
+    fun shouldOpenInWebView(context: Context, unshortenedUrl: String): Boolean {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        
+        val isCleanOnly = when {
+            UrlCleaner.isTwitterOrXUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_TWITTER_CLEAN_ONLY, false)
+            UrlCleaner.isRedditUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_REDDIT_CLEAN_ONLY, false)
+            UrlCleaner.isYouTubeUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, false)
+            UrlCleaner.isImdbUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_IMDB_CLEAN_ONLY, false)
+            UrlCleaner.isMediumUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, false)
+            UrlCleaner.isWikipediaUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, false)
+            UrlCleaner.isGoodreadsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, false)
+            UrlCleaner.isGeniusUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GENIUS_CLEAN_ONLY, false)
+            UrlCleaner.isGitHubUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GITHUB_CLEAN_ONLY, false)
+            UrlCleaner.isStackOverflowUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, false)
+            UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, false)
+            UrlCleaner.isGoogleMapsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)
+            else -> false
+        }
+        
+        if (!isCleanOnly) return false
+        
+        // If it's clean only, we only open in WebView if we are the default handler for this domain
+        // to avoid the endless redirect loop that would happen if we sent a VIEW intent
+        return try {
+            checkDomain(context, unshortenedUrl)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun fetchLatestInstances(activity: AppCompatActivity, type: String, onFetched: (List<AlternativeInstancesFetcher.Instance>) -> Unit) {
         activity.lifecycleScope.launch {
             val progressDialog = androidx.appcompat.app.AlertDialog.Builder(activity)
@@ -383,90 +421,40 @@ object SettingsUtils {
         }
 
         if (!appliedCustom) {
-            when {
-                UrlCleaner.isTwitterOrXUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_TWITTER_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_ALTERNATIVE_DOMAIN, SettingsActivity.DEFAULT_ALTERNATIVE_DOMAIN) ?: SettingsActivity.DEFAULT_ALTERNATIVE_DOMAIN
+            val domainMapping = listOf(
+                Pair({ UrlCleaner.isTwitterOrXUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_TWITTER_CLEAN_ONLY, Pair(SettingsActivity.KEY_ALTERNATIVE_DOMAIN, SettingsActivity.DEFAULT_ALTERNATIVE_DOMAIN))),
+                Pair({ UrlCleaner.isRedditUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_REDDIT_CLEAN_ONLY, Pair(SettingsActivity.KEY_REDDIT_DOMAIN, SettingsActivity.DEFAULT_REDDIT_DOMAIN))),
+                Pair({ UrlCleaner.isYouTubeUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, Pair(SettingsActivity.KEY_YOUTUBE_DOMAIN, SettingsActivity.DEFAULT_YOUTUBE_DOMAIN))),
+                Pair({ UrlCleaner.isImdbUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_IMDB_CLEAN_ONLY, Pair(SettingsActivity.KEY_IMDB_DOMAIN, SettingsActivity.DEFAULT_IMDB_DOMAIN))),
+                Pair({ UrlCleaner.isMediumUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, Pair(SettingsActivity.KEY_MEDIUM_DOMAIN, SettingsActivity.DEFAULT_MEDIUM_DOMAIN))),
+                Pair({ UrlCleaner.isWikipediaUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, Pair(SettingsActivity.KEY_WIKIPEDIA_DOMAIN, SettingsActivity.DEFAULT_WIKIPEDIA_DOMAIN))),
+                Pair({ UrlCleaner.isGoodreadsUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, Pair(SettingsActivity.KEY_GOODREADS_DOMAIN, SettingsActivity.DEFAULT_GOODREADS_DOMAIN))),
+                Pair({ UrlCleaner.isGeniusUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_GENIUS_CLEAN_ONLY, Pair(SettingsActivity.KEY_GENIUS_DOMAIN, SettingsActivity.DEFAULT_GENIUS_DOMAIN))),
+                Pair({ UrlCleaner.isGitHubUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_GITHUB_CLEAN_ONLY, Pair(SettingsActivity.KEY_GITHUB_DOMAIN, SettingsActivity.DEFAULT_GITHUB_DOMAIN))),
+                Pair({ UrlCleaner.isStackOverflowUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, Pair(SettingsActivity.KEY_STACKOVERFLOW_DOMAIN, SettingsActivity.DEFAULT_STACKOVERFLOW_DOMAIN))),
+                Pair({ UrlCleaner.isTumblrUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_TUMBLR_CLEAN_ONLY, Pair(SettingsActivity.KEY_TUMBLR_DOMAIN, SettingsActivity.DEFAULT_TUMBLR_DOMAIN))),
+                Pair({ UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, Pair(SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN))),
+                Pair({ UrlCleaner.isImgurUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_RIMGO_CLEAN_ONLY, Pair(SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN)))
+            )
+
+            for ((condition, settings) in domainMapping) {
+                if (condition()) {
+                    val (cleanOnlyKey, domainPrefs) = settings
+                    if (!prefs.getBoolean(cleanOnlyKey, false)) {
+                        val (domainKey, defaultDomain) = domainPrefs
+                        val domain = prefs.getString(domainKey, defaultDomain) ?: defaultDomain
                         redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
                     }
+                    return redirectUrl
                 }
-                UrlCleaner.isRedditUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_REDDIT_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_REDDIT_DOMAIN, SettingsActivity.DEFAULT_REDDIT_DOMAIN) ?: SettingsActivity.DEFAULT_REDDIT_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
+            }
+
+            // Special case for Google Maps as it doesn't just replace domain
+            if (UrlCleaner.isGoogleMapsUrl(unshortenedUrl)) {
+                if (!prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)) {
+                    redirectUrl = UrlCleaner.convertGoogleMapsToOsm(unshortenedUrl)
                 }
-                UrlCleaner.isYouTubeUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_YOUTUBE_DOMAIN, SettingsActivity.DEFAULT_YOUTUBE_DOMAIN) ?: SettingsActivity.DEFAULT_YOUTUBE_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isImdbUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_IMDB_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_IMDB_DOMAIN, SettingsActivity.DEFAULT_IMDB_DOMAIN) ?: SettingsActivity.DEFAULT_IMDB_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isMediumUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_MEDIUM_DOMAIN, SettingsActivity.DEFAULT_MEDIUM_DOMAIN) ?: SettingsActivity.DEFAULT_MEDIUM_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isWikipediaUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_WIKIPEDIA_DOMAIN, SettingsActivity.DEFAULT_WIKIPEDIA_DOMAIN) ?: SettingsActivity.DEFAULT_WIKIPEDIA_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isGoodreadsUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_GOODREADS_DOMAIN, SettingsActivity.DEFAULT_GOODREADS_DOMAIN) ?: SettingsActivity.DEFAULT_GOODREADS_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isGeniusUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_GENIUS_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_GENIUS_DOMAIN, SettingsActivity.DEFAULT_GENIUS_DOMAIN) ?: SettingsActivity.DEFAULT_GENIUS_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isGitHubUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_GITHUB_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_GITHUB_DOMAIN, SettingsActivity.DEFAULT_GITHUB_DOMAIN) ?: SettingsActivity.DEFAULT_GITHUB_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isStackOverflowUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_STACKOVERFLOW_DOMAIN, SettingsActivity.DEFAULT_STACKOVERFLOW_DOMAIN) ?: SettingsActivity.DEFAULT_STACKOVERFLOW_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isGoogleMapsUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)) {
-                        redirectUrl = UrlCleaner.convertGoogleMapsToOsm(unshortenedUrl)
-                    }
-                }
-                UrlCleaner.isTumblrUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_TUMBLR_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_TUMBLR_DOMAIN, SettingsActivity.DEFAULT_TUMBLR_DOMAIN) ?: SettingsActivity.DEFAULT_TUMBLR_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN) ?: SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
-                UrlCleaner.isImgurUrl(unshortenedUrl) -> {
-                    if (!prefs.getBoolean(SettingsActivity.KEY_RIMGO_CLEAN_ONLY, false)) {
-                        val domain = prefs.getString(SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN) ?: SettingsActivity.DEFAULT_RIMGO_DOMAIN
-                        redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, domain)
-                    }
-                }
+                return redirectUrl
             }
         }
         return redirectUrl

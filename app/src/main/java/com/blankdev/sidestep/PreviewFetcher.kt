@@ -41,9 +41,8 @@ object PreviewFetcher {
     
     private fun fetchViaDuckDuckGo(targetUrl: String): PreviewData? {
         try {
-            // Use the original URL to search, not the instance URL if possible, to get better results?
-            // Actually, searching the specific URL is best.
-            val query = java.net.URLEncoder.encode(targetUrl, "UTF-8")
+            // Wrap URL in quotes for exact match on DDG
+            val query = java.net.URLEncoder.encode("\"$targetUrl\"", "UTF-8")
             val searchUrl = "https://html.duckduckgo.com/html?q=$query"
             
             val request = okhttp3.Request.Builder()

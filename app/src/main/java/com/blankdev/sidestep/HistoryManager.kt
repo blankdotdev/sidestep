@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.core.content.edit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Manages URL processing history with configurable retention policies.
@@ -14,6 +16,8 @@ object HistoryManager {
     private const val PREFS_NAME = "url_history"
     private const val KEY_HISTORY = "history_list"
     private const val MAX_HISTORY_SIZE = 100
+    
+    private val mutex = Mutex()
     
     // History Retention Constants
     const val KEY_HISTORY_RETENTION = "history_retention"
@@ -44,46 +48,52 @@ object HistoryManager {
     /**
      * Add a pre-constructed HistoryEntry to history
      */
-    suspend fun addToHistory(context: Context, entry: HistoryEntry) = withContext(Dispatchers.IO) {
-        val history = getHistoryInternal(context).toMutableList()
-        val normalizedOriginal = UrlCleaner.ensureProtocol(entry.originalUrl)
-        
-        // Remove duplicate if exists by normalized original URL
-        // This ensures google.com and https://google.com are treated as the same entry
-        history.removeAll { UrlCleaner.ensureProtocol(it.originalUrl) == normalizedOriginal }
-        
-        // Add to front
-        history.add(0, entry)
-        
-        saveHistoryInternal(context, history)
+    suspend fun addToHistory(context: Context, entry: HistoryEntry) = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val history = getHistoryInternal(context).toMutableList()
+            val normalizedOriginal = UrlCleaner.ensureProtocol(entry.originalUrl)
+            
+            // Remove duplicate if exists by normalized original URL
+            // This ensures google.com and https://google.com are treated as the same entry
+            history.removeAll { UrlCleaner.ensureProtocol(it.originalUrl) == normalizedOriginal }
+            
+            // Add to front
+            history.add(0, entry)
+            
+            saveHistoryInternal(context, history)
+        }
     }
     
     /**
      * Update an existing entry (e.g. with preview data) without changing its position
      */
-    suspend fun updateEntry(context: Context, updatedEntry: HistoryEntry) = withContext(Dispatchers.IO) {
-        val history = getHistoryInternal(context).toMutableList()
-        val index = history.indexOfFirst { it.timestamp == updatedEntry.timestamp && it.originalUrl == updatedEntry.originalUrl }
-        
-        if (index != -1) {
-            history[index] = updatedEntry
-            saveHistoryInternal(context, history)
+    suspend fun updateEntry(context: Context, updatedEntry: HistoryEntry) = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val history = getHistoryInternal(context).toMutableList()
+            val index = history.indexOfFirst { it.timestamp == updatedEntry.timestamp && it.originalUrl == updatedEntry.originalUrl }
+            
+            if (index != -1) {
+                history[index] = updatedEntry
+                saveHistoryInternal(context, history)
+            }
         }
     }
     
     /**
      * Get history list, sorted by latest first
      */
-    suspend fun getHistory(context: Context): List<HistoryEntry> = withContext(Dispatchers.IO) {
-        getHistoryInternal(context)
+    suspend fun getHistory(context: Context): List<HistoryEntry> = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            getHistoryInternal(context)
+        }
     }
 
     /**
      * Synchronous version of getHistory for legacy support or strict UI requirements.
      * WARNING: This performs IO on the calling thread. Avoid calling on Main thread.
      */
-    fun getHistorySync(context: Context): List<HistoryEntry> {
-        return getHistoryInternal(context)
+    fun getHistorySync(context: Context): List<HistoryEntry> = synchronized(this) {
+        getHistoryInternal(context)
     }
     
     private fun getHistoryInternal(context: Context): List<HistoryEntry> {
@@ -132,6 +142,7 @@ object HistoryManager {
                 // Determine if we should migrate immediately
                 if (legacyList.isNotEmpty()) {
                     saveHistoryInternal(context, legacyList) // Migrate to JSON
+                    prefs.edit(commit = true) { remove("history") } // Purge legacy key forever
                 }
                 legacyList
             } catch (e2: Exception) {
@@ -168,60 +179,75 @@ object HistoryManager {
         }
         
         val prefs = getPrefs(context)
-        prefs.edit { putString(KEY_HISTORY, jsonArray.toString()) }
+        prefs.edit(commit = true) { putString(KEY_HISTORY, jsonArray.toString()) }
     }
     
     /**
      * Remove a specific entry from history
      */
-    suspend fun removeFromHistory(context: Context, entry: HistoryEntry) = withContext(Dispatchers.IO) {
-        val history = getHistoryInternal(context).toMutableList()
-        history.removeAll { it.originalUrl == entry.originalUrl && it.timestamp == entry.timestamp }
-        saveHistoryInternal(context, history)
+    suspend fun removeFromHistory(context: Context, entry: HistoryEntry) = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val history = getHistoryInternal(context).toMutableList()
+            history.removeAll { it.originalUrl == entry.originalUrl && it.timestamp == entry.timestamp }
+            saveHistoryInternal(context, history)
+        }
     }
     
     /**
      * Clear all history
      */
-    suspend fun clearHistory(context: Context) = withContext(Dispatchers.IO) {
-        val prefs = getPrefs(context)
-        prefs.edit { remove(KEY_HISTORY) }
+    suspend fun clearHistory(context: Context) = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val prefs = getPrefs(context)
+            prefs.edit(commit = true) { 
+                remove(KEY_HISTORY)
+                remove("history") // Also clear legacy key to prevent resurrection
+            }
+        }
     }
     
     /**
      * Apply history retention policy
      */
-    suspend fun applyRetentionPolicy(context: Context) = withContext(Dispatchers.IO) {
-        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-        val retentionMode = prefs.getString(KEY_HISTORY_RETENTION, DEFAULT_RETENTION_MODE) ?: DEFAULT_RETENTION_MODE
-        
-        when (retentionMode) {
-            "never" -> clearHistory(context)
-            "forever" -> { /* Do nothing */ }
-            "auto" -> {
-                val days = prefs.getString(KEY_HISTORY_DAYS, DEFAULT_HISTORY_DAYS.toString())?.toIntOrNull() ?: DEFAULT_HISTORY_DAYS
-                val items = prefs.getString(KEY_HISTORY_ITEMS, DEFAULT_HISTORY_ITEMS.toString())?.toIntOrNull() ?: DEFAULT_HISTORY_ITEMS
-                
-                val history = getHistoryInternal(context).toMutableList()
-                var changed = false
-                
-                // Filter by days
-                val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
-                if (history.any { it.timestamp < cutoffTime }) {
-                    history.removeAll { it.timestamp < cutoffTime }
-                    changed = true
+    suspend fun applyRetentionPolicy(context: Context) = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+            val retentionMode = prefs.getString(KEY_HISTORY_RETENTION, DEFAULT_RETENTION_MODE) ?: DEFAULT_RETENTION_MODE
+            
+            when (retentionMode) {
+                "never" -> {
+                    val hPrefs = getPrefs(context)
+                    hPrefs.edit(commit = true) { 
+                        remove(KEY_HISTORY)
+                        remove("history") // Also clear legacy key
+                    }
                 }
-                
-                // Filter by items
-                if (history.size > items) {
-                    val trimmed = history.take(items)
-                    history.clear()
-                    history.addAll(trimmed)
-                    changed = true
-                }
-                
-                if (changed) {
-                    saveHistoryInternal(context, history)
+                "forever" -> { /* Do nothing */ }
+                "auto" -> {
+                    val days = prefs.getString(KEY_HISTORY_DAYS, DEFAULT_HISTORY_DAYS.toString())?.toIntOrNull() ?: DEFAULT_HISTORY_DAYS
+                    val items = prefs.getString(KEY_HISTORY_ITEMS, DEFAULT_HISTORY_ITEMS.toString())?.toIntOrNull() ?: DEFAULT_HISTORY_ITEMS
+                    
+                    val history = getHistoryInternal(context).toMutableList()
+                    var changed = false
+                    
+                    // Filter by days
+                    val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
+                    if (history.any { it.timestamp < cutoffTime }) {
+                        history.removeAll { it.timestamp < cutoffTime }
+                        changed = true
+                    }
+                    
+                    // Filter by items
+                    if (history.size > items) {
+                        val trimmed = history.take(items)
+                        history.clear()
+                        history.addAll(trimmed)
+                        changed = true
+                    }
+                    
+                    if (changed) {
+                        saveHistoryInternal(context, history)
+                    }
                 }
             }
         }
