@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.5] - 2026-01-31
+
+### Fixed
+- Improved TikTok redirection and unshortening resilience.
+- Restored preview title extraction for various news sites via optimized DuckDuckGo search.
+- Refactored unshortening logic to use optimized native redirects.
+- Improved error recovery: preserves unshortening progress on failures.
+- Enhanced JavaScript and HTML redirect detection.
+- Cleaned up history UI to prevent flashing of old items.
+- Added Mutex synchronization to `HistoryManager` to prevent race conditions.
+- Removed `t.co` from the app choice list (unshortening already handles it).
+
 ## [1.1.4] - 2026-01-30
 
 ### Fixed
