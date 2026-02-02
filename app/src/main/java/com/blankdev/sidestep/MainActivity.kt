@@ -683,33 +683,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 val redirectUrl = SettingsUtils.resolveTargetUrl(this@MainActivity, cleaned, unshortenedUrl)
 
-                // Step 4: Save to History (Background) - Move before navigation to ensure recording even if loop break occurs
-                val entry = HistoryManager.HistoryEntry(
-                    originalUrl = url,
-                    cleanedUrl = cleaned,
-                    processedUrl = redirectUrl,
-                    timestamp = System.currentTimeMillis(),
-                    title = initialTitle,
-                    unshortenedUrl = unshortenedUrl
-                )
-                
-                if (!skipHistoryUpdate) {
-                    // Note: HistoryManager functions now handle Dispatchers.IO internally
-                    HistoryManager.addToHistory(this@MainActivity, entry)
-                    HistoryManager.applyRetentionPolicy(this@MainActivity)
-                    
-                    // Trigger preview fetch immediately after saving
-                    if (PreferenceManager.getDefaultSharedPreferences(this@MainActivity).getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE) != "never") {
-                        val savedEntry = HistoryManager.getHistory(this@MainActivity).firstOrNull { 
-                            it.originalUrl == url && it.timestamp == entry.timestamp 
-                        }
-                        if (savedEntry != null) {
-                            fetchPreview(savedEntry)
-                        }
-                    }
-                }
-
                 // Step 5: Open URL (Respect Immediate Navigation)
+                var wasNavigated = false
                 try {
                     if (isDestroyed || isFinishing) return@launch
                     
@@ -718,7 +693,6 @@ class MainActivity : AppCompatActivity() {
                     if (isImmediate) {
                         val finalRedirectUrl = UrlCleaner.ensureProtocol(redirectUrl)
                         
-                        // Determine if we should use in-app WebView
                         // Determine if we should use in-app WebView
                         if (SettingsUtils.shouldOpenInWebView(this@MainActivity, unshortenedUrl)) {
                             val webIntent = Intent(this@MainActivity, WebViewActivity::class.java).apply {
@@ -755,15 +729,44 @@ class MainActivity : AppCompatActivity() {
                         
                         // Increment sidestep counter ONLY if navigating
                         incrementSidestepCount()
+                        wasNavigated = true
                     } else {
                         Toast.makeText(this@MainActivity, "Link processed and added to history", Toast.LENGTH_SHORT).show()
                     }
-                    
-                    updateCounterUI(HistoryManager.getHistory(this@MainActivity))
                 } catch (e: Exception) {
                     if (!isDestroyed && !isFinishing) {
                         Toast.makeText(this@MainActivity, "Could not open URL: ${e.message}", Toast.LENGTH_LONG).show()
                     }
+                }
+
+                // Step 4: Save to History (Background) - Moved after navigation to prioritize speed
+                if (!skipHistoryUpdate) {
+                    val entry = HistoryManager.HistoryEntry(
+                        originalUrl = url,
+                        cleanedUrl = cleaned,
+                        processedUrl = redirectUrl,
+                        timestamp = System.currentTimeMillis(),
+                        title = initialTitle,
+                        unshortenedUrl = unshortenedUrl
+                    )
+                    
+                    // Note: HistoryManager functions now handle Dispatchers.IO internally
+                    HistoryManager.addToHistory(this@MainActivity, entry)
+                    HistoryManager.applyRetentionPolicy(this@MainActivity)
+                    
+                    // Trigger preview fetch immediately after saving
+                    if (PreferenceManager.getDefaultSharedPreferences(this@MainActivity).getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE) != "never") {
+                        val savedEntry = HistoryManager.getHistory(this@MainActivity).firstOrNull { 
+                            it.originalUrl == url && it.timestamp == entry.timestamp 
+                        }
+                        if (savedEntry != null) {
+                            fetchPreview(savedEntry)
+                        }
+                    }
+                }
+
+                if (!isDestroyed && !isFinishing) {
+                    updateCounterUI(HistoryManager.getHistory(this@MainActivity))
                 }
 
                 // Step 6: Handle UI cleanup

@@ -90,29 +90,9 @@ class RedirectActivity : AppCompatActivity() {
                 val redirectUrl = SettingsUtils.resolveTargetUrl(appContext, cleaned, unshortenedUrl)
                 val finalUrl = UrlCleaner.ensureProtocol(redirectUrl)
 
-                // Step 3: Save to History (Background)
-                withContext(Dispatchers.IO) {
-                    val entry = HistoryManager.HistoryEntry(
-                        originalUrl = url,
-                        cleanedUrl = cleaned,
-                        processedUrl = finalUrl,
-                        timestamp = System.currentTimeMillis(),
-                        unshortenedUrl = unshortenedUrl,
-                        isPreviewFetched = false
-                    )
-                    HistoryManager.addToHistory(appContext, entry)
-                    HistoryManager.applyRetentionPolicy(appContext)
-                    
-                    // Update global count
-                    val currentCount = prefs.getLong("sidestep_count", 0L)
-                    prefs.edit()
-                        .putLong("sidestep_count", currentCount + 1)
-                        .putBoolean("has_processed_url", true)
-                        .apply()
-                }
-
-                // Step 4: Perform Redirect
+                // Step 4: Perform Redirect - Priority 1
                 val isImmediate = prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
+                var wasNavigated = false
                 
                 if (isImmediate) {
                     if (SettingsUtils.shouldOpenInWebView(appContext, unshortenedUrl)) {
@@ -148,12 +128,36 @@ class RedirectActivity : AppCompatActivity() {
                             appContext.startActivity(redirectIntent)
                         }
                     }
+                    wasNavigated = true
                 } else {
                     // Start MainActivity to show history
                     val mainIntent = Intent(appContext, MainActivity::class.java).apply {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     }
                     appContext.startActivity(mainIntent)
+                }
+
+                // Step 3: Save to History (Background) - Priority 2
+                withContext(Dispatchers.IO) {
+                    val entry = HistoryManager.HistoryEntry(
+                        originalUrl = url,
+                        cleanedUrl = cleaned,
+                        processedUrl = finalUrl,
+                        timestamp = System.currentTimeMillis(),
+                        unshortenedUrl = unshortenedUrl,
+                        isPreviewFetched = false
+                    )
+                    HistoryManager.addToHistory(appContext, entry)
+                    HistoryManager.applyRetentionPolicy(appContext)
+                    
+                    // Update global count
+                    if (wasNavigated) {
+                        val currentCount = prefs.getLong("sidestep_count", 0L)
+                        prefs.edit()
+                            .putLong("sidestep_count", currentCount + 1)
+                            .putBoolean("has_processed_url", true)
+                            .apply()
+                    }
                 }
 
             } catch (e: Exception) {

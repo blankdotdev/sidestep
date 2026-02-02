@@ -1,9 +1,10 @@
 # Changelog
 
-## [1.1.6] - 2026-02-01
+## [1.1.7] - 2026-02-01
 
-- Improved platform detection from URLs and enhanced preview reliability for multiple domains.
-- Updated app icons and standardized UI text labels for a more consistent experience.
+- Optimized URL processing priority: navigation to cleaned URLs now occurs before background history and metadata operations for improved redirection speed.
+
+## [1.1.6] - 2026-02-01
 
 ## [1.1.5] - 2026-01-31
 
