@@ -1,10 +1,13 @@
-# Changelog
-
 ## [1.1.7] - 2026-02-01
 
-- Optimized URL processing priority: navigation to cleaned URLs now occurs before background history and metadata operations for improved redirection speed.
+### Added
+- Resilient URL preview fetching supporting both DuckDuckGo HTML and Lite versions.
+- Robust mobile headers for DuckDuckGo requests to avoid bot detection and improve reliability on physical devices.
+- Internal debug logging for URL processing and preview fetching.
 
-## [1.1.6] - 2026-02-01
+### Improved
+- Optimized URL processing priority: navigation to cleaned URLs now occurs before background history and metadata operations for improved redirection speed.
+- Elegant, non-hardcoded service name extraction for generic brand and subdomain identification.
 
 ## [1.1.5] - 2026-01-31
 
