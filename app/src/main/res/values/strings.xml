@@ -82,7 +82,7 @@
     <string name="toast_original_copied">Original URL copied</string>
     <string name="toast_unshortened_copied">Unshortened URL copied</string>
     <string name="toast_cleaned_copied">Cleaned URL copied</string>
-    <string name="dialog_clear_all_title">Clear All</string>
+    <string name="dialog_clear_all_title">Clear all</string>
     <string name="dialog_clear_all_message">Are you sure?</string>
     <string name="toast_history_cleared">History cleared</string>
     <string name="toast_item_removed">Item removed</string>

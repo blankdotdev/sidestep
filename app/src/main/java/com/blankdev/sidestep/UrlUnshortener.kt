@@ -18,7 +18,6 @@ object UrlUnshortener {
         if (!isShortenedUrl(currentUrl)) return@withContext currentUrl
         
         println("Sidestep: Unshortening $url")
-        var lastReferer: String? = null
         
         try {
             var hops = 0

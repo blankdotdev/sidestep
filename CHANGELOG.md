@@ -1,10 +1,13 @@
 # Changelog
 
+## [1.1.6] - 2026-02-01
+
+- Improved platform detection from URLs and enhanced preview reliability for multiple domains.
+- Updated app icons and standardized UI text labels for a more consistent experience.
+
 ## [1.1.5] - 2026-01-31
 
 ### Fixed
-- Improved TikTok redirection and unshortening resilience.
-- Restored preview title extraction for various news sites via optimized DuckDuckGo search.
 - Refactored unshortening logic to use optimized native redirects.
 - Improved error recovery: preserves unshortening progress on failures.
 - Enhanced JavaScript and HTML redirect detection.

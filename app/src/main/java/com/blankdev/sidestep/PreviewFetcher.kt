@@ -41,8 +41,8 @@ object PreviewFetcher {
     
     private fun fetchViaDuckDuckGo(targetUrl: String): PreviewData? {
         try {
-            // Wrap URL in quotes for exact match on DDG
-            val query = java.net.URLEncoder.encode("\"$targetUrl\"", "UTF-8")
+            // Searching and matching of exact URLs is better without quotes for many domains like Yahoo and Grayzone
+            val query = java.net.URLEncoder.encode(targetUrl, "UTF-8")
             val searchUrl = "https://html.duckduckgo.com/html?q=$query"
             
             val request = okhttp3.Request.Builder()

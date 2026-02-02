@@ -124,6 +124,11 @@ class UrlCleanerTest {
         assertEquals("Bitly", UrlCleaner.getServiceName("https://bit.ly/xyz"))
         assertEquals("TinyURL", UrlCleaner.getServiceName("https://tinyurl.com/123"))
         assertEquals("Rebrandly", UrlCleaner.getServiceName("https://rebrandly.com/foo"))
+        assertEquals("Yahoo Finance", UrlCleaner.getServiceName("https://finance.yahoo.com/news/article.html"))
+        assertEquals("The Grayzone", UrlCleaner.getServiceName("https://thegrayzone.com/2026/01/29/article/"))
+        assertEquals("Google News", UrlCleaner.getServiceName("https://news.google.com/home"))
+        assertEquals("The Verge", UrlCleaner.getServiceName("https://theverge.com/tech"))
+        assertEquals("Google", UrlCleaner.getServiceName("https://google.co.uk"))
     }
 
     @Test

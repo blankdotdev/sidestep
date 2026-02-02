@@ -245,7 +245,7 @@ object SettingsUtils {
     fun fetchLatestInstances(activity: AppCompatActivity, type: String, onFetched: (List<AlternativeInstancesFetcher.Instance>) -> Unit) {
         activity.lifecycleScope.launch {
             val progressDialog = androidx.appcompat.app.AlertDialog.Builder(activity)
-                .setTitle("Fetching Instances")
+                .setTitle("Fetching instances")
                 .setMessage("Getting healthy alternative frontends...")
                 .setCancelable(false)
                 .create()
@@ -331,7 +331,7 @@ object SettingsUtils {
         }.map { it as CharSequence }.toTypedArray()
 
         val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
-            .setTitle("Select Instance")
+            .setTitle("Select instance")
             .setItems(displayList) { _, which ->
                 val selected = instances[which]
                 targetInput.setText(selected.domain)

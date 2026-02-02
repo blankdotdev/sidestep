@@ -100,7 +100,7 @@ class SettingsCustomRedirectsActivity : AppCompatActivity() {
             // Handle Delete
             btnDelete.setOnClickListener {
                 AlertDialog.Builder(this)
-                    .setTitle("Delete Redirect")
+                    .setTitle("Delete redirect")
                     .setMessage("Are you sure you want to delete this redirect?")
                     .setPositiveButton("Delete") { _, _ ->
                         deleteCustomRedirect(redirect.id)
@@ -140,7 +140,7 @@ class SettingsCustomRedirectsActivity : AppCompatActivity() {
         dialogView.addView(infoText)
 
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle("Custom Redirects")
+            .setTitle("Custom redirects")
             .setView(dialogView)
             .setPositiveButton("Got it", null)
             .show()
@@ -159,7 +159,7 @@ class SettingsCustomRedirectsActivity : AppCompatActivity() {
         }
 
         com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle(if (existing == null) "Add Custom Redirect" else "Edit Custom Redirect")
+            .setTitle(if (existing == null) "Add custom redirect" else "Edit custom redirect")
             .setView(dialogView)
             .setPositiveButton("Save") { _, _ ->
                 val original = inputOriginal.text?.toString()?.trim() ?: ""
@@ -174,7 +174,7 @@ class SettingsCustomRedirectsActivity : AppCompatActivity() {
                 // Validation for collisions
                 if (checkCollision(original, existing?.id)) {
                     com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-                        .setTitle("Collision Detected")
+                        .setTitle("Collision detected")
                         .setMessage("A redirect for this domain already exists or conflicts with a built-in rule. Do you want to proceed and override?")
                         .setPositiveButton("Proceed") { _, _ ->
                             saveCustomRedirect(CustomRedirect(existing?.id ?: java.util.UUID.randomUUID().toString(), original, redirect, isAppend, existing?.isEnabled ?: true))

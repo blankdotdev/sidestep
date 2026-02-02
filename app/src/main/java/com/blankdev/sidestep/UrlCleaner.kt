@@ -623,11 +623,11 @@ object UrlCleaner {
             host.contains("tumblr.com") -> "Tumblr"
             host.contains("urbandictionary.com") -> "UrbanDictionary"
             host.contains("imgur.com") -> "Imgur"
-            host.contains("msn.com") -> "MSN"
             host.contains("spotify.com") -> "Spotify"
             host.contains("podcasts.apple.com") -> "Apple Podcasts"
             else -> {
-                var cleanHost = host
+                // Smart Generic Fallback
+                var cleanHost = host.lowercase(Locale.getDefault())
                 val prefixes = listOf("www.", "m.", "mobile.")
                 for (prefix in prefixes) {
                     if (cleanHost.startsWith(prefix)) {
@@ -635,14 +635,32 @@ object UrlCleaner {
                     }
                 }
                 
-                val dotIndex = cleanHost.lastIndexOf('.')
-                val name = if (dotIndex > 0) cleanHost.substring(0, dotIndex) else cleanHost
+                val parts = cleanHost.split(".")
+                if (parts.size < 2) return cleanHost.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+
+                // Determine TLD length (e.g., .com vs .co.uk)
+                val tldCount = if (parts.size >= 3 && 
+                                   parts.last().length <= 3 && 
+                                   parts[parts.size - 2].let { it == "co" || it == "com" || it == "net" || it == "org" || it.length <= 2 }) 2 else 1
                 
-                if (name.isNotEmpty()) {
-                    name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                val nameParts = parts.dropLast(tldCount)
+                if (nameParts.isEmpty()) return "Link"
+
+                // Subdomain Swap (e.g. finance.yahoo -> Yahoo Finance)
+                val processedParts = if (nameParts.size >= 2) {
+                    nameParts.reversed()
                 } else {
-                    "Link"
+                    nameParts
                 }
+
+                processedParts.joinToString(" ") { part ->
+                    // Heuristic for "The" prefix (limit to common news/blog pattern to avoid over-splitting words like "theory")
+                    if (part.startsWith("the") && part.length > 5) {
+                        "The " + part.substring(3).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                    } else {
+                        part.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                    }
+                }.trim()
             }
         }
     }

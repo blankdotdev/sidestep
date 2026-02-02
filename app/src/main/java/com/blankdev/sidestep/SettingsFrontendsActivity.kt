@@ -206,7 +206,7 @@ class SettingsFrontendsActivity : AppCompatActivity() {
     private fun validateCleanOnlySelection(domain: String): Boolean {
         if (SettingsUtils.isAppDefaultHandlerForDomain(this, domain)) {
             AlertDialog.Builder(this)
-                .setTitle("In-App View Enabled")
+                .setTitle("In-app view enabled")
                 .setMessage("Since Sidestep is the default handler for $domain, selecting 'Clean only' will open these links in a secure in-app browser to prevent redirect loops.")
                 .setPositiveButton("Got it", null)
                 .show()
