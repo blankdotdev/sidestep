@@ -25,7 +25,7 @@ jobs:
         run: detekt --input . --config config/detekt/detekt.yml --build-upon-default-config --report sarif:detekt.sarif
 
       - name: Upload SARIF report
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: success() || failure()
         with:
           sarif_file: detekt.sarif
