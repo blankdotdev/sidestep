@@ -1,3 +1,8 @@
+## [1.1.9] - 2026-02-02
+
+### Security
+- Fixed multiple Polynomial regular expression (ReDoS) vulnerabilities in `AlternativeInstancesFetcher`.
+
 ## [1.1.8] - 2026-02-02
 
 - Added monochrome app icon for Android themed icons.
