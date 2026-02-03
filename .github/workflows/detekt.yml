@@ -1,0 +1,23 @@
+name: Detekt
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  detekt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Detekt
+        uses: detekt/detekt-action@v1.23.1
+        with:
+          config: config/detekt/detekt.yml # We will create a default config or use default
+          build_upon_default_config: true
