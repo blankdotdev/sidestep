@@ -119,6 +119,12 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun testIsTwitterOrXUrl_vxtwitter() {
+        assertTrue(UrlCleaner.isTwitterOrXUrl("https://vxtwitter.com/user"))
+        assertTrue(UrlCleaner.isTwitterOrXUrl("https://fxtwitter.com/user"))
+    }
+
+    @Test
     fun testGetServiceName() {
         assertEquals("Apple News", UrlCleaner.getServiceName("https://apple.news/asm"))
         assertEquals("Bitly", UrlCleaner.getServiceName("https://bit.ly/xyz"))
@@ -129,6 +135,22 @@ class UrlCleanerTest {
         assertEquals("Google News", UrlCleaner.getServiceName("https://news.google.com/home"))
         assertEquals("The Verge", UrlCleaner.getServiceName("https://theverge.com/tech"))
         assertEquals("Google", UrlCleaner.getServiceName("https://google.co.uk"))
+        assertEquals("Twitter", UrlCleaner.getServiceName("https://vxtwitter.com/user"))
+        assertEquals("Twitter", UrlCleaner.getServiceName("https://fxtwitter.com/user"))
+    }
+
+    @Test
+    fun testGetServiceName_improvedHeuristics() {
+        assertEquals("Scientific American", UrlCleaner.getServiceName("https://scientificamerican.com/article/123"))
+        assertEquals("Popular Mechanics", UrlCleaner.getServiceName("https://popularmechanics.com/tech/123"))
+        assertEquals("Washington Post", UrlCleaner.getServiceName("https://washingtonpost.com/politics/123"))
+        assertEquals("USA Today", UrlCleaner.getServiceName("https://usatoday.com/story/123"))
+        assertEquals("NY Times", UrlCleaner.getServiceName("https://nytimes.com/2024/02/02/world/europe/123"))
+        assertEquals("New Yorker", UrlCleaner.getServiceName("https://newyorker.com/magazine/123"))
+        assertEquals("The Atlantic", UrlCleaner.getServiceName("https://theatlantic.com/ideas/123"))
+        assertEquals("The Guardian", UrlCleaner.getServiceName("https://theguardian.com/world/123"))
+        assertEquals("WSJ", UrlCleaner.getServiceName("https://wsj.com/articles/123"))
+        assertEquals("BBC News", UrlCleaner.getServiceName("https://bbcnews.com/123"))
     }
 
     @Test
@@ -342,5 +364,12 @@ class UrlCleanerTest {
         assertFalse(result.contains("_r="))
         assertFalse(result.contains("_t="))
         assertEquals("https://www.tiktok.com/@whitewoodmac/video/7600787341246090518", result)
+    }
+
+    @Test
+    fun testCleanUrl_vxtwitter() {
+        val url = "https://vxtwitter.com/user/status/123?s=20"
+        val clean = UrlCleaner.cleanUrl(url)
+        assertEquals("https://vxtwitter.com/user/status/123", clean)
     }
 }

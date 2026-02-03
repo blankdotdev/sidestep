@@ -322,7 +322,8 @@ object UrlCleaner {
     fun isTwitterOrXUrl(url: String?): Boolean {
         if (url == null) return false
         val host = getHost(url)
-        return host.contains("twitter.com") || host.contains("x.com")
+        return host.contains("twitter.com") || host.contains("x.com") || 
+               host.contains("vxtwitter.com") || host.contains("fxtwitter.com")
     }
 
     /**
@@ -594,7 +595,8 @@ object UrlCleaner {
         
         return when {
             host.contains("youtube.com") || host.contains("youtu.be") -> "YouTube"
-            host.contains("twitter.com") || host.contains("x.com") -> "Twitter"
+            host.contains("twitter.com") || host.contains("x.com") || 
+            host.contains("vxtwitter.com") || host.contains("fxtwitter.com") -> "Twitter"
             host.contains("tiktok.com") -> "TikTok"
             host.contains("reddit.com") || host.contains("redd.it") -> "Reddit"
             host.contains("imdb.com") -> "IMDb"
@@ -607,7 +609,6 @@ object UrlCleaner {
             host.contains("instagram.com") -> "Instagram"
             host.contains("facebook.com") -> "Facebook"
             host.contains("amazon") -> "Amazon"
-            host.contains("nytimes.com") -> "NYTimes"
             host.contains("apple.news") || host.contains("news.apple.com") -> "Apple News"
             host.contains("bitly.com") || host.contains("bit.ly") -> "Bitly"
             host.contains("tinyurl.com") -> "TinyURL"
@@ -646,17 +647,60 @@ object UrlCleaner {
                 val nameParts = parts.dropLast(tldCount)
                 if (nameParts.isEmpty()) return "Link"
 
-                // Subdomain Swap (e.g. finance.yahoo -> Yahoo Finance)
-                val processedParts = if (nameParts.size >= 2) {
-                    nameParts.reversed()
-                } else {
-                    nameParts
+                // Extract the main name (join parts if multiple subdomains but usually we want the last one before TLD)
+                var mainName = nameParts.last().lowercase(Locale.getDefault())
+                
+                // Heuristic 1: Media Suffixes (e.g., washingtonpost -> Washington Post)
+                val mediaSuffixes = listOf(
+                    "post", "times", "today", "journal", "american", "mechanics", 
+                    "review", "digest", "gazette", "herald", "tribune", "observer",
+                    "insider", "weekly", "daily", "monthly", "report", "news", "yorker",
+                    "atlantic", "guardian", "independent", "standard", "express"
+                )
+                
+                for (suffix in mediaSuffixes) {
+                    if (mainName.endsWith(suffix) && mainName != suffix) {
+                        val prefixPart = mainName.substring(0, mainName.length - suffix.length)
+                        
+                        // Handle common acronyms in prefix (e.g., usa, ny)
+                        val formattedPrefix = when (prefixPart) {
+                            "usa" -> "USA"
+                            "ny" -> "NY"
+                            "wsj" -> "WSJ"
+                            "bbc" -> "BBC"
+                            "npr" -> "NPR"
+                            "mit" -> "MIT"
+                            else -> prefixPart.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                        }
+                        
+                        val formattedSuffix = suffix.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                        mainName = "$formattedPrefix $formattedSuffix"
+                        break
+                    }
                 }
 
-                processedParts.joinToString(" ") { part ->
-                    // Heuristic for "The" prefix (limit to common news/blog pattern to avoid over-splitting words like "theory")
-                    if (part.startsWith("the") && part.length > 5) {
-                        "The " + part.substring(3).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                // Heuristic 2: Subdomain Swap (e.g. finance.yahoo -> Yahoo Finance)
+                if (mainName == nameParts.last().lowercase(Locale.getDefault()) && nameParts.size >= 2) {
+                    val reversed = nameParts.reversed()
+                    return reversed.joinToString(" ") { part ->
+                         val lower = part.lowercase(Locale.getDefault())
+                         when {
+                             lower == "usa" -> "USA"
+                             lower == "ny" -> "NY"
+                             lower.startsWith("the") && lower.length > 5 -> "The " + lower.substring(3).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                             else -> part.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                         }
+                    }.trim()
+                }
+
+                // Final formatting for single main name or already split name
+                val finalParts = mainName.split(" ")
+                return finalParts.joinToString(" ") { part ->
+                    val lower = part.lowercase(Locale.getDefault())
+                    if (lower.startsWith("the") && lower.length > 5) {
+                        "The " + lower.substring(3).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                    } else if (setOf("usa", "ny", "wsj", "bbc", "npr", "mit").contains(lower)) {
+                        lower.uppercase(Locale.getDefault())
                     } else {
                         part.replaceFirstChar { it.titlecase(Locale.getDefault()) }
                     }

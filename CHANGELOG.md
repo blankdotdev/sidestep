@@ -1,3 +1,9 @@
+## [1.1.8] - 2026-02-02
+
+- Added monochrome app icon for Android themed icons.
+- Improved domain title identification for news and media sites.
+- Enhanced podcast resolution and added support for `vxtwitter.com` and `fxtwitter.com`.
+
 ## [1.1.7] - 2026-02-01
 
 ### Added
