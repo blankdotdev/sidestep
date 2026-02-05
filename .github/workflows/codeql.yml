@@ -45,6 +45,15 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Accept Android SDK Licenses
+      run: |
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+    - name: Install Android SDK Build-Tools
+      run: |
+         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;36.0.0-rc1" "platforms;android-36"
+
+
     - name: Build with Gradle
       run: ./gradlew assembleDebug
 
