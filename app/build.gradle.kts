@@ -9,8 +9,9 @@ plugins {
 
 android {
     namespace = "com.blankdev.sidestep"
-    compileSdk = 35
-    buildToolsVersion = "35.0.0"
+    compileSdk = 36
+    buildToolsVersion = "36.0.0-rc1" // Explicitly setting to a newer version compatible with 36, or letting AGP handle it. Let's try explicit first if we know it, or just update SDK.
+    // Actually, safest is often to just prompt compileSdk. Let's try 36.
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     val keystoreProperties = Properties()
@@ -21,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "com.blankdev.sidestep"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 11
         versionName = "1.1.9"
 
@@ -88,8 +89,8 @@ dependencies {
     
     // Testing
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:2.3.0")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")
     testImplementation("org.json:json:20251224")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
 }
