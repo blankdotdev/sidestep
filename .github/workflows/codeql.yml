@@ -48,13 +48,6 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Accept Android SDK Licenses
-      run: yes | sdkmanager --licenses || true
-
-    - name: Install Android Build Tools
-      run: sdkmanager "build-tools;36.0.0-rc1" "platforms;android-36"
-
-
     - name: Build with Gradle
       run: ./gradlew :app:assembleDebug --info
 
