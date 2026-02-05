@@ -38,18 +38,7 @@ jobs:
       uses: github/codeql-action/init@v4
       with:
         languages: ${{ matrix.language }}
-        build-mode: manual
-        # If you're using a "custom query" set, specify it here.
-        # queries: ./path/to/local/query, your-org/your-repo/queries@main
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Build with Gradle
-      run: ./gradlew :app:assembleDebug --info
+        build-mode: none
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4
