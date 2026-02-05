@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   detekt:
@@ -22,7 +23,7 @@ jobs:
           detekt_version: '1.23.6'
 
       - name: Run Detekt
-        run: detekt --input . --config config/detekt/detekt.yml --build-upon-default-config --report sarif:detekt.sarif
+        run: detekt-cli --input . --config config/detekt/detekt.yml --build-upon-default-config --report sarif:detekt.sarif
 
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v4
