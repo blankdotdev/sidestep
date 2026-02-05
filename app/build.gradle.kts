@@ -92,5 +92,5 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.20")
     testImplementation("org.json:json:20251224")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 }
