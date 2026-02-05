@@ -31,7 +31,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Detekt
-        run: ./gradlew detekt
+        run: ./gradlew :app:detekt
 
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v4
