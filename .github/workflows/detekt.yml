@@ -17,16 +17,21 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Detekt
-        uses: peter-murray/setup-detekt@v3
+      - name: set up JDK 17
+        uses: actions/setup-java@v5
         with:
-          detekt_version: '1.23.6'
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
       - name: Run Detekt
-        run: detekt-cli --input . --config config/detekt/detekt.yml --build-upon-default-config --report sarif:detekt.sarif
+        run: ./gradlew detekt
 
       - name: Upload SARIF report
         uses: github/codeql-action/upload-sarif@v4
         if: success() || failure()
         with:
-          sarif_file: detekt.sarif
+          sarif_file: app/build/reports/detekt/detekt.sarif
