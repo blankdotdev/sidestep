@@ -5,7 +5,7 @@ import java.io.FileInputStream
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("dev.detekt")
+    id("dev.detekt") version "2.0.0-alpha.2"
 }
 
 detekt {
