@@ -243,9 +243,6 @@ object UrlCleaner {
         }
     }
 
-    /**
-     * Convert youtu.be/ID or youtube.com/shorts/ID to youtube.com/watch?v=ID
-     */
     fun normalizeYouTubeUrl(url: String): String {
         try {
             val uri = URI(url)
@@ -266,6 +263,9 @@ object UrlCleaner {
                 val segments = path.split("/").filter { it.isNotEmpty() }
                 val videoId = segments.lastOrNull() ?: return url
                 
+                val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
+                return URI("https", "www.youtube.com", "/watch", newQuery, uri.fragment).toString()
+            }
         } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to normalize YouTube URL: $url", e)
         }
@@ -297,6 +297,7 @@ object UrlCleaner {
                 val reelPattern = """/reel/(\d+)/?""".toRegex()
                 val reelMatch = reelPattern.find(path)
                 if (reelMatch != null) {
+                    val videoId = reelMatch.groupValues[1]
                     val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
                     return URI("https", "www.facebook.com", "/watch", newQuery, uri.fragment).toString()
                 }

@@ -17,6 +17,7 @@ import com.google.android.material.color.DynamicColors
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.util.Log
+import androidx.core.net.toUri
 
 class WebViewActivity : AppCompatActivity() {
 
