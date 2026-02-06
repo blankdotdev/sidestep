@@ -154,24 +154,24 @@ class SettingsFrontendsActivity : AppCompatActivity() {
         }
 
         // Setup standard platform toggles
-        setupPlatformToggle(R.id.toggleTwitterMode, R.id.twitterDomainContainer, SettingsActivity.KEY_TWITTER_CLEAN_ONLY, "x.com", R.id.btnTwitterClean, R.id.btnTwitterRedirect)
-        setupPlatformToggle(R.id.toggleRedditMode, R.id.redditDomainContainer, SettingsActivity.KEY_REDDIT_CLEAN_ONLY, "reddit.com", R.id.btnRedditClean, R.id.btnRedditRedirect)
-        setupPlatformToggle(R.id.toggleYouTubeMode, R.id.youtubeDomainContainer, SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, "youtube.com", R.id.btnYouTubeClean, R.id.btnYouTubeRedirect)
-        setupPlatformToggle(R.id.toggleImdbMode, R.id.imdbDomainContainer, SettingsActivity.KEY_IMDB_CLEAN_ONLY, "imdb.com", R.id.btnImdbClean, R.id.btnImdbRedirect)
-        setupPlatformToggle(R.id.toggleMediumMode, R.id.mediumDomainContainer, SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, "medium.com", R.id.btnMediumClean, R.id.btnMediumRedirect)
-        setupPlatformToggle(R.id.toggleWikipediaMode, R.id.wikipediaDomainContainer, SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, "wikipedia.org", R.id.btnWikipediaClean, R.id.btnWikipediaRedirect)
-        setupPlatformToggle(R.id.toggleGoodreadsMode, R.id.goodreadsDomainContainer, SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, "goodreads.com", R.id.btnGoodreadsClean, R.id.btnGoodreadsRedirect)
-        setupPlatformToggle(R.id.toggleGeniusMode, R.id.geniusDomainContainer, SettingsActivity.KEY_GENIUS_CLEAN_ONLY, "genius.com", R.id.btnGeniusClean, R.id.btnGeniusRedirect)
-        setupPlatformToggle(R.id.toggleGitHubMode, R.id.githubDomainContainer, SettingsActivity.KEY_GITHUB_CLEAN_ONLY, "github.com", R.id.btnGitHubClean, R.id.btnGitHubRedirect)
-        setupPlatformToggle(R.id.toggleStackOverflowMode, R.id.stackoverflowDomainContainer, SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, "stackoverflow.com", R.id.btnStackOverflowClean, R.id.btnStackOverflowRedirect)
-        setupPlatformToggle(R.id.toggleTumblrMode, R.id.tumblrDomainContainer, SettingsActivity.KEY_TUMBLR_CLEAN_ONLY, "tumblr.com", R.id.btnTumblrClean, R.id.btnTumblrRedirect)
-        setupPlatformToggle(R.id.toggleRuralDictionaryMode, R.id.rural_dictionaryDomainContainer, SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, "urbandictionary.com", R.id.btnRuralDictionaryClean, R.id.btnRuralDictionaryRedirect)
-        setupPlatformToggle(R.id.toggleRimgoMode, R.id.rimgoDomainContainer, SettingsActivity.KEY_RIMGO_CLEAN_ONLY, "imgur.com", R.id.btnRimgoClean, R.id.btnRimgoRedirect)
-        setupPlatformToggle(R.id.toggleGoogleMapsMode, R.id.googlemapsDomainContainer, SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, "google.com", R.id.btnGoogleMapsClean, R.id.btnGoogleMapsRedirect)
+        setupPlatformToggle(R.id.toggleTwitterMode, R.id.twitterDomainContainer, SettingsActivity.KEY_TWITTER_CLEAN_ONLY, "x.com", R.id.btnTwitterClean, R.id.btnTwitterRedirect, SettingsActivity.KEY_ALTERNATIVE_DOMAIN, SettingsActivity.DEFAULT_ALTERNATIVE_DOMAIN)
+        setupPlatformToggle(R.id.toggleRedditMode, R.id.redditDomainContainer, SettingsActivity.KEY_REDDIT_CLEAN_ONLY, "reddit.com", R.id.btnRedditClean, R.id.btnRedditRedirect, SettingsActivity.KEY_REDDIT_DOMAIN, SettingsActivity.DEFAULT_REDDIT_DOMAIN)
+        setupPlatformToggle(R.id.toggleYouTubeMode, R.id.youtubeDomainContainer, SettingsActivity.KEY_YOUTUBE_CLEAN_ONLY, "youtube.com", R.id.btnYouTubeClean, R.id.btnYouTubeRedirect, SettingsActivity.KEY_YOUTUBE_DOMAIN, SettingsActivity.DEFAULT_YOUTUBE_DOMAIN)
+        setupPlatformToggle(R.id.toggleImdbMode, R.id.imdbDomainContainer, SettingsActivity.KEY_IMDB_CLEAN_ONLY, "imdb.com", R.id.btnImdbClean, R.id.btnImdbRedirect, SettingsActivity.KEY_IMDB_DOMAIN, SettingsActivity.DEFAULT_IMDB_DOMAIN)
+        setupPlatformToggle(R.id.toggleMediumMode, R.id.mediumDomainContainer, SettingsActivity.KEY_MEDIUM_CLEAN_ONLY, "medium.com", R.id.btnMediumClean, R.id.btnMediumRedirect, SettingsActivity.KEY_MEDIUM_DOMAIN, SettingsActivity.DEFAULT_MEDIUM_DOMAIN)
+        setupPlatformToggle(R.id.toggleWikipediaMode, R.id.wikipediaDomainContainer, SettingsActivity.KEY_WIKIPEDIA_CLEAN_ONLY, "wikipedia.org", R.id.btnWikipediaClean, R.id.btnWikipediaRedirect, SettingsActivity.KEY_WIKIPEDIA_DOMAIN, SettingsActivity.DEFAULT_WIKIPEDIA_DOMAIN)
+        setupPlatformToggle(R.id.toggleGoodreadsMode, R.id.goodreadsDomainContainer, SettingsActivity.KEY_GOODREADS_CLEAN_ONLY, "goodreads.com", R.id.btnGoodreadsClean, R.id.btnGoodreadsRedirect, SettingsActivity.KEY_GOODREADS_DOMAIN, SettingsActivity.DEFAULT_GOODREADS_DOMAIN)
+        setupPlatformToggle(R.id.toggleGeniusMode, R.id.geniusDomainContainer, SettingsActivity.KEY_GENIUS_CLEAN_ONLY, "genius.com", R.id.btnGeniusClean, R.id.btnGeniusRedirect, SettingsActivity.KEY_GENIUS_DOMAIN, SettingsActivity.DEFAULT_GENIUS_DOMAIN)
+        setupPlatformToggle(R.id.toggleGitHubMode, R.id.githubDomainContainer, SettingsActivity.KEY_GITHUB_CLEAN_ONLY, "github.com", R.id.btnGitHubClean, R.id.btnGitHubRedirect, SettingsActivity.KEY_GITHUB_DOMAIN, SettingsActivity.DEFAULT_GITHUB_DOMAIN)
+        setupPlatformToggle(R.id.toggleStackOverflowMode, R.id.stackoverflowDomainContainer, SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, "stackoverflow.com", R.id.btnStackOverflowClean, R.id.btnStackOverflowRedirect, SettingsActivity.KEY_STACKOVERFLOW_DOMAIN, SettingsActivity.DEFAULT_STACKOVERFLOW_DOMAIN)
+        setupPlatformToggle(R.id.toggleTumblrMode, R.id.tumblrDomainContainer, SettingsActivity.KEY_TUMBLR_CLEAN_ONLY, "tumblr.com", R.id.btnTumblrClean, R.id.btnTumblrRedirect, SettingsActivity.KEY_TUMBLR_DOMAIN, SettingsActivity.DEFAULT_TUMBLR_DOMAIN)
+        setupPlatformToggle(R.id.toggleRuralDictionaryMode, R.id.rural_dictionaryDomainContainer, SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, "urbandictionary.com", R.id.btnRuralDictionaryClean, R.id.btnRuralDictionaryRedirect, SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN)
+        setupPlatformToggle(R.id.toggleRimgoMode, R.id.rimgoDomainContainer, SettingsActivity.KEY_RIMGO_CLEAN_ONLY, "imgur.com", R.id.btnRimgoClean, R.id.btnRimgoRedirect, SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN)
+        setupPlatformToggle(R.id.toggleGoogleMapsMode, R.id.googlemapsDomainContainer, SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, "google.com", R.id.btnGoogleMapsClean, R.id.btnGoogleMapsRedirect, SettingsActivity.KEY_GOOGLE_MAPS_DOMAIN, SettingsActivity.DEFAULT_GOOGLE_MAPS_DOMAIN)
     }
 
 
-    private fun setupPlatformToggle(toggleGroupId: Int, containerId: Int, prefKey: String, domain: String, cleanBtnId: Int, redirectBtnId: Int) {
+    private fun setupPlatformToggle(toggleGroupId: Int, containerId: Int, prefKey: String, domain: String, cleanBtnId: Int, redirectBtnId: Int, domainPrefKey: String, domainDefault: String) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val toggle = findViewById<MaterialButtonToggleGroup>(toggleGroupId)
         val container = findViewById<android.view.View>(containerId)
@@ -180,6 +180,15 @@ class SettingsFrontendsActivity : AppCompatActivity() {
         if (isCleanOnly) {
             toggle.check(cleanBtnId)
             container.visibility = android.view.View.GONE
+            // Ensure inputs are clear if starting in clean-only
+            (container as? LinearLayout)?.let { layout ->
+                for (i in 0 until layout.childCount) {
+                    val child = layout.getChildAt(i)
+                    if (child is com.google.android.material.textfield.TextInputLayout) {
+                        child.editText?.text = null
+                    }
+                }
+            }
         } else {
             toggle.check(redirectBtnId)
             container.visibility = android.view.View.VISIBLE
@@ -191,13 +200,31 @@ class SettingsFrontendsActivity : AppCompatActivity() {
                     if (validateCleanOnlySelection(domain)) {
                         prefs.edit { putBoolean(prefKey, true) }
                         container.visibility = android.view.View.GONE
+                        // Clear inputs when hidden
+                        (container as? LinearLayout)?.let { layout ->
+                            for (i in 0 until layout.childCount) {
+                                val child = layout.getChildAt(i)
+                                if (child is com.google.android.material.textfield.TextInputLayout) {
+                                    child.editText?.text = null
+                                }
+                            }
+                        }
                     } else {
-                        // Re-check redirect if validation failed (though validate currently always returns true)
+                        // Re-check redirect if validation failed
                         toggle.check(redirectBtnId)
                     }
                 } else {
                     prefs.edit { putBoolean(prefKey, false) }
                     container.visibility = android.view.View.VISIBLE
+                    // Re-populate from preferences when shown
+                    (container as? LinearLayout)?.let { layout ->
+                        for (i in 0 until layout.childCount) {
+                            val child = layout.getChildAt(i)
+                            if (child is com.google.android.material.textfield.TextInputLayout) {
+                                child.editText?.setText(prefs.getString(domainPrefKey, domainDefault))
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -6,6 +6,8 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.Locale
 import java.util.regex.Pattern
+import android.util.Log
+import java.net.URISyntaxException
 
 /**
  * Utility for cleaning URLs by removing tracking parameters and normalizing formats.
@@ -22,6 +24,16 @@ object UrlCleaner {
         } else {
             url
         }
+    }
+
+    /**
+     * Checks if a URL has an allowed scheme (http or https).
+     * This prevents Intent Redirection attacks using file://, javascript:, etc.
+     */
+    fun isValidAppUrl(url: String?): Boolean {
+        if (url == null) return false
+        val lowerUrl = url.lowercase(Locale.getDefault())
+        return lowerUrl.startsWith("http://") || lowerUrl.startsWith("https://")
     }
     
     // Comprehensive tracking parameters covering all major platforms
@@ -222,7 +234,11 @@ object UrlCleaner {
             val newQuery = if (preservedParams.isEmpty()) null else preservedParams.joinToString("&")
             
             return URI(uri.scheme, uri.authority, uri.path, newQuery, uri.fragment).toString()
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to parse URI: $inputUrl", e)
+            return inputUrl
         } catch (e: Exception) {
+            Log.e(TAG, "Unexpected error cleaning URL: $inputUrl", e)
             return inputUrl
         }
     }
@@ -250,10 +266,9 @@ object UrlCleaner {
                 val segments = path.split("/").filter { it.isNotEmpty() }
                 val videoId = segments.lastOrNull() ?: return url
                 
-                val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
-                return URI(uri.scheme, uri.authority, "/watch", newQuery, uri.fragment).toString()
-            }
-        } catch (e: Exception) {}
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to normalize YouTube URL: $url", e)
+        }
         
         return url
     }
@@ -282,12 +297,13 @@ object UrlCleaner {
                 val reelPattern = """/reel/(\d+)/?""".toRegex()
                 val reelMatch = reelPattern.find(path)
                 if (reelMatch != null) {
-                    val videoId = reelMatch.groupValues[1]
                     val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
                     return URI("https", "www.facebook.com", "/watch", newQuery, uri.fragment).toString()
                 }
             }
-        } catch (e: Exception) {}
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to normalize Facebook URL: $url", e)
+        }
         
         return url
     }
@@ -310,8 +326,9 @@ object UrlCleaner {
         try {
             val uri = URI(url)
             return URI(uri.scheme ?: "https", domainToUse, uri.path, uri.query, uri.fragment).toString()
-        } catch (e: Exception) {
+        } catch (e: URISyntaxException) {
             // Fallback for malformed URLs
+            Log.e(TAG, "Failed to replace domain in URL: $url", e)
             return url
         }
     }
@@ -530,8 +547,9 @@ object UrlCleaner {
                     }
                 }
             }
-            
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to convert Google Maps URL to OSM: $url", e)
+        }
         
         // Fallback: just open OpenStreetMap homepage
         return "https://www.openstreetmap.org"
@@ -572,14 +590,17 @@ object UrlCleaner {
                     }
                 }
             }
-        } catch (e: Exception) {}
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to extract nested URL: $url", e)
+        }
         return null
     }
 
     private fun getHost(url: String): String {
         return try {
             URI(url).host?.lowercase() ?: ""
-        } catch (e: Exception) {
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to get host from URL: $url", e)
             ""
         }
     }
@@ -736,7 +757,8 @@ object UrlCleaner {
             
             return display
             
-        } catch (e: Exception) {
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to get cleaned display URL: $url", e)
             return cleanedFull
         }
     }
@@ -758,7 +780,8 @@ object UrlCleaner {
             
             return if (fullPath.isNotEmpty()) fullPath else cleanedFull
             
-        } catch (e: Exception) {
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to get cleaned path: $url", e)
             return cleanedFull
         }
     }
@@ -794,8 +817,11 @@ object UrlCleaner {
             
             val newPath = cleanSegments.joinToString("/")
             return URI(uri.scheme, uri.authority, newPath, uri.query, uri.fragment).toString()
-        } catch (e: Exception) {
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to clean path segments: $url", e)
             return url
         }
     }
+
+    private const val TAG = "UrlCleaner"
 }

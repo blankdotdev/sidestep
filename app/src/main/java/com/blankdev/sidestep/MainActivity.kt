@@ -279,7 +279,7 @@ class MainActivity : AppCompatActivity() {
         
         // Warning Text with theme-aware color
         warningText = TextView(this).apply {
-            text = getString(R.string.error_invalid_url)
+            text = "" // Initialize empty
             textSize = 12f
             // Use Material error color for better theme compatibility
             setTextColor(getThemeColor(com.google.android.material.R.attr.colorError))
@@ -454,12 +454,19 @@ class MainActivity : AppCompatActivity() {
     
     private fun validateInput(text: String?) {
         if (text.isNullOrEmpty()) {
+            warningText.text = ""
             warningText.visibility = android.view.View.GONE
             return
         }
         
         val isValid = android.util.Patterns.WEB_URL.matcher(text).matches()
-        warningText.visibility = if (isValid) android.view.View.GONE else android.view.View.VISIBLE
+        if (isValid) {
+            warningText.text = ""
+            warningText.visibility = android.view.View.GONE
+        } else {
+            warningText.text = getString(R.string.error_invalid_url)
+            warningText.visibility = android.view.View.VISIBLE
+        }
     }
     
     private fun getThemeColor(attr: Int): Int {
@@ -494,6 +501,7 @@ class MainActivity : AppCompatActivity() {
         
         // Hide counter if welcome guide is visible
         if (historyEmpty && showWelcome) {
+            sidestepCounter.text = ""
             sidestepCounter.visibility = View.GONE
             return
         }
@@ -816,13 +824,14 @@ class MainActivity : AppCompatActivity() {
             val showWelcome = shouldShowWelcomeGuide() && history.isEmpty()
             
             if (retentionMode == "never") {
+                historyList.visibility = View.GONE
+                emptyStateGuide.visibility = if (showWelcome) View.VISIBLE else View.GONE
+                
                 historyAdapter.submitList(emptyList()) {
                     // Ensure menu is invalidated after list clears
                     invalidateOptionsMenu()
                     runAfterUpdate?.invoke()
                 }
-                historyList.visibility = View.GONE
-                emptyStateGuide.visibility = if (showWelcome) View.VISIBLE else View.GONE
                 
                 // If Welcome Guide is VISIBLE, set weight to 1, else 0 wrapping content
                 val params = emptyStateGuide.layoutParams as LinearLayout.LayoutParams

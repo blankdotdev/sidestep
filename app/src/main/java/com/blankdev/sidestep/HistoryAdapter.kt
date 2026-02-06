@@ -136,13 +136,18 @@ class HistoryAdapter(
 
         val displayTitle = titleProvider(entry)
         val titleText = TextView(context).apply {
-            text = displayTitle
+            if (!displayTitle.isBlank()) {
+                text = displayTitle
+                visibility = View.VISIBLE
+            } else {
+                text = ""
+                visibility = View.GONE
+            }
             textSize = 16f
             setTypeface(null, Typeface.BOLD)
             setTextColor(themeColorProvider(android.R.attr.textColorPrimary))
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.END
-            visibility = if (!displayTitle.isBlank()) View.VISIBLE else View.GONE
         }
         textLayout.addView(titleText)
 

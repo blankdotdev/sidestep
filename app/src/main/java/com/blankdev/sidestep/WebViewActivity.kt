@@ -14,8 +14,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.color.DynamicColors
-import androidx.core.net.toUri
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.util.Log
 
 class WebViewActivity : AppCompatActivity() {
 
@@ -55,7 +56,8 @@ class WebViewActivity : AppCompatActivity() {
                         val intent = Intent(Intent.ACTION_VIEW, request?.url)
                         startActivity(intent)
                         true
-                    } catch (e: Exception) {
+                    } catch (e: ActivityNotFoundException) {
+                        Log.e(TAG, "No activity found to handle URL: $url", e)
                         true // Prevent crash if no handler
                     }
                 }
@@ -66,8 +68,13 @@ class WebViewActivity : AppCompatActivity() {
                     
                     currentUrl = url
                     this@WebViewActivity.title = if (url != null) {
-                        try { url.toUri().host ?: "Sidestep" } catch (e: Exception) { "Sidestep" }
-                    } else "Sidestep"
+                        try { 
+                            url.toUri().host ?: DEFAULT_TITLE 
+                        } catch (e: IllegalArgumentException) { 
+                            Log.e(TAG, "Failed to parse host from URL: $url", e)
+                            DEFAULT_TITLE 
+                        }
+                    } else DEFAULT_TITLE
                 }
             }
         }
@@ -80,10 +87,10 @@ class WebViewActivity : AppCompatActivity() {
 
         // Add explicit MaterialToolbar
         val toolbar = com.google.android.material.appbar.MaterialToolbar(this).apply {
-            title = "Sidestep"
+            title = DEFAULT_TITLE
             setTitleTextColor(getThemeColor(android.R.attr.textColorPrimary))
             setBackgroundColor(getThemeColor(com.google.android.material.R.attr.colorSurface))
-            elevation = 4f
+            elevation = TOOLBAR_ELEVATION
         }
         rootLayout.addView(toolbar)
         setSupportActionBar(toolbar)
@@ -92,7 +99,7 @@ class WebViewActivity : AppCompatActivity() {
         rootLayout.addView(webView, android.widget.LinearLayout.LayoutParams(
             android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
             0,
-            1f
+            LAYOUT_WEIGHT_MATCH_PARENT
         ))
         
         setContentView(rootLayout)
@@ -106,7 +113,7 @@ class WebViewActivity : AppCompatActivity() {
         }
         
         currentUrl = intent?.getStringExtra(EXTRA_URL)
-        if (currentUrl != null) {
+        if (currentUrl != null && UrlCleaner.isValidAppUrl(currentUrl)) {
             val headers = mapOf("X-Requested-With" to packageName)
             webView.loadUrl(currentUrl!!, headers)
         } else {
@@ -132,12 +139,23 @@ class WebViewActivity : AppCompatActivity() {
         return android.graphics.Color.MAGENTA
     }
 
+    private fun handleOpenInBrowser() {
+        try {
+            currentUrl?.let {
+                val browserIntent = Intent(Intent.ACTION_VIEW, it.toUri())
+                startActivity(browserIntent)
+            }
+        } catch (e: ActivityNotFoundException) {
+            Log.e(TAG, "No browser found to handle URL: $currentUrl", e)
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menu.add(0, MENU_SHARE, 0, "Share").apply {
+        menu.add(Menu.NONE, MENU_SHARE, Menu.NONE, "Share").apply {
             setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
             setIcon(R.drawable.ic_share)
         }
-        menu.add(0, MENU_OPEN_IN_BROWSER, 1, "Open in Browser").apply {
+        menu.add(Menu.NONE, MENU_OPEN_IN_BROWSER, 1, "Open in Browser").apply {
             setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         }
         return true
@@ -162,12 +180,7 @@ class WebViewActivity : AppCompatActivity() {
                 true
             }
             MENU_OPEN_IN_BROWSER -> {
-                try {
-                    currentUrl?.let {
-                        val browserIntent = Intent(Intent.ACTION_VIEW, it.toUri())
-                        startActivity(browserIntent)
-                    }
-                } catch (e: Exception) {}
+                handleOpenInBrowser()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -184,6 +197,11 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     companion object {
+        private const val TAG = "WebViewActivity"
+        private const val DEFAULT_TITLE = "Sidestep"
+        private const val TOOLBAR_ELEVATION = 4f
+        private const val LAYOUT_WEIGHT_MATCH_PARENT = 1f
+        
         const val EXTRA_URL = "extra_url"
         private const val MENU_SHARE = 101
         private const val MENU_OPEN_IN_BROWSER = 102
