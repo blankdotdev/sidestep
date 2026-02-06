@@ -1,0 +1,3 @@
+🔒 Security: Resolved 50+ security findings and fixed 108 code quality violations
+⬆️ Upgrades: Android SDK 36, Gradle 9.3.0, Kotlin 2.1.10, and major dependency updates
+🐛 Fixes: Improved link handling logic and build system stability

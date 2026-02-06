@@ -1,1 +1,1 @@
-Privacy-focused URL redirects to alternative frontends.
+Intercept URLs, remove tracking, redirect to alternative frontends. No apps/accounts needed.

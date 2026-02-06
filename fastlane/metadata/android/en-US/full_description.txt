@@ -1,7 +1,25 @@
-<p>Privacy-focused Android app that intercepts social media URLs and redirects them to privacy-friendly alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.</p>
+<p>Android app that intercepts social media URLs and redirects them to alternative frontends while removing tracking parameters. No apps or accounts needed to access the content shared with you.</p>
 
+<p><b>Alternative Frontends</b></p>
+<p>Bypass closed ecosystems and access a more open internet - with a less cluttered web experience. Sidestep supports several major platforms with configurable alternatives:</p>
+<ul>
+  <li>Twitter/X → Nitter</li>
+  <li>Reddit → Redlib</li>
+  <li>YouTube → Invidious, Piped</li>
+  <li>Google Maps → OpenStreetMap</li>
+  <li>IMDb → LibreMDB</li>
+  <li>Medium → Scribe</li>
+  <li>Wikipedia → Wikiless</li>
+  <li>Goodreads → BiblioReads</li>
+  <li>Genius → Dumb, Intellectual</li>
+  <li>Tumblr → Priviblur</li>
+  <li>UrbanDictionary → RuralDictionary</li>
+  <li>Imgur → Rimgo</li>
+  <li>GitHub → GotHub</li>
+  <li>StackOverflow → AnonymousOverflow</li>
+</ul>
 
-<p><b>Smart URL Cleaning</b></p>
+<p><b>Flexible Configuration &amp; Smart URL Cleaning</b></p>
 <p>Automatically removes tracking parameters from all URLs:</p>
 <ul>
   <li>UTM parameters (utm_source, utm_medium, etc.)</li>
@@ -10,22 +28,20 @@
   <li>Analytics parameters</li>
 </ul>
 
-<p><b>Automation</b></p>
 <p>Granular control over how URLs are processed:</p>
 <ul>
   <li>Unshorten URLs: Automatically resolves shortened links (bit.ly, t.co, etc.)</li>
   <li>Remove Tracking: Strip analytics and tracking parameters</li>
   <li>Immediate Navigation: Automatically open the processed URL in your browser</li>
-</ul>
-
-<p><b>Privacy-Focused Redirects</b></p>
-<p>Alternative frontends create a less cluttered web experience; bypassing closed ecosystems and promoting a more open internet. Sidestep supports several major platforms with configurable alternative frontends: Twitter/X (Nitter), Reddit (Redlib), YouTube (Invidious, Piped), Google Maps (OpenStreetMap), IMDb (LibreMDB), Medium (Scribe), Wikipedia (Wikiless), Goodreads (BiblioReads), Genius (Dumb, Intellectual), Tumblr (Priviblur), UrbanDictionary (RuralDictionary), Imgur (Rimgo), GitHub (GotHub), and StackOverflow (AnonymousOverflow).</p>
-
-<p><b>Features</b></p>
-<ul>
   <li>Clean Only Mode: Remove tracking without redirecting</li>
-  <li>Clean & Sidestep Mode: Remove tracking AND redirect to alternative frontend</li>
+  <li>Clean &amp; Sidestep Mode: Remove tracking AND redirect to alternative frontend</li>
   <li>Custom Redirects: Add your own domain mappings</li>
   <li>Instance Picker: Fetch live, healthy instances sorted by uptime</li>
-  <li>History & Previews: Track processed links with rich metadata fetched via DuckDuckGo (optional)</li>
+</ul>
+
+<p><b>Tracking-proof</b></p>
+<ul>
+  <li>Previews fetched via DuckDuckGo (optional)</li>
+  <li>No Data Collection: Zero analytics, zero tracking</li>
+  <li>Local Processing: All URL cleaning happens on-device</li>
 </ul>
