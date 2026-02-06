@@ -48,7 +48,8 @@
             android:taskAffinity="">
 
             <!-- General URL Intent Filter -->
-            <intent-filter android:autoVerify="true">
+            <!-- Twitter / X -->
+            <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
@@ -56,14 +57,6 @@
                 <data android:scheme="http" />
                 <data android:scheme="https" />
 
-                <!-- TikTok -->
-                <data android:host="tiktok.com" />
-                <data android:host="www.tiktok.com" />
-                <data android:host="v.tiktok.com" />
-                <data android:host="vt.tiktok.com" />
-                <data android:host="vm.tiktok.com" />
-
-                <!-- Twitter / X -->
                 <data android:host="twitter.com" />
                 <data android:host="www.twitter.com" />
                 <data android:host="x.com" />
@@ -72,17 +65,61 @@
                 <data android:host="www.vxtwitter.com" />
                 <data android:host="fxtwitter.com" />
                 <data android:host="www.fxtwitter.com" />
+            </intent-filter>
 
-                <!-- Reddit -->
+            <!-- TikTok -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
+                <data android:host="tiktok.com" />
+                <data android:host="www.tiktok.com" />
+                <data android:host="v.tiktok.com" />
+                <data android:host="vt.tiktok.com" />
+                <data android:host="vm.tiktok.com" />
+            </intent-filter>
+
+            <!-- Reddit -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
                 <data android:host="reddit.com" />
                 <data android:host="www.reddit.com" />
                 <data android:host="redd.it" />
+            </intent-filter>
 
-                <!-- YouTube -->
+            <!-- YouTube -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+
                 <data android:host="youtube.com" />
                 <data android:host="www.youtube.com" />
                 <data android:host="m.youtube.com" />
                 <data android:host="youtu.be" />
+            </intent-filter>
+
+            <!-- Other Major Services -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
 
                 <!-- IMDb -->
                 <data android:host="imdb.com" />
