@@ -12,6 +12,18 @@ import java.util.regex.Pattern
  * Fetches URL preview metadata using privacy-focused methods (DuckDuckGo search)
  */
 object PreviewFetcher {
+    
+    private const val CACHE_INITIAL_CAPACITY = 16
+    private const val CACHE_LOAD_FACTOR = 0.75f
+    private const val CACHE_MAX_SIZE = 50
+    private const val MIN_HTML_DEBUG_SIZE = 1000
+    private const val DEBUG_SNIPPET_LENGTH = 500
+    private const val HOURS_PER_DAY = 24
+    private const val MINUTES_PER_HOUR = 60
+    private const val SECONDS_PER_MINUTE = 60
+    private const val MS_PER_SECOND = 1000L
+    private const val TIMESTAMP_MS_THRESHOLD = 1_000_000_000_000L
+    private const val TIMESTAMP_SECONDS_THRESHOLD = 100_000_000L
 
     data class PreviewData(
         val title: String? = null,
@@ -20,9 +32,9 @@ object PreviewFetcher {
         val timestamp: Long? = null
     )
 
-    private val cache = object : LinkedHashMap<String, PreviewData>(16, 0.75f, true) {
+    private val cache = object : LinkedHashMap<String, PreviewData>(CACHE_INITIAL_CAPACITY, CACHE_LOAD_FACTOR, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, PreviewData>?): Boolean {
-            return size > 50 // Keep last 50 previews
+            return size > CACHE_MAX_SIZE // Keep last 50 previews
         }
     }
 
@@ -84,7 +96,7 @@ object PreviewFetcher {
             } else {
                 println("Sidestep: No title found in DDG response (HTML length: ${html.length})")
                 // Fallback debug: print first 500 chars of HTML if it looks tiny (potential bot block)
-                if (html.length < 1000) println("Sidestep: DDG response snippet: ${html.take(500)}")
+                if (html.length < MIN_HTML_DEBUG_SIZE) println("Sidestep: DDG response snippet: ${html.take(DEBUG_SNIPPET_LENGTH)}")
             }
             
             // Extract Snippet for Date - resilient to both HTML version (result__snippet) and Lite version (result-snippet)
@@ -125,9 +137,9 @@ object PreviewFetcher {
                         val unit = relMatch.group(2)?.lowercase()
                         val now = System.currentTimeMillis()
                         timestamp = when(unit) {
-                            "day" -> now - (amount * 24 * 60 * 60 * 1000L)
-                            "hour" -> now - (amount * 60 * 60 * 1000L)
-                            "minute" -> now - (amount * 60 * 1000L)
+                            "day" -> now - (amount * HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND)
+                            "hour" -> now - (amount * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND)
+                            "minute" -> now - (amount * SECONDS_PER_MINUTE * MS_PER_SECOND)
                             else -> null
                         }
                     }
@@ -216,7 +228,7 @@ object PreviewFetcher {
                 try {
                     @Suppress("DEPRECATION")
                     result = android.text.Html.fromHtml(result).toString()
-                } catch (e2: Exception) {}
+                } catch (ignored: Exception) {}
             }
         }
         
@@ -243,18 +255,18 @@ object PreviewFetcher {
                 val sdf = java.text.SimpleDateFormat(format, java.util.Locale.US)
                 if (format.endsWith("'Z'")) sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
                 return sdf.parse(dateStr)?.time
-            } catch (e: Exception) {}
+            } catch (ignored: Exception) {}
         }
         
         // Fallback: Try parsing as pure numeric Unix timestamp (seconds or milliseconds)
         try {
             val longVal = dateStr.trim().toLong()
-            return if (longVal > 1_000_000_000_000L) {
+            return if (longVal > TIMESTAMP_MS_THRESHOLD) {
                 longVal // milliseconds
-            } else if (longVal > 100_000_000L) {
-                longVal * 1000 // seconds
+            } else if (longVal > TIMESTAMP_SECONDS_THRESHOLD) {
+                longVal * MS_PER_SECOND // seconds
             } else null
-        } catch (e: Exception) {}
+        } catch (ignored: Exception) {}
         
         return null
     }

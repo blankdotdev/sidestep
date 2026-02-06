@@ -64,8 +64,8 @@ class SettingsPrivacyActivity : AppCompatActivity() {
         privacyCard.visibility = if (currentMode == "never") android.view.View.GONE else android.view.View.VISIBLE
         
         // Sliders initial values
-        val daysOptions = listOf(1, 7, 14, 30, 365)
-        val itemsOptions = listOf(5, 10, 25, 50, 100)
+        val daysOptions = HISTORY_DAYS_OPTIONS
+        val itemsOptions = HISTORY_ITEMS_OPTIONS
 
         val savedDays = prefs.getString(HistoryManager.KEY_HISTORY_DAYS, HistoryManager.DEFAULT_HISTORY_DAYS.toString())?.toIntOrNull() ?: HistoryManager.DEFAULT_HISTORY_DAYS
         val savedItems = prefs.getString(HistoryManager.KEY_HISTORY_ITEMS, HistoryManager.DEFAULT_HISTORY_ITEMS.toString())?.toIntOrNull() ?: HistoryManager.DEFAULT_HISTORY_ITEMS
@@ -138,6 +138,12 @@ class SettingsPrivacyActivity : AppCompatActivity() {
         switch.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit { putBoolean(SettingsActivity.KEY_PREVIEW_FETCH, isChecked) }
         }
+    }
+
+    companion object {
+        // History Retention Options
+        private val HISTORY_DAYS_OPTIONS = listOf(1, 7, 14, 30, 365)
+        private val HISTORY_ITEMS_OPTIONS = listOf(5, 10, 25, 50, 100)
     }
 
 }

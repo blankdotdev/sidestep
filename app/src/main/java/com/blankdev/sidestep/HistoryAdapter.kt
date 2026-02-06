@@ -38,6 +38,19 @@ class HistoryAdapter(
         }
     }
 ) {
+    companion object {
+        private const val CONTAINER_HORIZONTAL_PADDING_DP = 8
+        private const val CONTAINER_VERTICAL_PADDING_DP = 10
+        private const val CONTAINER_END_PADDING_DP = 4
+        private const val CONTENT_PADDING_DP = 8
+        private const val IMAGE_SIZE_DP = 40
+        private const val IMAGE_CARD_SIZE_DP = 56
+        private const val IMAGE_CARD_MARGIN_END_DP = 16
+        private const val CARD_CORNER_RADIUS = 16f
+        private const val MENU_BUTTON_PADDING_DP = 12
+        private const val TITLE_TEXT_SIZE_SP = 16f
+        private const val SUBTITLE_TEXT_SIZE_SP = 14f
+    }
 
     inner class ViewHolder(val view: View) : RecyclerView.ViewHolder(view)
 
@@ -45,7 +58,7 @@ class HistoryAdapter(
         val context = parent.context
         val itemContainer = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dpProvider(8), dpProvider(10), dpProvider(4), dpProvider(10))
+            setPadding(dpProvider(CONTAINER_HORIZONTAL_PADDING_DP), dpProvider(CONTAINER_VERTICAL_PADDING_DP), dpProvider(CONTAINER_END_PADDING_DP), dpProvider(CONTAINER_VERTICAL_PADDING_DP))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -85,7 +98,7 @@ class HistoryAdapter(
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             gravity = Gravity.CENTER_VERTICAL
             background = rippleDrawableProvider()
-            setPadding(dpProvider(8), dpProvider(8), dpProvider(8), dpProvider(8))
+            setPadding(dpProvider(CONTENT_PADDING_DP), dpProvider(CONTENT_PADDING_DP), dpProvider(CONTENT_PADDING_DP), dpProvider(CONTENT_PADDING_DP))
             setOnClickListener { onItemClick(entry) }
         }
 
@@ -111,17 +124,17 @@ class HistoryAdapter(
         }
 
         val imageView = ImageView(context).apply {
-            layoutParams = FrameLayout.LayoutParams(dpProvider(40), dpProvider(40)).apply { gravity = Gravity.CENTER }
+            layoutParams = FrameLayout.LayoutParams(dpProvider(IMAGE_SIZE_DP), dpProvider(IMAGE_SIZE_DP)).apply { gravity = Gravity.CENTER }
             scaleType = ImageView.ScaleType.CENTER_CROP
             setImageResource(displayImage)
             setColorFilter(themeColorProvider(com.google.android.material.R.attr.colorOnSurface))
         }
 
         val imageCard = CardView(context).apply {
-            radius = 16f
+            radius = CARD_CORNER_RADIUS
             cardElevation = 0f
             setCardBackgroundColor(Color.TRANSPARENT)
-            layoutParams = LinearLayout.LayoutParams(dpProvider(56), dpProvider(56)).apply { marginEnd = dpProvider(16) }
+            layoutParams = LinearLayout.LayoutParams(dpProvider(IMAGE_CARD_SIZE_DP), dpProvider(IMAGE_CARD_SIZE_DP)).apply { marginEnd = dpProvider(IMAGE_CARD_MARGIN_END_DP) }
             addView(imageView)
         }
         contentContainer.addView(imageCard)
@@ -143,7 +156,7 @@ class HistoryAdapter(
                 text = ""
                 visibility = View.GONE
             }
-            textSize = 16f
+            textSize = TITLE_TEXT_SIZE_SP
             setTypeface(null, Typeface.BOLD)
             setTextColor(themeColorProvider(android.R.attr.textColorPrimary))
             maxLines = 1
@@ -153,7 +166,7 @@ class HistoryAdapter(
 
         val subtitleText = TextView(context).apply {
             text = subtitleProvider(entry)
-            textSize = 14f
+            textSize = SUBTITLE_TEXT_SIZE_SP
             setTextColor(themeColorProvider(android.R.attr.textColorSecondary))
             maxLines = 1
             ellipsize = TextUtils.TruncateAt.MIDDLE
@@ -165,7 +178,7 @@ class HistoryAdapter(
         val menuButton = android.widget.ImageButton(context).apply {
             setImageResource(R.drawable.ic_more_vert)
             background = rippleDrawableProvider()
-            setPadding(dpProvider(12), dpProvider(12), dpProvider(12), dpProvider(12))
+            setPadding(dpProvider(MENU_BUTTON_PADDING_DP), dpProvider(MENU_BUTTON_PADDING_DP), dpProvider(MENU_BUTTON_PADDING_DP), dpProvider(MENU_BUTTON_PADDING_DP))
             setColorFilter(themeColorProvider(android.R.attr.textColorSecondary))
             setOnClickListener { onMenuClick(it, entry) }
         }

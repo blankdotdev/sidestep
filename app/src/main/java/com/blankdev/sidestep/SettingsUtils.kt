@@ -70,8 +70,8 @@ object SettingsUtils {
             }
             
             // Enforce default order if it matches the default set (hack for stale data)
-            if ((list.size == 4 || list.size == 6) && list.any { it.originalDomain == "nytimes.com" } && list.count { it.originalDomain == "tiktok.com" } == 2) {
-                val updatedList = if (list.size == 4) {
+            if ((list.size == DEFAULT_REDIRECT_COUNT_LEGACY || list.size == DEFAULT_REDIRECT_COUNT_CURRENT) && list.any { it.originalDomain == "nytimes.com" } && list.count { it.originalDomain == "tiktok.com" } == 2) {
+                val updatedList = if (list.size == DEFAULT_REDIRECT_COUNT_LEGACY) {
                     list.toMutableList().apply {
                         if (none { it.id == "default_spotify" }) add(CustomRedirect("default_spotify", "open.spotify.com", "song.link", true, true))
                         if (none { it.id == "default_apple_podcasts" }) add(CustomRedirect("default_apple_podcasts", "podcasts.apple.com", "pods.link", true, true))
@@ -82,13 +82,13 @@ object SettingsUtils {
 
                 return updatedList.sortedWith(compareBy<CustomRedirect> { 
                     when {
-                        it.originalDomain == "nytimes.com" -> 0
-                        it.originalDomain == "tiktok.com" && !it.isAppend -> 1 // Domain Swap
-                        it.originalDomain == "tiktok.com" && it.isAppend -> 2 // Append
-                        it.originalDomain == "instagram.com" -> 3
-                        it.originalDomain == "open.spotify.com" -> 4
-                        it.originalDomain == "podcasts.apple.com" -> 5
-                        else -> 6
+                        it.originalDomain == "nytimes.com" -> SORT_PRIORITY_NYTIMES
+                        it.originalDomain == "tiktok.com" && !it.isAppend -> SORT_PRIORITY_TIKTOK_SWAP // Domain Swap
+                        it.originalDomain == "tiktok.com" && it.isAppend -> SORT_PRIORITY_TIKTOK_APPEND // Append
+                        it.originalDomain == "instagram.com" -> SORT_PRIORITY_INSTAGRAM
+                        it.originalDomain == "open.spotify.com" -> SORT_PRIORITY_SPOTIFY
+                        it.originalDomain == "podcasts.apple.com" -> SORT_PRIORITY_APPLE_PODCASTS
+                        else -> SORT_PRIORITY_OTHER
                     }
                 })
             }
@@ -557,6 +557,18 @@ object SettingsUtils {
 
         bottomSheetDialog.show()
     }
+
+    // Default Redirect Sort Priorities
+    private const val DEFAULT_REDIRECT_COUNT_LEGACY = 4
+    private const val DEFAULT_REDIRECT_COUNT_CURRENT = 6
+    private const val SORT_PRIORITY_NYTIMES = 0
+    private const val SORT_PRIORITY_TIKTOK_SWAP = 1
+    private const val SORT_PRIORITY_TIKTOK_APPEND = 2
+    private const val SORT_PRIORITY_INSTAGRAM = 3
+    private const val SORT_PRIORITY_SPOTIFY = 4
+    private const val SORT_PRIORITY_APPLE_PODCASTS = 5
+    private const val SORT_PRIORITY_OTHER = 6
+
 
     private const val TAG = "SettingsUtils"
     private const val HEALTH_HEALTHY = "Healthy"

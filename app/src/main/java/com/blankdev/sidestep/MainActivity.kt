@@ -48,9 +48,11 @@ import androidx.core.content.edit
  * Shared OkHttpClient for connection pooling
  */
 object NetworkClient {
+    private const val NETWORK_TIMEOUT_SECONDS = 10L
+    
     val client = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .readTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 }
 
@@ -58,6 +60,66 @@ object NetworkClient {
  * Main activity with URL input and history display
  */
 class MainActivity : AppCompatActivity() {
+    
+    companion object {
+        // UI Dimensions
+        private const val TOOLBAR_HEIGHT_DP = 80
+        private const val TOOLBAR_PADDING_START_DP = 8
+        private const val TOOLBAR_PADDING_TOP_DP = 16
+        private const val CONTENT_PADDING_DP = 16
+        private const val INPUT_CONTAINER_PADDING_DP = 8
+        private const val INPUT_CONTAINER_VERTICAL_PADDING_DP = 4
+        private const val INPUT_CONTAINER_MARGIN_TOP_DP = 8
+        private const val INPUT_CONTAINER_MARGIN_BOTTOM_DP = 16
+        private const val URL_INPUT_PADDING_START_DP = 12
+        private const val URL_INPUT_PADDING_VERTICAL_DP = 8
+        private const val PROCESS_BUTTON_SIZE_DP = 48
+        private const val PROCESS_BUTTON_PADDING_DP = 12
+        private const val WARNING_TEXT_PADDING_HORIZONTAL_DP = 8
+        private const val WARNING_TEXT_PADDING_TOP_DP = 4
+        private const val WARNING_TEXT_PADDING_BOTTOM_DP = 12
+        private const val GUIDE_PADDING_HORIZONTAL_DP = 24
+        private const val GUIDE_PADDING_BOTTOM_DP = 16
+        private const val GUIDE_LABEL_PADDING_TOP_DP = 32
+        private const val GUIDE_LABEL_PADDING_BOTTOM_DP = 24
+        private const val STEP_CIRCLE_SIZE_DP = 24
+        private const val STEP_TEXT_PADDING_START_DP = 24
+        private const val STEP_LINE_WIDTH_DP = 2
+        private const val BUTTON_CORNER_RADIUS_DP = 28
+        private const val BUTTON_MIN_HEIGHT_DP = 56
+        private const val BUTTON_PADDING_TOP_DP = 16
+        private const val COUNTER_PADDING_VERTICAL_LARGE_DP = 32
+        private const val COUNTER_PADDING_TOP_DP = 16
+        private const val COUNTER_PADDING_BOTTOM_DP = 8
+        
+        // Text Sizes
+        private const val TITLE_TEXT_SIZE_SP = 28f
+        private const val SUBTITLE_TEXT_SIZE_SP = 14f
+        private const val URL_INPUT_TEXT_SIZE_SP = 16f
+        private const val WARNING_TEXT_SIZE_SP = 12f
+        private const val GUIDE_LABEL_TEXT_SIZE_SP = 12f
+        private const val STEP_CIRCLE_TEXT_SIZE_SP = 12f
+        private const val STEP_TEXT_SIZE_SP = 16f
+        private const val COUNTER_TEXT_SIZE_SP = 14f
+        
+        // Styling Values
+        private const val INPUT_CORNER_RADIUS_DP = 64
+        private const val SECONDARY_CORNER_RADIUS_F = 32f
+        private const val INPUT_BORDER_WIDTH_DP = 3
+        private const val INPUT_BORDER_ALPHA = 120
+        private const val SECONDARY_BG_ALPHA = 15
+        private const val STEP_CIRCLE_ALPHA = 40
+        private const val STEP_LINE_ALPHA = 40
+        private const val ELEVATION_DP = 4f
+        private const val COUNTER_SCALE_MULTIPLIER = 6f
+        private const val LINE_SPACING_MULTIPLIER = 1.2f
+        private const val LETTER_SPACING = 0.1f
+        
+        // Menu Item IDs
+        private const val MENU_ITEM_SHARE = 100
+        private const val MENU_ITEM_CLEAR = 101
+        private const val MENU_ITEM_INFO = 102
+    }
 
     private lateinit var urlInput: EditText
     private lateinit var historyList: RecyclerView
@@ -151,15 +213,15 @@ class MainActivity : AppCompatActivity() {
         val toolbar = com.google.android.material.appbar.MaterialToolbar(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                80.dp()
+                TOOLBAR_HEIGHT_DP.dp()
             )
-            setPadding(8.dp(), 16.dp(), 0, 0) // Adjusted to align title with content
+            setPadding(TOOLBAR_PADDING_START_DP.dp(), TOOLBAR_PADDING_TOP_DP.dp(), 0, 0) // Adjusted to align title with content
             setBackgroundColor(getThemeColor(android.R.attr.colorBackground))
             
             // Custom Title View to match the original 28f size and alignment
             val titleTextView = TextView(context).apply {
                 text = getString(R.string.app_name)
-                textSize = 28f
+                textSize = TITLE_TEXT_SIZE_SP
                 setTypeface(null, Typeface.BOLD)
                 setTextColor(getThemeColor(android.R.attr.textColorPrimary))
             }
@@ -177,7 +239,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val contentPadding = 16.dp()
+        val contentPadding = CONTENT_PADDING_DP.dp()
         // Content Container (to hold everything except toolbar)
         contentContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -193,7 +255,7 @@ class MainActivity : AppCompatActivity() {
 
         // Sidestep Counter initialization (moved to end of setup)
         sidestepCounter = TextView(this).apply {
-            textSize = 14f
+            textSize = SUBTITLE_TEXT_SIZE_SP
             setTypeface(null, Typeface.BOLD)
             setTextColor(getThemeColor(android.R.attr.textColorSecondary))
             gravity = Gravity.CENTER
@@ -204,14 +266,14 @@ class MainActivity : AppCompatActivity() {
         // Input container
         val inputContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(8.dp(), 4.dp(), 8.dp(), 4.dp())
+            setPadding(INPUT_CONTAINER_PADDING_DP.dp(), INPUT_CONTAINER_VERTICAL_PADDING_DP.dp(), INPUT_CONTAINER_PADDING_DP.dp(), INPUT_CONTAINER_VERTICAL_PADDING_DP.dp())
             background = createInputBackground()
-            elevation = 4f
+            elevation = ELEVATION_DP
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(0, 8.dp(), 0, 16.dp())
+                setMargins(0, INPUT_CONTAINER_MARGIN_TOP_DP.dp(), 0, INPUT_CONTAINER_MARGIN_BOTTOM_DP.dp())
             }
         }
         
@@ -235,8 +297,8 @@ class MainActivity : AppCompatActivity() {
                        android.text.InputType.TYPE_TEXT_VARIATION_URI
             imeOptions = EditorInfo.IME_ACTION_GO
             background = null
-            setPadding(12.dp(), 8.dp(), 8.dp(), 8.dp())
-            textSize = 16f
+            setPadding(URL_INPUT_PADDING_START_DP.dp(), URL_INPUT_PADDING_VERTICAL_DP.dp(), URL_INPUT_PADDING_VERTICAL_DP.dp(), URL_INPUT_PADDING_VERTICAL_DP.dp())
+            textSize = URL_INPUT_TEXT_SIZE_SP
             setTextColor(getThemeColor(android.R.attr.textColorPrimary))
             
             setOnEditorActionListener { _, actionId, _ ->
@@ -266,8 +328,8 @@ class MainActivity : AppCompatActivity() {
             setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setColorFilter(getThemeColor(com.google.android.material.R.attr.colorPrimary)) 
             layoutParams = LinearLayout.LayoutParams(
-                48.dp(),
-                48.dp()
+                PROCESS_BUTTON_SIZE_DP.dp(),
+                PROCESS_BUTTON_SIZE_DP.dp()
             ).apply {
                 gravity = Gravity.CENTER_VERTICAL
             }
@@ -280,10 +342,10 @@ class MainActivity : AppCompatActivity() {
         // Warning Text with theme-aware color
         warningText = TextView(this).apply {
             text = "" // Initialize empty
-            textSize = 12f
+            textSize = WARNING_TEXT_SIZE_SP
             // Use Material error color for better theme compatibility
             setTextColor(getThemeColor(com.google.android.material.R.attr.colorError))
-            setPadding(8.dp(), 4.dp(), 8.dp(), 12.dp())
+            setPadding(WARNING_TEXT_PADDING_HORIZONTAL_DP.dp(), WARNING_TEXT_PADDING_TOP_DP.dp(), WARNING_TEXT_PADDING_HORIZONTAL_DP.dp(), WARNING_TEXT_PADDING_BOTTOM_DP.dp())
             visibility = android.view.View.GONE
         }
         contentContainer.addView(warningText)
@@ -291,16 +353,16 @@ class MainActivity : AppCompatActivity() {
         // Empty State Guide
         emptyStateGuide = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(24.dp(), 0.dp(), 24.dp(), 16.dp())
+            setPadding(GUIDE_PADDING_HORIZONTAL_DP.dp(), 0.dp(), GUIDE_PADDING_HORIZONTAL_DP.dp(), GUIDE_PADDING_BOTTOM_DP.dp())
             visibility = View.GONE
             
             val guideLabel = TextView(this@MainActivity).apply {
                 text = getString(R.string.guide_welcome_label)
-                textSize = 12f
+                textSize = WARNING_TEXT_SIZE_SP
                 setTypeface(null, Typeface.BOLD)
                 setTextColor(getThemeColor(android.R.attr.textColorSecondary))
-                setPadding(0, 32.dp(), 0, 24.dp())
-                letterSpacing = 0.1f
+                setPadding(0, GUIDE_LABEL_PADDING_TOP_DP.dp(), 0, GUIDE_LABEL_PADDING_BOTTOM_DP.dp())
+                letterSpacing = LETTER_SPACING
             }
             addView(guideLabel)
 
@@ -336,19 +398,19 @@ class MainActivity : AppCompatActivity() {
                 val leftColumn = LinearLayout(this@MainActivity).apply {
                     orientation = LinearLayout.VERTICAL
                     gravity = Gravity.CENTER_HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(24.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
+                    layoutParams = LinearLayout.LayoutParams(STEP_CIRCLE_SIZE_DP.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
                 }
 
-                val circleSize = 24.dp()
+                val circleSize = STEP_CIRCLE_SIZE_DP.dp()
                 val stepCircle = TextView(this@MainActivity).apply {
                     text = (index + 1).toString()
-                    textSize = 12f
+                    textSize = WARNING_TEXT_SIZE_SP
                     setTypeface(null, Typeface.BOLD)
                     gravity = Gravity.CENTER
                     val bgColor = if (index == 0) {
                         getThemeColor(com.google.android.material.R.attr.colorPrimary)
                     } else {
-                        androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), 40)
+                        androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), STEP_CIRCLE_ALPHA)
                     }
                     val textColor = if (index == 0) {
                         getThemeColor(com.google.android.material.R.attr.colorOnPrimary)
@@ -369,8 +431,8 @@ class MainActivity : AppCompatActivity() {
                 // Add line segment if not the last step
                 if (index < steps.size - 1) {
                     val lineSegment = View(this@MainActivity).apply {
-                        setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), 40))
-                        layoutParams = LinearLayout.LayoutParams(2.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
+                        setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), STEP_LINE_ALPHA))
+                        layoutParams = LinearLayout.LayoutParams(STEP_LINE_WIDTH_DP.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
                     }
                     leftColumn.addView(lineSegment)
                 }
@@ -379,7 +441,7 @@ class MainActivity : AppCompatActivity() {
                 val stepTextView = TextView(this@MainActivity).apply {
                     text = stepText
                     textSize = 16f
-                    setPadding(24.dp(), 0, 0, 0) 
+                    setPadding(STEP_TEXT_PADDING_START_DP.dp(), 0, 0, 0) 
                     setTextColor(if (index == 0) getThemeColor(android.R.attr.textColorPrimary) else getThemeColor(android.R.attr.textColorSecondary))
                     setLineSpacing(0f, 1.2f)
                 }
@@ -392,7 +454,7 @@ class MainActivity : AppCompatActivity() {
             // For the last step, add the button below the steps list
             val buttonContainer = LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(0, 16.dp(), 0, 0)
+                setPadding(0, BUTTON_PADDING_TOP_DP.dp(), 0, 0)
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
@@ -401,10 +463,10 @@ class MainActivity : AppCompatActivity() {
 
             val defaultButton = com.google.android.material.button.MaterialButton(this@MainActivity).apply {
                 text = getString(R.string.btn_set_default)
-                cornerRadius = 28.dp()
+                cornerRadius = BUTTON_CORNER_RADIUS_DP.dp()
                 insetTop = 0
                 insetBottom = 0
-                minHeight = 56.dp()
+                minHeight = BUTTON_MIN_HEIGHT_DP.dp()
                 setOnClickListener { openDefaultHandlerSettings() }
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -526,7 +588,7 @@ class MainActivity : AppCompatActivity() {
             val primaryColor = getThemeColor(com.google.android.material.R.attr.colorPrimary)
             
             spannable.setSpan(
-                android.text.style.RelativeSizeSpan(6f), 
+                android.text.style.RelativeSizeSpan(COUNTER_SCALE_MULTIPLIER), 
                 0, countText.length,
                 android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
             )
@@ -544,8 +606,8 @@ class MainActivity : AppCompatActivity() {
             sidestepCounter.text = spannable
             sidestepCounter.setTypeface(null, Typeface.NORMAL) // Unbold the label (whole view normal, span handles bold count)
             sidestepCounter.textSize = 14f // Base size for the label
-            sidestepCounter.setLineSpacing(0f, 1.2f)
-            sidestepCounter.setPadding(0, 32.dp(), 0, 32.dp())
+            sidestepCounter.setLineSpacing(0f, LINE_SPACING_MULTIPLIER)
+            sidestepCounter.setPadding(0, COUNTER_PADDING_VERTICAL_LARGE_DP.dp(), 0, COUNTER_PADDING_VERTICAL_LARGE_DP.dp())
             sidestepCounter.layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 0,
@@ -559,7 +621,7 @@ class MainActivity : AppCompatActivity() {
             sidestepCounter.textSize = 14f
             sidestepCounter.setTypeface(null, Typeface.BOLD) // Keep footer bold
             sidestepCounter.setTextColor(getThemeColor(android.R.attr.textColorSecondary))
-            sidestepCounter.setPadding(0, 16.dp(), 0, 8.dp())
+            sidestepCounter.setPadding(0, COUNTER_PADDING_TOP_DP.dp(), 0, COUNTER_PADDING_BOTTOM_DP.dp())
             
             sidestepCounter.layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -572,7 +634,7 @@ class MainActivity : AppCompatActivity() {
     private fun createInputBackground(): android.graphics.drawable.Drawable {
         val shape = android.graphics.drawable.GradientDrawable()
         shape.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-        shape.cornerRadius = 64.dp().toFloat() // Pill shape
+        shape.cornerRadius = INPUT_CORNER_RADIUS_DP.dp().toFloat() // Pill shape
         
         // Use theme surface color
         shape.setColor(getThemeColor(com.google.android.material.R.attr.colorSurface))
@@ -580,8 +642,8 @@ class MainActivity : AppCompatActivity() {
         // Border color based on theme (using textColorSecondary or similar for border)
         val borderColor = getThemeColor(android.R.attr.textColorSecondary)
         // Revert to thicker border (3dp) and higher alpha (120) per user feedback
-        val alphaBorder = androidx.core.graphics.ColorUtils.setAlphaComponent(borderColor, 120)
-        shape.setStroke(3, alphaBorder)
+        val alphaBorder = androidx.core.graphics.ColorUtils.setAlphaComponent(borderColor, INPUT_BORDER_ALPHA)
+        shape.setStroke(INPUT_BORDER_WIDTH_DP, alphaBorder)
         
         return shape
     }
@@ -597,10 +659,10 @@ class MainActivity : AppCompatActivity() {
     private fun createSecondaryBackground(): android.graphics.drawable.Drawable {
         val shape = android.graphics.drawable.GradientDrawable()
         shape.shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-        shape.cornerRadius = 32f
+        shape.cornerRadius = SECONDARY_CORNER_RADIUS_F
         // Very subtle background color related to surface/secondary
         val baseColor = getThemeColor(android.R.attr.textColorSecondary)
-        shape.setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(baseColor, 15))
+        shape.setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(baseColor, SECONDARY_BG_ALPHA))
         return shape
     }
 
@@ -1250,7 +1312,7 @@ class MainActivity : AppCompatActivity() {
         fun addDetailRow(label: String, content: String, actionIcon: Int, onAction: () -> Unit) {
             val labelView = TextView(this).apply {
                 text = label
-                textSize = 12f
+                textSize = WARNING_TEXT_SIZE_SP
                 setTextColor(getThemeColor(android.R.attr.textColorSecondary))
                 setPadding(0, 12.dp(), 0, 4.dp())
             }
@@ -1411,11 +1473,5 @@ class MainActivity : AppCompatActivity() {
             .putLong("sidestep_count", currentCount + 1)
             .putBoolean("has_processed_url", true)
             .apply()
-    }
-    
-    companion object {
-        private const val MENU_ITEM_SHARE = 100
-        private const val MENU_ITEM_CLEAR = 101
-        private const val MENU_ITEM_INFO = 102
     }
 }

@@ -8,12 +8,21 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.regex.Pattern
+import android.util.Log
+
 
 /**
  * Fetches and manages alternative frontend instances with health/uptime data.
  * Provides fallback domains when API fetching fails.
  */
 object AlternativeInstancesFetcher {
+    
+    private const val HTTP_CONNECT_TIMEOUT_MS = 5000
+    private const val HTTP_READ_TIMEOUT_MS = 5000
+    private const val TAG = "AlternativeInstancesFetcher"
+
+    private const val HTTP_OK = 200
+    private const val LOOKAHEAD_BUFFER_SIZE = 200
 
     data class Instance(
         val domain: String, 
@@ -120,7 +129,7 @@ object AlternativeInstancesFetcher {
             if (results.isEmpty()) {
                 results.addAll(fetchNitterFromWiki())
             }
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) { Log.e(TAG, "Failed to fetch instances", e) }
         
         if (results.isEmpty()) {
             results.addAll(getNitterDefaults())
@@ -133,12 +142,12 @@ object AlternativeInstancesFetcher {
         try {
             val connection = URL(REDLIB_API_URL).openConnection() as HttpURLConnection
             connection.apply {
-                connectTimeout = 5000
-                readTimeout = 5000
+                connectTimeout = HTTP_CONNECT_TIMEOUT_MS
+                readTimeout = HTTP_READ_TIMEOUT_MS
                 requestMethod = "GET"
             }
             
-            if (connection.responseCode == 200) {
+            if (connection.responseCode == HTTP_OK) {
                 val jsonStr = connection.inputStream.bufferedReader().use { it.readText() }
                 val root = JSONObject(jsonStr)
                 val monitors = root.optJSONObject("psp")?.optJSONArray("monitors")
@@ -164,7 +173,7 @@ object AlternativeInstancesFetcher {
                     }
                 }
             }
-        } catch (e: Exception) { e.printStackTrace() }
+        } catch (e: Exception) { Log.e(TAG, "Failed to fetch instances", e) }
         
         if (results.isEmpty()) {
             results.addAll(getRedlibDefaults())
@@ -177,8 +186,8 @@ object AlternativeInstancesFetcher {
         try {
             val connection = URL(INVIDIOUS_API_URL).openConnection() as HttpURLConnection
             connection.apply {
-                connectTimeout = 5000
-                readTimeout = 5000
+                connectTimeout = HTTP_CONNECT_TIMEOUT_MS
+                readTimeout = HTTP_READ_TIMEOUT_MS
             }
             val json = connection.inputStream.bufferedReader().use { it.readText() }
             
@@ -207,7 +216,7 @@ object AlternativeInstancesFetcher {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch instances", e)
         }
         
         if (instances.isEmpty()) {
@@ -238,8 +247,8 @@ object AlternativeInstancesFetcher {
         try {
             val connection = URL(LIBREDIRECT_INSTANCES_URL).openConnection() as HttpURLConnection
             connection.apply {
-                connectTimeout = 5000
-                readTimeout = 5000
+                connectTimeout = HTTP_CONNECT_TIMEOUT_MS
+                readTimeout = HTTP_READ_TIMEOUT_MS
                 requestMethod = "GET"
             }
             
@@ -257,7 +266,7 @@ object AlternativeInstancesFetcher {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch instances", e)
         }
         return@withContext results
     }
@@ -307,8 +316,8 @@ object AlternativeInstancesFetcher {
         try {
             val connection = URL(PRIVIBLUR_INSTANCES_URL).openConnection() as HttpURLConnection
             connection.apply {
-                connectTimeout = 5000
-                readTimeout = 5000
+                connectTimeout = HTTP_CONNECT_TIMEOUT_MS
+                readTimeout = HTTP_READ_TIMEOUT_MS
                 requestMethod = "GET"
             }
 
@@ -325,7 +334,7 @@ object AlternativeInstancesFetcher {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch instances", e)
         }
         
         if (instances.isEmpty()) {
@@ -339,8 +348,8 @@ object AlternativeInstancesFetcher {
         try {
             val connection = URL(statusUrl).openConnection() as HttpURLConnection
             connection.apply {
-                connectTimeout = 5000
-                readTimeout = 5000
+                connectTimeout = HTTP_CONNECT_TIMEOUT_MS
+                readTimeout = HTTP_READ_TIMEOUT_MS
                 requestMethod = "GET"
                 setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Sidestep/1.0")
             }
@@ -385,7 +394,7 @@ object AlternativeInstancesFetcher {
                 instances.add(Instance(domain, uptime = uptime, uptime7d = uptime, health = health))
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch instances", e)
         }
         return instances
     }
@@ -395,8 +404,8 @@ object AlternativeInstancesFetcher {
         try {
             val connection = URL(statusUrl).openConnection() as HttpURLConnection
             connection.apply {
-                connectTimeout = 5000
-                readTimeout = 5000
+                connectTimeout = HTTP_CONNECT_TIMEOUT_MS
+                readTimeout = HTTP_READ_TIMEOUT_MS
                 requestMethod = "GET"
                 setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
             }
@@ -412,7 +421,7 @@ object AlternativeInstancesFetcher {
                 val domain = matcher.group(1)?.lowercase() ?: continue
                 if (isAlternativeInstance(domain) && !seenDomains.contains(domain)) {
                     // Look ahead for percentages
-                    val lookAhead = html.substring(matcher.end(), (matcher.end() + 200).coerceAtMost(html.length))
+                    val lookAhead = html.substring(matcher.end(), (matcher.end() + LOOKAHEAD_BUFFER_SIZE).coerceAtMost(html.length))
                     
                     // Match multiple percentages if they exist (common in status pages: 24h, 7d, 30d)
                     val pctMatcher = Pattern.compile("(\\d{1,3}(?:\\.\\d+)?%)").matcher(lookAhead)
@@ -437,7 +446,7 @@ object AlternativeInstancesFetcher {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch instances", e)
         }
         return instances
     }
@@ -447,8 +456,8 @@ object AlternativeInstancesFetcher {
         try {
             val connection = URL(NITTER_WIKI_URL).openConnection() as HttpURLConnection
             connection.apply {
-                connectTimeout = 5000
-                readTimeout = 5000
+                connectTimeout = HTTP_CONNECT_TIMEOUT_MS
+                readTimeout = HTTP_READ_TIMEOUT_MS
                 requestMethod = "GET"
             }
 
@@ -463,7 +472,7 @@ object AlternativeInstancesFetcher {
                 }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to fetch instances", e)
         }
         return instances
     }

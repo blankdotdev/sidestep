@@ -181,7 +181,7 @@ class SettingsActivity : AppCompatActivity() {
             
             val itemLayout = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
-                setPadding(0, SettingsUtils.dp(this@SettingsActivity, 16), 0, SettingsUtils.dp(this@SettingsActivity, 16))
+                setPadding(0, SettingsUtils.dp(this@SettingsActivity, STATUS_ITEM_PADDING_DP), 0, SettingsUtils.dp(this@SettingsActivity, STATUS_ITEM_PADDING_DP))
                 gravity = Gravity.CENTER_VERTICAL
             }
 
@@ -193,15 +193,15 @@ class SettingsActivity : AppCompatActivity() {
 
             val statusIndicator = TextView(this).apply {
                 text = "●"
-                textSize = 18f
+                textSize = STATUS_INDICATOR_SIZE_SP
                 setTextColor(androidx.core.content.ContextCompat.getColor(context, statusColorId))
-                setPadding(0, 0, SettingsUtils.dp(this@SettingsActivity, 24), 0)
+                setPadding(0, 0, SettingsUtils.dp(this@SettingsActivity, STATUS_INDICATOR_PADDING_END_DP), 0)
             }
             itemLayout.addView(statusIndicator)
 
             val nameText = TextView(this).apply {
                 text = name
-                textSize = 16f
+                textSize = PLATFORM_NAME_TEXT_SIZE_SP
                 setTextColor(SettingsUtils.getThemeColor(this@SettingsActivity, android.R.attr.textColorPrimary))
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
@@ -209,7 +209,7 @@ class SettingsActivity : AppCompatActivity() {
 
             val statusText = TextView(this).apply {
                 text = statusLabel
-                textSize = 14f
+                textSize = STATUS_LABEL_TEXT_SIZE_SP
                 setTextColor(SettingsUtils.getThemeColor(this@SettingsActivity, if (status != SettingsUtils.DomainStatus.NONE) android.R.attr.textColorPrimary else android.R.attr.textColorSecondary))
             }
             itemLayout.addView(statusText)
@@ -223,7 +223,7 @@ class SettingsActivity : AppCompatActivity() {
     private fun showGuidedTour() {
         val dialogView = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val padding = SettingsUtils.dp(this@SettingsActivity, 24)
+            val padding = SettingsUtils.dp(this@SettingsActivity, GUIDED_TOUR_PADDING_DP)
             setPadding(padding, 0, padding, 0)
         }
         
@@ -237,10 +237,10 @@ class SettingsActivity : AppCompatActivity() {
         steps.forEach { stepText ->
             val step = TextView(this).apply {
                 text = stepText
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 16f)
-                setPadding(0, 0, 0, SettingsUtils.dp(this@SettingsActivity, 16))
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, GUIDED_TOUR_TEXT_SIZE_SP)
+                setPadding(0, 0, 0, SettingsUtils.dp(this@SettingsActivity, GUIDED_TOUR_STEP_SPACING_DP))
                 setTextColor(SettingsUtils.getThemeColor(this@SettingsActivity, android.R.attr.textColorSecondary))
-                setLineSpacing(0f, 1.4f)
+                setLineSpacing(0f, LINE_SPACING_MULTIPLIER)
             }
             dialogView.addView(step)
         }
@@ -274,6 +274,16 @@ class SettingsActivity : AppCompatActivity() {
 
 
     companion object {
+    // UI Dimensions and Text Sizes
+    private const val STATUS_ITEM_PADDING_DP = 16
+    private const val STATUS_INDICATOR_SIZE_SP = 18f
+    private const val STATUS_INDICATOR_PADDING_END_DP = 24
+    private const val PLATFORM_NAME_TEXT_SIZE_SP = 16f
+    private const val STATUS_LABEL_TEXT_SIZE_SP = 14f
+    private const val GUIDED_TOUR_PADDING_DP = 24
+    private const val GUIDED_TOUR_TEXT_SIZE_SP = 16f
+    private const val GUIDED_TOUR_STEP_SPACING_DP = 16
+    private const val LINE_SPACING_MULTIPLIER = 1.4f
         const val KEY_ALTERNATIVE_DOMAIN = "alternative_domain"
         const val DEFAULT_ALTERNATIVE_DOMAIN = "nitter.net" 
         const val KEY_REDDIT_DOMAIN = "reddit_domain"
