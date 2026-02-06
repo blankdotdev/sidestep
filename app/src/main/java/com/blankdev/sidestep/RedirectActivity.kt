@@ -41,7 +41,19 @@ class RedirectActivity : AppCompatActivity() {
         }
 
         if (url != null) {
-            processAndRedirect(url)
+            val sanitizedUrl = UrlCleaner.ensureProtocol(url)
+            if (UrlCleaner.isValidAppUrl(sanitizedUrl)) {
+                processAndRedirect(url)
+            } else {
+                // Not a valid web URL, fall back to MainActivity or handle as text
+                val mainIntent = Intent(this, MainActivity::class.java).apply {
+                    setAction(Intent.ACTION_SEND)
+                    putExtra(Intent.EXTRA_TEXT, url)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+                startActivity(mainIntent)
+                finish()
+            }
         } else {
             // If we can't find a URL, fall back to MainActivity
             val mainIntent = Intent(intent).apply {

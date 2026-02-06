@@ -43,7 +43,9 @@
             android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:excludeFromRecents="true"
-            android:noHistory="true">
+            android:noHistory="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="">
 
             <!-- General URL Intent Filter -->
             <intent-filter android:autoVerify="true">

@@ -24,6 +24,8 @@ import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.Dispatchers
 import com.blankdev.sidestep.BuildConfig
+import android.util.Log
+import org.json.JSONException
 
 data class CustomRedirect(
     val id: String,
@@ -92,7 +94,8 @@ object SettingsUtils {
             }
             
             list
-        } catch (e: Exception) {
+        } catch (e: JSONException) {
+            Log.e(TAG, "Failed to parse custom redirects JSON", e)
             emptyList()
         }
     }
@@ -179,7 +182,9 @@ object SettingsUtils {
                         return true
                     }
                 }
-            } catch (e: Exception) {}
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to check domain verification status", e)
+            }
         }
         
         val resolveInfo = context.packageManager.resolveActivity(intent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
@@ -238,6 +243,7 @@ object SettingsUtils {
         return try {
             checkDomain(context, unshortenedUrl)
         } catch (e: Exception) {
+            Log.e(TAG, "Error checking domain for WebView", e)
             false
         }
     }
@@ -294,8 +300,8 @@ object SettingsUtils {
             "intellectual" -> getCachedInstances(activity, "intellectual") ?: AlternativeInstancesFetcher.getIntellectualDefaults()
             else -> getCachedInstances(activity, "reddit") ?: AlternativeInstancesFetcher.getRedlibDefaults()
         }).filter { instance ->
-            val isDown = instance.health == "Down" || 
-                         (instance.health == "unhealthy" || instance.health == "Dead")
+            val isDown = instance.health == HEALTH_DOWN || 
+                         (instance.health == HEALTH_UNHEALTHY || instance.health == HEALTH_DEAD)
             val isZeroUptime = instance.uptime?.startsWith("0") == true || instance.uptime7d?.startsWith("0") == true
             !(isDown && isZeroUptime)
         }
@@ -303,9 +309,9 @@ object SettingsUtils {
         val displayList = instances.map { instance ->
             val uptime = instance.uptimeValue
             val (colorId, emoji) = when {
-                instance.health == "Healthy" || uptime >= 98f -> R.color.status_green_pastel to "●"
-                instance.health == "Issues" || uptime >= 85f -> R.color.status_yellow_pastel to "●"
-                instance.health == "Down" || uptime < 85f && instance.uptime != null -> R.color.status_red_pastel to "●"
+                instance.health == HEALTH_HEALTHY || uptime >= UPTIME_THRESHOLD_HEALTHY -> R.color.status_green_pastel to HEALTH_EMOJI
+                instance.health == HEALTH_ISSUES || uptime >= UPTIME_THRESHOLD_ISSUES -> R.color.status_yellow_pastel to HEALTH_EMOJI
+                instance.health == HEALTH_DOWN || uptime < UPTIME_THRESHOLD_ISSUES && instance.uptime != null -> R.color.status_red_pastel to HEALTH_EMOJI
                 else -> null to null
             }
             
@@ -381,8 +387,8 @@ object SettingsUtils {
                 ))
             }
             return list
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (e: JSONException) {
+            Log.e(TAG, "Failed to parse cached instances JSON for $type", e)
             return null
         }
     }
@@ -525,6 +531,7 @@ object SettingsUtils {
                             context.startActivity(webIntent)
                         }
                     } catch (e: Exception) {
+                        Log.e(TAG, "Failed to open URL: $redirectUrl", e)
                         android.widget.Toast.makeText(context, "Could not open URL", android.widget.Toast.LENGTH_SHORT).show()
                     }
                     bottomSheetDialog.dismiss()
@@ -550,4 +557,14 @@ object SettingsUtils {
 
         bottomSheetDialog.show()
     }
+
+    private const val TAG = "SettingsUtils"
+    private const val HEALTH_HEALTHY = "Healthy"
+    private const val HEALTH_ISSUES = "Issues"
+    private const val HEALTH_DOWN = "Down"
+    private const val HEALTH_UNHEALTHY = "unhealthy"
+    private const val HEALTH_DEAD = "Dead"
+    private const val HEALTH_EMOJI = "●"
+    private const val UPTIME_THRESHOLD_HEALTHY = 98f
+    private const val UPTIME_THRESHOLD_ISSUES = 85f
 }

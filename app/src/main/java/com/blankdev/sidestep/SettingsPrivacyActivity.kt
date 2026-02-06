@@ -98,8 +98,18 @@ class SettingsPrivacyActivity : AppCompatActivity() {
                     android.widget.Toast.makeText(this, "History must be enabled if Immediate Navigation is OFF", android.widget.Toast.LENGTH_LONG).show()
                 } else {
                     prefs.edit { putString(HistoryManager.KEY_HISTORY_RETENTION, newMode) }
-                    customContainer.visibility = if (newMode == HistoryManager.DEFAULT_RETENTION_MODE) android.view.View.VISIBLE else android.view.View.GONE
-                    privacyCard.visibility = if (newMode == "never") android.view.View.GONE else android.view.View.VISIBLE
+                    
+                    if (newMode == HistoryManager.DEFAULT_RETENTION_MODE) {
+                        customContainer.visibility = android.view.View.VISIBLE
+                    } else {
+                        customContainer.visibility = android.view.View.GONE
+                    }
+                    
+                    if (newMode == "never") {
+                        privacyCard.visibility = android.view.View.GONE
+                    } else {
+                        privacyCard.visibility = android.view.View.VISIBLE
+                    }
                 }
             }
         }

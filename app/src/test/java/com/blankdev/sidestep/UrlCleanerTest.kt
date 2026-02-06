@@ -219,6 +219,19 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun testValidAppUrl() {
+        assertTrue(UrlCleaner.isValidAppUrl("http://google.com"))
+        assertTrue(UrlCleaner.isValidAppUrl("https://example.com/path"))
+        assertTrue(UrlCleaner.isValidAppUrl("HTTP://UPPERCASE.COM"))
+        
+        assertFalse(UrlCleaner.isValidAppUrl("file:///etc/hosts"))
+        assertFalse(UrlCleaner.isValidAppUrl("javascript:alert(1)"))
+        assertFalse(UrlCleaner.isValidAppUrl("google.com")) // Must have protocol to be valid app URL
+        assertFalse(UrlCleaner.isValidAppUrl(null))
+        assertFalse(UrlCleaner.isValidAppUrl(""))
+    }
+
+    @Test
     fun testIsImgurUrl() {
         assertTrue(UrlCleaner.isImgurUrl("https://imgur.com/gallery/abc"))
         assertTrue(UrlCleaner.isImgurUrl("https://www.imgur.com/abc"))
