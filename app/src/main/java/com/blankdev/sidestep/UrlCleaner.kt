@@ -465,79 +465,68 @@ object UrlCleaner {
             val path = uri.path ?: ""
             val query = uri.query
 
-            sequenceOf(
-                { matchMapsCoordinates(url) },
-                { matchMapsPlace(path) },
-                { matchMapsDirection(path) },
-                { matchMapsSearchPath(path) },
-                { matchMapsQueryParam(query) },
-                { matchMapsLatLongParam(query) }
-            ).firstNotNullOfOrNull { it() } 
-            ?: "https://www.openstreetmap.org"
+            val result = matchOpenStreetMapRedirect(url, path, query)
+            result ?: "https://www.openstreetmap.org"
         } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to convert Google Maps URL to OSM: $url", e)
             "https://www.openstreetmap.org"
         }
     }
 
-    private fun matchMapsCoordinates(url: String): String? {
-        val atPattern = "@([^,]+),([^,]+),([0-9.]+)z?".toRegex()
-        val atMatch = atPattern.find(url) ?: return null
-        val lat = atMatch.groupValues[1]
-        val long = atMatch.groupValues[2]
-        val zoom = atMatch.groupValues[3].replace("z", "")
-        return "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=$zoom/$lat/$long"
-    }
+    /**
+     * Tries to find a corresponding OpenStreetMap URL pattern from a Google Maps URL
+     */
+    private fun matchOpenStreetMapRedirect(url: String, path: String, query: String?): String? {
+        // 1. Coordinates via @lat,long,zoom
+        val atMatch = "@([^,]+),([^,]+),([0-9.]+)z?".toRegex().find(url)
+        if (atMatch != null) {
+            val (lat, long, zoom) = atMatch.destructured
+            val cleanZoom = zoom.replace("z", "")
+            return "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=$cleanZoom/$lat/$long"
+        }
 
-    private fun matchMapsPlace(path: String): String? {
-        if (!path.contains("/place/")) return null
-        val placeName = path.substringAfter("/place/").substringBefore("/")
-        val decoded = URLDecoder.decode(placeName, "UTF-8")
-        return "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
-    }
-
-    private fun matchMapsDirection(path: String): String? {
-        return path.takeIf { it.contains("/dir/") }
-            ?.substringAfter("/dir/")
-            ?.split("/")
-            ?.takeIf { it.size >= 2 }
-            ?.let { parts ->
+        // 2. Direct directions /dir/from/to
+        if (path.contains("/dir/")) {
+            val parts = path.substringAfter("/dir/").split("/").takeIf { it.size >= 2 }
+            if (parts != null) {
                 val from = URLDecoder.decode(parts[0], "UTF-8")
                 val to = URLDecoder.decode(parts[1], "UTF-8")
-                "https://www.openstreetmap.org/directions?from=${URLEncoder.encode(from, "UTF-8")}&to=${URLEncoder.encode(to, "UTF-8")}"
+                return "https://www.openstreetmap.org/directions?from=${URLEncoder.encode(from, "UTF-8")}&to=${URLEncoder.encode(to, "UTF-8")}"
             }
-    }
+        }
 
-    private fun matchMapsSearchPath(path: String): String? {
-        return path.takeIf { it.contains("/search/") }
-            ?.substringAfter("/search/")
-            ?.substringBefore("/")
-            ?.takeIf { it.isNotEmpty() }
-            ?.let { query ->
-                val decoded = URLDecoder.decode(query, "UTF-8")
-                "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
+        // 3. Place or Search in path
+        val searchFor = when {
+            path.contains("/place/") -> path.substringAfter("/place/").substringBefore("/")
+            path.contains("/search/") -> path.substringAfter("/search/").substringBefore("/")
+            else -> null
+        }
+        if (!searchFor.isNullOrEmpty()) {
+             val decoded = URLDecoder.decode(searchFor, "UTF-8")
+             return "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
+        }
+
+        // 4. Query params (ll or q)
+        if (query != null) {
+            // Lat/Long param
+            if (query.contains("ll=")) {
+                val coords = "ll=([^&]+)".toRegex().find(query)?.groupValues?.get(1)?.split(",")
+                if (coords != null && coords.size >= 2) {
+                     val lat = coords[0]
+                     val long = coords[1]
+                     return "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=15/$lat/$long"
+                }
             }
-    }
-
-    private fun matchMapsQueryParam(query: String?): String? {
-        return query?.let { q ->
-            val qPattern = "(?:^|&)(?:q|query|search_query)=([^&]+)".toRegex()
-            qPattern.find(q)?.groupValues?.get(1)?.let { qParam ->
+            
+            // Search param
+            val qParam = "(?:^|&)(?:q|query|search_query)=([^&]+)".toRegex().find(query)?.groupValues?.get(1)
+            if (qParam != null) {
                 val decoded = URLDecoder.decode(qParam, "UTF-8")
-                "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
+                return "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
             }
         }
-    }
-
-    private fun matchMapsLatLongParam(query: String?): String? {
-        return query?.takeIf { it.contains("ll=") }?.let { q ->
-            val llPattern = "ll=([^&]+)".toRegex()
-            llPattern.find(q)?.groupValues?.get(1)?.split(",")?.takeIf { it.size >= 2 }?.let { coords ->
-                val lat = coords[0]
-                val long = coords[1]
-                "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=15/$lat/$long"
-            }
-        }
+        
+        return null
     }
 
 

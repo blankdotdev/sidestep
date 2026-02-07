@@ -1003,24 +1003,14 @@ class MainActivity : AppCompatActivity() {
         return when {
             isTwitter -> {
                 val timestamp = entry.postedTimestamp ?: getTwitterTimestamp(contentUrl)
-                if (timestamp != null) {
-                    val sdf = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
-                    "Posted on ${sdf.format(java.util.Date(timestamp))}"
-                } else getFallbackSubtitle(entry, contentUrl)
+                formatTimestamp(timestamp) { "Posted on $it" } ?: getFallbackSubtitle(entry, contentUrl)
             }
             isTikTok -> {
                 val timestamp = entry.postedTimestamp ?: getTikTokTimestamp(contentUrl)
-                if (timestamp != null) {
-                    val sdf = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
-                    "Posted on ${sdf.format(java.util.Date(timestamp))}"
-                } else getFallbackSubtitle(entry, contentUrl)
+                formatTimestamp(timestamp) { "Posted on $it" } ?: getFallbackSubtitle(entry, contentUrl)
             }
             isReddit -> {
-                val timestamp = entry.postedTimestamp
-                if (timestamp != null && timestamp > 0) {
-                    val sdf = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
-                    "Posted on ${sdf.format(java.util.Date(timestamp))}"
-                } else getFallbackSubtitle(entry, contentUrl)
+                formatTimestamp(entry.postedTimestamp) { "Posted on $it" } ?: getFallbackSubtitle(entry, contentUrl)
             }
             isYouTube -> {
                 val timestamp = entry.postedTimestamp
@@ -1033,6 +1023,15 @@ class MainActivity : AppCompatActivity() {
             else -> getFallbackSubtitle(entry, contentUrl)
         }
     }
+
+    private fun formatTimestamp(timestamp: Long?, format: (String) -> String): String? {
+        if (timestamp != null && timestamp > 0) {
+            val sdf = SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault())
+            return format(sdf.format(java.util.Date(timestamp)))
+        }
+        return null
+    }
+
 
     private fun getFallbackSubtitle(entry: HistoryManager.HistoryEntry, contentUrl: String): String {
         val title = getDisplayTitle(entry)
