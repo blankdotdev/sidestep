@@ -130,7 +130,7 @@ class AlternativeInstancesFetcherTest {
 
     @Test
     fun testDomainPatternRegexWithPossessiveQuantifiers() {
-        // Test the fixed regex pattern from line 422 - using atomic grouping to prevent ReDoS
+        // Test the fixed regex pattern from line 425 - using atomic grouping to prevent ReDoS
         val pattern = Pattern.compile("((?>[a-z0-9-]+)(?:\\.(?>[a-z0-9-]+))*\\.[a-z]{2,})", Pattern.CASE_INSENSITIVE)
         
         // Valid domains embedded in HTML-like text (matching actual usage)

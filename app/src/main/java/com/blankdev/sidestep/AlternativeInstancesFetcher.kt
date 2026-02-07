@@ -419,8 +419,11 @@ object AlternativeInstancesFetcher {
 
             val html = connection.inputStream.bufferedReader().use { it.readText() }
             
+            // Limit input size to prevent ReDoS attacks - defense in depth
+            val safeHtml = if (html.length > 1_000_000) html.substring(0, 1_000_000) else html
+            
             val domainPattern = Pattern.compile("((?>[a-z0-9-]+)(?:\\.(?>[a-z0-9-]+))*\\.[a-z]{2,})", Pattern.CASE_INSENSITIVE)
-            val matcher = domainPattern.matcher(html)
+            val matcher = domainPattern.matcher(safeHtml)
             
             val seenDomains = mutableSetOf<String>()
             
@@ -428,7 +431,7 @@ object AlternativeInstancesFetcher {
                 val domain = matcher.group(1)?.lowercase() ?: continue
                 if (isAlternativeInstance(domain) && !seenDomains.contains(domain)) {
                     // Look ahead for percentages
-                    val lookAhead = html.substring(matcher.end(), (matcher.end() + LOOKAHEAD_BUFFER_SIZE).coerceAtMost(html.length))
+                    val lookAhead = safeHtml.substring(matcher.end(), (matcher.end() + LOOKAHEAD_BUFFER_SIZE).coerceAtMost(safeHtml.length))
                     
                     // Match multiple percentages if they exist (common in status pages: 24h, 7d, 30d)
                     val pctMatcher = Pattern.compile("(\\d{1,3}(?:\\.\\d+)?%)").matcher(lookAhead)
