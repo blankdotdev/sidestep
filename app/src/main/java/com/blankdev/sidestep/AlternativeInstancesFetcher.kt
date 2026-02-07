@@ -345,7 +345,12 @@ object AlternativeInstancesFetcher {
             generateSequence { if (matcher.find()) matcher else null }
                 .mapNotNull { m ->
                     val url = m.group(2) ?: return@mapNotNull null
-                    val domain = try { URI(url).host } catch (ignored: URISyntaxException) { null }
+                    val domain = try { 
+                        URI(url).host 
+                    } catch (e: URISyntaxException) { 
+                        Log.d(TAG, "Invalid URI extracting domain: $url", e)
+                        null 
+                    }
                     domain?.takeIf { isAlternativeInstance(it) }
                 }
                 .forEach { domain -> instances.add(Instance(domain)) }
@@ -411,7 +416,7 @@ object AlternativeInstancesFetcher {
         val pctMatcher = Pattern.compile("(\\d{1,3}(?:\\.\\d+)?%)").matcher(row)
         val percentages = mutableListOf<String>()
         while (pctMatcher.find()) {
-            percentages.add(pctMatcher.group(1))
+            pctMatcher.group(1)?.let { percentages.add(it) }
         }
         
         val uptime = if (percentages.isNotEmpty()) percentages.last() else null
@@ -450,7 +455,7 @@ object AlternativeInstancesFetcher {
                     val pctMatcher = Pattern.compile("(\\d{1,3}(?:\\.\\d+)?%)").matcher(lookAhead)
                     val percentages = mutableListOf<String>()
                     while (pctMatcher.find()) {
-                        percentages.add(pctMatcher.group(1))
+                        pctMatcher.group(1)?.let { percentages.add(it) }
                     }
 
                     val uptime = if (percentages.isNotEmpty()) percentages[0] else null

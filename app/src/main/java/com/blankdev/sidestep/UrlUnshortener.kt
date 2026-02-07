@@ -198,7 +198,8 @@ object UrlUnshortener {
             
             val score = calculateShortenerScore(host, path)
             isHighProbabilityShortener(score, host, path)
-        } catch (ignored: java.net.URISyntaxException) {
+        } catch (e: java.net.URISyntaxException) {
+            println("Sidestep: Invalid URI in redirect check: $url - ${e.message}")
             false
         }
     }

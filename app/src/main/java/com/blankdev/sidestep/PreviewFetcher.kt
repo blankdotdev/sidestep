@@ -180,7 +180,8 @@ object PreviewFetcher {
         return try {
             val host = java.net.URI(url).host?.lowercase() ?: ""
             host.contains("youtube.com") || host.contains("youtu.be")
-        } catch (ignored: java.net.URISyntaxException) {
+        } catch (e: java.net.URISyntaxException) {
+            android.util.Log.d("PreviewFetcher", "Invalid URI in YouTube check: $url", e)
             false
         }
     }
@@ -249,7 +250,8 @@ object PreviewFetcher {
                 try {
                     @Suppress("DEPRECATION")
                     result = android.text.Html.fromHtml(result).toString()
-                } catch (ignored: Exception) {
+                } catch (e: Exception) {
+                    android.util.Log.d("PreviewFetcher", "HTML decoding fallback failed, keeping original", e)
                     // Keep original if HTML parsing fails
                 }
             }
@@ -279,7 +281,10 @@ object PreviewFetcher {
                 val sdf = java.text.SimpleDateFormat(format, java.util.Locale.US)
                 if (format.endsWith("'Z'")) sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
                 sdf.parse(dateStr)?.time
-            } catch (ignored: Exception) { null }
+            } catch (e: Exception) {
+                android.util.Log.d("PreviewFetcher", "Date parsing failed for format: $format", e)
+                null
+            }
         }.firstOrNull() ?: tryParseNumericTimestamp(dateStr)
     }
 
@@ -291,6 +296,9 @@ object PreviewFetcher {
             } else if (longVal > TIMESTAMP_SECONDS_THRESHOLD) {
                 longVal * MS_PER_SECOND // seconds
             } else null
-        } catch (ignored: Exception) { null }
+        } catch (e: NumberFormatException) {
+            android.util.Log.d("PreviewFetcher", "Invalid numeric timestamp: $dateStr", e)
+            null
+        }
     }
 }

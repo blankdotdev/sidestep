@@ -152,7 +152,8 @@ object HistoryManager {
                     prefs.edit(commit = true) { remove("history") } // Purge legacy key forever
                 }
                 legacyList
-            } catch (ignored: Exception) {
+            } catch (e: Exception) {
+                android.util.Log.w("HistoryManager", "Failed to parse legacy history format, returning empty", e)
                 emptyList()
             }
         }

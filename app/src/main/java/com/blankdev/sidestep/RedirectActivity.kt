@@ -120,7 +120,11 @@ class RedirectActivity : AppCompatActivity() {
                  }
             } catch (ignored: kotlinx.coroutines.TimeoutCancellationException) {
                  sanitizedUrl
-             } catch (ignored: Exception) {
+             } catch (e: java.io.IOException) {
+                 Log.w(TAG, "Network error during unshorten, using original URL", e)
+                 sanitizedUrl
+             } catch (e: java.net.URISyntaxException) {
+                 Log.w(TAG, "Invalid URI during unshorten, using original URL", e)
                  sanitizedUrl
              }
         } else {

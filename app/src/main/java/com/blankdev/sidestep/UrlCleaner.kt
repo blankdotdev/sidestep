@@ -565,7 +565,8 @@ object UrlCleaner {
                     
                     val decodedValue = try {
                         URLDecoder.decode(parts[1], "UTF-8")
-                    } catch (ignored: java.io.UnsupportedEncodingException) {
+                    } catch (e: java.io.UnsupportedEncodingException) {
+                        Log.w(TAG, "UTF-8 encoding not supported (should never happen), using null", e)
                         null
                     }
                     
@@ -583,7 +584,8 @@ object UrlCleaner {
         return try {
             URI(url)
             true
-        } catch (ignored: URISyntaxException) {
+        } catch (e: URISyntaxException) {
+            Log.d(TAG, "Invalid URI in validation: $url", e)
             false
         }
     }
