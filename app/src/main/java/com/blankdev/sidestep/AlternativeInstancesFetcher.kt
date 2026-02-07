@@ -323,8 +323,8 @@ object AlternativeInstancesFetcher {
             }
 
             val html = connection.inputStream.bufferedReader().use { it.readText() }
-            // Matches |[domain](url)|
-            val pattern = Pattern.compile("\\|\\[(.*?)\\]\\((.*?)\\)\\|")
+            // Matches |[domain](url)| - using possessive quantifiers to prevent ReDoS
+            val pattern = Pattern.compile("\\|\\[([^\\]]++)\\]\\(([^)]++)\\)\\|")
             val matcher = pattern.matcher(html)
             
             
@@ -419,7 +419,7 @@ object AlternativeInstancesFetcher {
 
             val html = connection.inputStream.bufferedReader().use { it.readText() }
             
-            val domainPattern = Pattern.compile("([a-z0-9.-]+\\.[a-z]{2,})", Pattern.CASE_INSENSITIVE)
+            val domainPattern = Pattern.compile("((?>[a-z0-9-]+)(?:\\.(?>[a-z0-9-]+))*\\.[a-z]{2,})", Pattern.CASE_INSENSITIVE)
             val matcher = domainPattern.matcher(html)
             
             val seenDomains = mutableSetOf<String>()

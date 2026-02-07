@@ -97,4 +97,63 @@ class AlternativeInstancesFetcherTest {
         // Should find at least the last one
         assertEquals("86.5%", percentages.last())
     }
+
+    @Test
+    fun testMarkdownLinkRegexWithPossessiveQuantifiers() {
+        // Test the fixed regex pattern from line 327
+        val pattern = Pattern.compile("\\|\\[([^\\]]++)\\]\\(([^)]++)\\)\\|")
+        
+        // Valid markdown link
+        val validInput = "|[example.com](https://example.com)|"
+        val validMatcher = pattern.matcher(validInput)
+        assertTrue(validMatcher.find())
+        assertEquals("example.com", validMatcher.group(1))
+        assertEquals("https://example.com", validMatcher.group(2))
+        
+        // Multiple links
+        val multipleLinks = "|[domain1.com](https://domain1.com)| and |[domain2.org](https://domain2.org)|"
+        val multipleMatcher = pattern.matcher(multipleLinks)
+        assertTrue(multipleMatcher.find())
+        assertEquals("domain1.com", multipleMatcher.group(1))
+        assertTrue(multipleMatcher.find())
+        assertEquals("domain2.org", multipleMatcher.group(1))
+        
+        // Edge case: malicious input with many brackets (should not cause ReDoS)
+        val maliciousInput = "|[" + "[".repeat(1000) + "](https://example.com)|"
+        val maliciousMatcher = pattern.matcher(maliciousInput)
+        // Should complete quickly without catastrophic backtracking
+        val startTime = System.currentTimeMillis()
+        maliciousMatcher.find()
+        val endTime = System.currentTimeMillis()
+        assertTrue("Regex should complete in under 500ms", (endTime - startTime) < 500)
+    }
+
+    @Test
+    fun testDomainPatternRegexWithPossessiveQuantifiers() {
+        // Test the fixed regex pattern from line 422 - using atomic grouping to prevent ReDoS
+        val pattern = Pattern.compile("((?>[a-z0-9-]+)(?:\\.(?>[a-z0-9-]+))*\\.[a-z]{2,})", Pattern.CASE_INSENSITIVE)
+        
+        // Valid domains embedded in HTML-like text (matching actual usage)
+        val testCases = mapOf(
+            "Visit example.com for more" to "example.com",
+            "Check out sub.example.org today" to "sub.example.org",
+            "Go to test-domain.co.uk now" to "test-domain.co.uk",
+            "See 123.example.net here" to "123.example.net"
+        )
+        
+        for ((html, expectedDomain) in testCases) {
+            val matcher = pattern.matcher(html)
+            assertTrue("Should match in: $html", matcher.find())
+            assertEquals(expectedDomain, matcher.group(1))
+        }
+        
+        // Edge case: malicious input with many valid characters (should not cause ReDoS)
+        val maliciousInput = "a".repeat(10000) + "invalid"
+        val maliciousMatcher = pattern.matcher(maliciousInput)
+        // Should complete quickly without catastrophic backtracking
+        val startTime = System.currentTimeMillis()
+        maliciousMatcher.find()
+        val endTime = System.currentTimeMillis()
+        assertTrue("Regex should complete in under 500ms", (endTime - startTime) < 500)
+    }
 }
