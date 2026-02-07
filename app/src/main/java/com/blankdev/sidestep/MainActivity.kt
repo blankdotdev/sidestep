@@ -538,7 +538,7 @@ class MainActivity : AppCompatActivity() {
             return if (typedValue.resourceId != 0) {
                 try {
                     androidx.core.content.ContextCompat.getColor(this, typedValue.resourceId)
-                } catch (e: Exception) {
+                } catch (e: android.content.res.Resources.NotFoundException) {
                     // Fallback for cases where resourceId is not a color (e.g. a drawable like listDivider)
                     typedValue.data
                 }
@@ -682,7 +682,7 @@ class MainActivity : AppCompatActivity() {
                     "package:$packageName".toUri())
             }
             startActivity(intent)
-        } catch (e: Exception) {
+        } catch (e: android.content.ActivityNotFoundException) {
             Toast.makeText(this, "Could not open settings", Toast.LENGTH_SHORT).show()
         }
     }
@@ -730,9 +730,13 @@ class MainActivity : AppCompatActivity() {
                 
                 updateUiAfterNavigation()
 
-            } catch (e: Exception) {
+            } catch (e: java.io.IOException) {
                 if (!isDestroyed && !isFinishing) {
-                    Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@MainActivity, "Network error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: java.net.URISyntaxException) {
+                if (!isDestroyed && !isFinishing) {
+                    Toast.makeText(this@MainActivity, "Invalid URL: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -753,7 +757,7 @@ class MainActivity : AppCompatActivity() {
         val unshortenedUrl = if (shouldUnshorten) {
             try {
                 UrlUnshortener.unshorten(url, resolveHtml)
-            } catch (e: Exception) {
+            } catch (e: java.io.IOException) {
                 url
             }
         } else {
@@ -823,9 +827,13 @@ class MainActivity : AppCompatActivity() {
             }
             
             incrementSidestepCount()
-        } catch (e: Exception) {
+        } catch (e: android.content.ActivityNotFoundException) {
             if (!isDestroyed && !isFinishing) {
-                Toast.makeText(this, "Could not open URL: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "No app available to open this URL", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: java.net.URISyntaxException) {
+            if (!isDestroyed && !isFinishing) {
+                Toast.makeText(this, "Invalid URL format: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -1064,7 +1072,7 @@ class MainActivity : AppCompatActivity() {
             } else if (uIndex != -1 && uIndex + 1 < pathSegments.size) {
                 "u/${pathSegments[uIndex + 1]}"
             } else null
-        } catch (e: Exception) {
+        } catch (e: java.net.URISyntaxException) {
             null
         }
     }
@@ -1077,7 +1085,7 @@ class MainActivity : AppCompatActivity() {
             val commentsIndex = pathSegments.indexOf("comments")
             // Return null for now as we don't use idLong
             if (commentsIndex != -1 && commentsIndex + 1 < pathSegments.size) null else null
-        } catch (e: Exception) {
+        } catch (e: java.net.URISyntaxException) {
             null
         }
     }
@@ -1095,7 +1103,7 @@ class MainActivity : AppCompatActivity() {
                 val v = uri.pathSegments.firstOrNull()
                 if (v != null) "YouTube Video ($v)" else "YouTube Video"
             } else null
-        } catch (e: Exception) {
+        } catch (e: java.net.URISyntaxException) {
             null
         }
     }
@@ -1118,7 +1126,7 @@ class MainActivity : AppCompatActivity() {
                      }
                  } else null
              }
-         } catch (e: Exception) {
+         } catch (e: java.net.URISyntaxException) {
              null
          }
     }
@@ -1209,7 +1217,7 @@ class MainActivity : AppCompatActivity() {
     private fun extractDomain(url: String): String {
         return try {
             url.toUri().host ?: url
-        } catch (e: Exception) {
+        } catch (e: java.net.URISyntaxException) {
             url
         }
     }
@@ -1227,7 +1235,7 @@ class MainActivity : AppCompatActivity() {
             if (pathSegments.size >= 1) {
                 pathSegments[0]
             } else null
-        } catch (e: Exception) {
+        } catch (e: java.io.IOException) {
             null
         }
     }
@@ -1238,7 +1246,7 @@ class MainActivity : AppCompatActivity() {
             val uri = url.toUri()
             val pathSegments = uri.pathSegments
             pathSegments.find { it.startsWith("@") }?.substring(1)
-        } catch (e: Exception) {
+        } catch (e: java.io.IOException) {
             null
         }
     }
@@ -1254,7 +1262,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 } else null
             }
-        } catch (e: Exception) {
+        } catch (e: java.io.IOException) {
             null
         }
     }
@@ -1297,7 +1305,7 @@ class MainActivity : AppCompatActivity() {
             val mPopup = fieldMPopup.get(popup)
             mPopup.javaClass.getDeclaredMethod("setForceShowIcon", Boolean::class.javaPrimitiveType)
                 .invoke(mPopup, true)
-        } catch (e: Exception) {
+        } catch (e: ReflectiveOperationException) {
             // Ignore if fails, icons just won't show
         }
         
