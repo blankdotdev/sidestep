@@ -1,0 +1,9 @@
+# Exclude the F-Droid data backup from language statistics
+fdroiddata_fix_v2/** linguist-vendored
+
+# Exclude scripts from language statistics
+scripts/** linguist-documentation
+verify-pr.sh linguist-documentation
+
+# Exclude Fastlane metadata
+fastlane/** linguist-documentation

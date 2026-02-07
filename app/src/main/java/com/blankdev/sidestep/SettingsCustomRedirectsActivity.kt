@@ -19,6 +19,15 @@ import com.google.android.material.color.DynamicColors
 
 class SettingsCustomRedirectsActivity : AppCompatActivity() {
 
+    companion object {
+        private const val EMPTY_LIST_TEXT_SIZE_SP = 14f
+        private const val EMPTY_LIST_PADDING_DP = 16
+        private const val INFO_MODAL_PADDING_DP = 24
+        private const val INFO_MODAL_TEXT_SIZE_SP = 16f
+        private const val INFO_MODAL_LINE_SPACING = 1.4f
+        private const val INFO_MODAL_BOTTOM_PADDING_DP = 16
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         DynamicColors.applyToActivitiesIfAvailable(this.application)
@@ -66,9 +75,9 @@ class SettingsCustomRedirectsActivity : AppCompatActivity() {
         if (redirects.isEmpty()) {
             val emptyText = TextView(this).apply {
                 text = getString(R.string.no_custom_redirects)
-                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, 14f)
+                setTextSize(android.util.TypedValue.COMPLEX_UNIT_SP, EMPTY_LIST_TEXT_SIZE_SP)
                 setTextColor(SettingsUtils.getThemeColor(this@SettingsCustomRedirectsActivity, android.R.attr.textColorSecondary))
-                setPadding(0, 16, 0, 16)
+                setPadding(0, EMPTY_LIST_PADDING_DP, 0, EMPTY_LIST_PADDING_DP)
                 gravity = Gravity.CENTER
             }
             container.addView(emptyText)
@@ -116,7 +125,7 @@ class SettingsCustomRedirectsActivity : AppCompatActivity() {
     private fun showCustomRedirectsInfoModal() {
         val dialogView = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val padding = SettingsUtils.dp(this@SettingsCustomRedirectsActivity, 24)
+            val padding = SettingsUtils.dp(this@SettingsCustomRedirectsActivity, INFO_MODAL_PADDING_DP)
             setPadding(padding, 0, padding, 0)
         }
 
@@ -132,10 +141,10 @@ class SettingsCustomRedirectsActivity : AppCompatActivity() {
 
         val infoText = TextView(this).apply {
             text = info
-            textSize = 16f
+            textSize = INFO_MODAL_TEXT_SIZE_SP
             setTextColor(SettingsUtils.getThemeColor(this@SettingsCustomRedirectsActivity, android.R.attr.textColorSecondary))
-            setLineSpacing(0f, 1.4f)
-            setPadding(0, 0, 0, SettingsUtils.dp(this@SettingsCustomRedirectsActivity, 16))
+            setLineSpacing(0f, INFO_MODAL_LINE_SPACING)
+            setPadding(0, 0, 0, SettingsUtils.dp(this@SettingsCustomRedirectsActivity, INFO_MODAL_BOTTOM_PADDING_DP))
         }
         dialogView.addView(infoText)
 

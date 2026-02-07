@@ -18,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import android.text.Html
+import android.content.ActivityNotFoundException
 import android.text.Spannable
 import android.text.style.URLSpan
 import android.text.style.ClickableSpan
@@ -147,7 +148,8 @@ class SettingsActivity : AppCompatActivity() {
                     "package:$packageName".toUri())
             }
             startActivity(intent)
-        } catch (e: Exception) {
+        } catch (e: ActivityNotFoundException) {
+            android.util.Log.w("SettingsActivity", "Could not open settings", e)
             android.widget.Toast.makeText(this, "Could not open settings", android.widget.Toast.LENGTH_SHORT).show()
         }
     }

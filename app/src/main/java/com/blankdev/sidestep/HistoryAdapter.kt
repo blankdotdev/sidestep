@@ -75,25 +75,53 @@ class HistoryAdapter(
         container.removeAllViews()
 
         val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
-        val isTwitter = UrlCleaner.isTwitterOrXUrl(contentUrl)
-        val isTikTok = UrlCleaner.isTikTokUrl(contentUrl)
-        val isReddit = UrlCleaner.isRedditUrl(contentUrl)
-        val isYouTube = UrlCleaner.isYouTubeUrl(contentUrl)
-        val isMedium = UrlCleaner.isMediumUrl(contentUrl)
-        val isImdb = UrlCleaner.isImdbUrl(contentUrl)
-        val isWikipedia = UrlCleaner.isWikipediaUrl(contentUrl)
-        val isGoodreads = UrlCleaner.isGoodreadsUrl(contentUrl)
-        val isGenius = UrlCleaner.isGeniusUrl(contentUrl)
-        val isGitHub = UrlCleaner.isGitHubUrl(contentUrl)
-        val isStackOverflow = UrlCleaner.isStackOverflowUrl(contentUrl)
-        val isNYTimes = contentUrl.contains("nytimes.com")
-        val isInstagram = contentUrl.contains("instagram.com")
-        val isTumblr = UrlCleaner.isTumblrUrl(contentUrl)
-        val isImgur = UrlCleaner.isImgurUrl(contentUrl)
-        val isUrbanDictionary = UrlCleaner.isUrbanDictionaryUrl(contentUrl)
-        val isGoogleMaps = UrlCleaner.isGoogleMapsUrl(contentUrl)
+        val contentContainer = createContentContainer(context, entry)
+        val displayImage = getPlatformIcon(contentUrl)
 
-        val contentContainer = LinearLayout(context).apply {
+        val imageCard = createImageCard(context, displayImage)
+        contentContainer.addView(imageCard)
+
+        val textLayout = createTextLayout(context, entry)
+
+
+        contentContainer.addView(textLayout)
+        container.addView(contentContainer)
+
+        val menuButton = createMenuButton(context, entry)
+        container.addView(menuButton)
+    }
+    
+    private data class PlatformIconRule(
+        val condition: (String) -> Boolean,
+        val iconResId: Int
+    )
+
+    private val platformRules = listOf(
+        PlatformIconRule({ UrlCleaner.isTwitterOrXUrl(it) }, R.drawable.ic_x_logo),
+        PlatformIconRule({ UrlCleaner.isTikTokUrl(it) }, R.drawable.ic_tiktok_logo),
+        PlatformIconRule({ UrlCleaner.isRedditUrl(it) }, R.drawable.ic_reddit_logo),
+        PlatformIconRule({ UrlCleaner.isYouTubeUrl(it) }, R.drawable.ic_youtube_logo),
+        PlatformIconRule({ UrlCleaner.isMediumUrl(it) }, R.drawable.ic_medium_logo),
+        PlatformIconRule({ UrlCleaner.isImdbUrl(it) }, R.drawable.ic_imdb_logo),
+        PlatformIconRule({ UrlCleaner.isWikipediaUrl(it) }, R.drawable.ic_wikipedia_logo),
+        PlatformIconRule({ UrlCleaner.isGoodreadsUrl(it) }, R.drawable.ic_goodreads_logo),
+        PlatformIconRule({ UrlCleaner.isGeniusUrl(it) }, R.drawable.ic_genius_logo),
+        PlatformIconRule({ UrlCleaner.isGitHubUrl(it) }, R.drawable.ic_github_logo),
+        PlatformIconRule({ UrlCleaner.isStackOverflowUrl(it) }, R.drawable.ic_stackoverflow_logo),
+        PlatformIconRule({ it.contains("nytimes.com") }, R.drawable.ic_nytimes_logo),
+        PlatformIconRule({ it.contains("instagram.com") }, R.drawable.ic_instagram_logo),
+        PlatformIconRule({ UrlCleaner.isTumblrUrl(it) }, R.drawable.ic_tumblr_logo),
+        PlatformIconRule({ UrlCleaner.isImgurUrl(it) }, R.drawable.ic_imgur_logo),
+        PlatformIconRule({ UrlCleaner.isUrbanDictionaryUrl(it) }, R.drawable.ic_urbandictionary_logo),
+        PlatformIconRule({ UrlCleaner.isGoogleMapsUrl(it) }, R.drawable.ic_google_maps_logo)
+    )
+
+    private fun getPlatformIcon(url: String): Int {
+        return platformRules.firstOrNull { it.condition(url) }?.iconResId ?: R.drawable.ic_generic_link
+    }
+    
+    private fun createContentContainer(context: Context, entry: HistoryManager.HistoryEntry): LinearLayout {
+        return LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             gravity = Gravity.CENTER_VERTICAL
@@ -101,87 +129,72 @@ class HistoryAdapter(
             setPadding(dpProvider(CONTENT_PADDING_DP), dpProvider(CONTENT_PADDING_DP), dpProvider(CONTENT_PADDING_DP), dpProvider(CONTENT_PADDING_DP))
             setOnClickListener { onItemClick(entry) }
         }
-
-        val displayImage = when {
-            isTwitter -> R.drawable.ic_x_logo
-            isTikTok -> R.drawable.ic_tiktok_logo
-            isReddit -> R.drawable.ic_reddit_logo
-            isYouTube -> R.drawable.ic_youtube_logo
-            isMedium -> R.drawable.ic_medium_logo
-            isImdb -> R.drawable.ic_imdb_logo
-            isWikipedia -> R.drawable.ic_wikipedia_logo
-            isGoodreads -> R.drawable.ic_goodreads_logo
-            isGenius -> R.drawable.ic_genius_logo
-            isGitHub -> R.drawable.ic_github_logo
-            isStackOverflow -> R.drawable.ic_stackoverflow_logo
-            isNYTimes -> R.drawable.ic_nytimes_logo
-            isInstagram -> R.drawable.ic_instagram_logo
-            isTumblr -> R.drawable.ic_tumblr_logo
-            isImgur -> R.drawable.ic_imgur_logo
-            isUrbanDictionary -> R.drawable.ic_urbandictionary_logo
-            isGoogleMaps -> R.drawable.ic_google_maps_logo
-            else -> R.drawable.ic_generic_link
-        }
-
+    }
+    
+    private fun createImageCard(context: Context, imageResource: Int): CardView {
         val imageView = ImageView(context).apply {
             layoutParams = FrameLayout.LayoutParams(dpProvider(IMAGE_SIZE_DP), dpProvider(IMAGE_SIZE_DP)).apply { gravity = Gravity.CENTER }
             scaleType = ImageView.ScaleType.CENTER_CROP
-            setImageResource(displayImage)
+            setImageResource(imageResource)
             setColorFilter(themeColorProvider(com.google.android.material.R.attr.colorOnSurface))
         }
-
-        val imageCard = CardView(context).apply {
+        
+        return CardView(context).apply {
             radius = CARD_CORNER_RADIUS
             cardElevation = 0f
             setCardBackgroundColor(Color.TRANSPARENT)
-            layoutParams = LinearLayout.LayoutParams(dpProvider(IMAGE_CARD_SIZE_DP), dpProvider(IMAGE_CARD_SIZE_DP)).apply { marginEnd = dpProvider(IMAGE_CARD_MARGIN_END_DP) }
+            layoutParams = LinearLayout.LayoutParams(dpProvider(IMAGE_CARD_SIZE_DP), dpProvider(IMAGE_CARD_SIZE_DP)).apply { 
+                marginEnd = dpProvider(IMAGE_CARD_MARGIN_END_DP) 
+            }
             addView(imageView)
         }
-        contentContainer.addView(imageCard)
-
-        val textLayout = LinearLayout(context).apply {
+    }
+    
+    private fun createTextLayout(context: Context, entry: HistoryManager.HistoryEntry): LinearLayout {
+        return LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-        }
-
-        val displayTitle = titleProvider(entry)
-        val titleText = TextView(context).apply {
-            if (!displayTitle.isBlank()) {
-                text = displayTitle
-                visibility = View.VISIBLE
-            } else {
-                text = ""
-                visibility = View.GONE
+            
+            // Title
+            val displayTitle = titleProvider(entry)
+            val titleText = TextView(context).apply {
+                if (!displayTitle.isBlank()) {
+                    text = displayTitle
+                    visibility = View.VISIBLE
+                } else {
+                    text = ""
+                    visibility = View.GONE
+                }
+                textSize = TITLE_TEXT_SIZE_SP
+                setTypeface(null, Typeface.BOLD)
+                setTextColor(themeColorProvider(android.R.attr.textColorPrimary))
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.END
             }
-            textSize = TITLE_TEXT_SIZE_SP
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(themeColorProvider(android.R.attr.textColorPrimary))
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.END
+            addView(titleText)
+            
+            // Subtitle
+            val subtitleText = TextView(context).apply {
+                text = subtitleProvider(entry)
+                textSize = SUBTITLE_TEXT_SIZE_SP
+                setTextColor(themeColorProvider(android.R.attr.textColorSecondary))
+                maxLines = 1
+                ellipsize = TextUtils.TruncateAt.MIDDLE
+            }
+            addView(subtitleText)
         }
-        textLayout.addView(titleText)
-
-        val subtitleText = TextView(context).apply {
-            text = subtitleProvider(entry)
-            textSize = SUBTITLE_TEXT_SIZE_SP
-            setTextColor(themeColorProvider(android.R.attr.textColorSecondary))
-            maxLines = 1
-            ellipsize = TextUtils.TruncateAt.MIDDLE
-        }
-        textLayout.addView(subtitleText)
-        contentContainer.addView(textLayout)
-        container.addView(contentContainer)
-
-        val menuButton = android.widget.ImageButton(context).apply {
+    }
+    
+    private fun createMenuButton(context: Context, entry: HistoryManager.HistoryEntry): android.widget.ImageButton {
+        return android.widget.ImageButton(context).apply {
             setImageResource(R.drawable.ic_more_vert)
             background = rippleDrawableProvider()
             setPadding(dpProvider(MENU_BUTTON_PADDING_DP), dpProvider(MENU_BUTTON_PADDING_DP), dpProvider(MENU_BUTTON_PADDING_DP), dpProvider(MENU_BUTTON_PADDING_DP))
             setColorFilter(themeColorProvider(android.R.attr.textColorSecondary))
             setOnClickListener { onMenuClick(it, entry) }
         }
-        container.addView(menuButton)
     }
 }

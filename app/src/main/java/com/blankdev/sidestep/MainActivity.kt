@@ -203,22 +203,44 @@ class MainActivity : AppCompatActivity() {
     private fun Int.dp(): Int = (this * resources.displayMetrics.density).toInt()
 
     private fun setupUI() {
-        // Root Layout
         val rootLayout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(getThemeColor(android.R.attr.colorBackground))
         }
 
-        // MaterialToolbar for Header
+        setupToolbar(rootLayout)
+        handleWindowInsets(rootLayout)
+
+        contentContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            val contentPadding = CONTENT_PADDING_DP.dp()
+            setPadding(contentPadding, contentPadding, contentPadding, 0)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        }
+        rootLayout.addView(contentContainer)
+        
+        setupInputSection(contentContainer)
+        setupWarningText(contentContainer)
+        setupEmptyStateGuide(contentContainer)
+        setupHistoryList(contentContainer)
+        setupCounter(contentContainer)
+        
+        setContentView(rootLayout)
+    }
+
+    private fun setupToolbar(rootLayout: LinearLayout) {
         val toolbar = com.google.android.material.appbar.MaterialToolbar(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 TOOLBAR_HEIGHT_DP.dp()
             )
-            setPadding(TOOLBAR_PADDING_START_DP.dp(), TOOLBAR_PADDING_TOP_DP.dp(), 0, 0) // Adjusted to align title with content
+            setPadding(TOOLBAR_PADDING_START_DP.dp(), TOOLBAR_PADDING_TOP_DP.dp(), 0, 0)
             setBackgroundColor(getThemeColor(android.R.attr.colorBackground))
             
-            // Custom Title View to match the original 28f size and alignment
             val titleTextView = TextView(context).apply {
                 text = getString(R.string.app_name)
                 textSize = TITLE_TEXT_SIZE_SP
@@ -229,41 +251,19 @@ class MainActivity : AppCompatActivity() {
         }
         
         setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(false) // Use our custom TextView instead
+        supportActionBar?.setDisplayShowTitleEnabled(false)
         rootLayout.addView(toolbar)
+    }
 
-        // Handle Window Insets for Edge-to-Edge
-        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { v, insets ->
+    private fun handleWindowInsets(view: View) {
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
             insets
         }
+    }
 
-        val contentPadding = CONTENT_PADDING_DP.dp()
-        // Content Container (to hold everything except toolbar)
-        contentContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(contentPadding, contentPadding, contentPadding, 0)
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                0,
-                1f
-            )
-        }
-        rootLayout.addView(contentContainer)
-        
-
-        // Sidestep Counter initialization (moved to end of setup)
-        sidestepCounter = TextView(this).apply {
-            textSize = SUBTITLE_TEXT_SIZE_SP
-            setTypeface(null, Typeface.BOLD)
-            setTextColor(getThemeColor(android.R.attr.textColorSecondary))
-            gravity = Gravity.CENTER
-            setPadding(0, 16.dp(), 0, 8.dp())
-            visibility = View.GONE // Default to GONE
-        }
-
-        // Input container
+    private fun setupInputSection(container: LinearLayout) {
         val inputContainer = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             setPadding(INPUT_CONTAINER_PADDING_DP.dp(), INPUT_CONTAINER_VERTICAL_PADDING_DP.dp(), INPUT_CONTAINER_PADDING_DP.dp(), INPUT_CONTAINER_VERTICAL_PADDING_DP.dp())
@@ -277,7 +277,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
-        // TextInputLayout wrapper for URL input field
         val textInputLayout = com.google.android.material.textfield.TextInputLayout(this).apply {
             hint = getString(R.string.hint_url_input)
             setHintTextColor(android.content.res.ColorStateList.valueOf(getThemeColor(android.R.attr.textColorSecondary)))
@@ -291,7 +290,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // URL input field
         urlInput = EditText(this).apply {
             inputType = android.text.InputType.TYPE_CLASS_TEXT or 
                        android.text.InputType.TYPE_TEXT_VARIATION_URI
@@ -308,7 +306,6 @@ class MainActivity : AppCompatActivity() {
                 } else false
             }
             
-            // Add validation watcher
             addTextChangedListener(object : android.text.TextWatcher {
                 override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
@@ -320,10 +317,9 @@ class MainActivity : AppCompatActivity() {
         textInputLayout.addView(urlInput)
         inputContainer.addView(textInputLayout)
         
-        // Material Design button with arrow icon in input field
         val processButton = android.widget.ImageButton(this).apply {
             setImageResource(R.drawable.ic_go_slick)
-            background = null // Remove circle background for now to match screenshot "arrow_forward" style
+            background = null
             scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
             setPadding(12.dp(), 12.dp(), 12.dp(), 12.dp())
             setColorFilter(getThemeColor(com.google.android.material.R.attr.colorPrimary)) 
@@ -337,20 +333,21 @@ class MainActivity : AppCompatActivity() {
         }
         inputContainer.addView(processButton)
         
-        contentContainer.addView(inputContainer)
-        
-        // Warning Text with theme-aware color
+        container.addView(inputContainer)
+    }
+
+    private fun setupWarningText(container: LinearLayout) {
         warningText = TextView(this).apply {
-            text = "" // Initialize empty
+            text = ""
             textSize = WARNING_TEXT_SIZE_SP
-            // Use Material error color for better theme compatibility
             setTextColor(getThemeColor(com.google.android.material.R.attr.colorError))
             setPadding(WARNING_TEXT_PADDING_HORIZONTAL_DP.dp(), WARNING_TEXT_PADDING_TOP_DP.dp(), WARNING_TEXT_PADDING_HORIZONTAL_DP.dp(), WARNING_TEXT_PADDING_BOTTOM_DP.dp())
             visibility = android.view.View.GONE
         }
-        contentContainer.addView(warningText)
-        
-        // Empty State Guide
+        container.addView(warningText)
+    }
+
+    private fun setupEmptyStateGuide(container: LinearLayout) {
         emptyStateGuide = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(GUIDE_PADDING_HORIZONTAL_DP.dp(), 0.dp(), GUIDE_PADDING_HORIZONTAL_DP.dp(), GUIDE_PADDING_BOTTOM_DP.dp())
@@ -366,7 +363,6 @@ class MainActivity : AppCompatActivity() {
             }
             addView(guideLabel)
 
-            // Step container
             val stepsList = LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
                 layoutParams = LinearLayout.LayoutParams(
@@ -384,74 +380,10 @@ class MainActivity : AppCompatActivity() {
             )
             
             steps.forEachIndexed { index, stepText ->
-                val stepRow = LinearLayout(this@MainActivity).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = Gravity.TOP
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        0,
-                        1f
-                    )
-                }
-
-                // Left column for circle and line segment
-                val leftColumn = LinearLayout(this@MainActivity).apply {
-                    orientation = LinearLayout.VERTICAL
-                    gravity = Gravity.CENTER_HORIZONTAL
-                    layoutParams = LinearLayout.LayoutParams(STEP_CIRCLE_SIZE_DP.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
-                }
-
-                val circleSize = STEP_CIRCLE_SIZE_DP.dp()
-                val stepCircle = TextView(this@MainActivity).apply {
-                    text = (index + 1).toString()
-                    textSize = WARNING_TEXT_SIZE_SP
-                    setTypeface(null, Typeface.BOLD)
-                    gravity = Gravity.CENTER
-                    val bgColor = if (index == 0) {
-                        getThemeColor(com.google.android.material.R.attr.colorPrimary)
-                    } else {
-                        androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), STEP_CIRCLE_ALPHA)
-                    }
-                    val textColor = if (index == 0) {
-                        getThemeColor(com.google.android.material.R.attr.colorOnPrimary)
-                    } else {
-                        getThemeColor(android.R.attr.textColorSecondary)
-                    }
-                    setTextColor(textColor)
-                    
-                    val bg = android.graphics.drawable.GradientDrawable().apply {
-                        shape = android.graphics.drawable.GradientDrawable.OVAL
-                        setColor(bgColor)
-                    }
-                    background = bg
-                    layoutParams = LinearLayout.LayoutParams(circleSize, circleSize)
-                }
-                leftColumn.addView(stepCircle)
-
-                // Add line segment if not the last step
-                if (index < steps.size - 1) {
-                    val lineSegment = View(this@MainActivity).apply {
-                        setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), STEP_LINE_ALPHA))
-                        layoutParams = LinearLayout.LayoutParams(STEP_LINE_WIDTH_DP.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
-                    }
-                    leftColumn.addView(lineSegment)
-                }
-                stepRow.addView(leftColumn)
-
-                val stepTextView = TextView(this@MainActivity).apply {
-                    text = stepText
-                    textSize = 16f
-                    setPadding(STEP_TEXT_PADDING_START_DP.dp(), 0, 0, 0) 
-                    setTextColor(if (index == 0) getThemeColor(android.R.attr.textColorPrimary) else getThemeColor(android.R.attr.textColorSecondary))
-                    setLineSpacing(0f, 1.2f)
-                }
-                stepRow.addView(stepTextView)
-
-                stepsList.addView(stepRow)
+                addGuideStep(stepsList, index, stepText, steps.size)
             }
             addView(stepsList)
             
-            // For the last step, add the button below the steps list
             val buttonContainer = LinearLayout(this@MainActivity).apply {
                 orientation = LinearLayout.VERTICAL
                 setPadding(0, BUTTON_PADDING_TOP_DP.dp(), 0, 0)
@@ -476,13 +408,77 @@ class MainActivity : AppCompatActivity() {
             buttonContainer.addView(defaultButton)
             addView(buttonContainer)
         }
-        contentContainer.addView(emptyStateGuide)
+        container.addView(emptyStateGuide)
+    }
 
-        // History RecyclerView
+    private fun addGuideStep(parent: LinearLayout, index: Int, stepText: String, totalSteps: Int) {
+        val stepRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.TOP
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
+                1f
+            )
+        }
+
+        val leftColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(STEP_CIRCLE_SIZE_DP.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
+        }
+
+        val circleSize = STEP_CIRCLE_SIZE_DP.dp()
+        val stepCircle = TextView(this).apply {
+            text = (index + 1).toString()
+            textSize = WARNING_TEXT_SIZE_SP
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            val bgColor = if (index == 0) {
+                getThemeColor(com.google.android.material.R.attr.colorPrimary)
+            } else {
+                androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), STEP_CIRCLE_ALPHA)
+            }
+            val textColor = if (index == 0) {
+                getThemeColor(com.google.android.material.R.attr.colorOnPrimary)
+            } else {
+                getThemeColor(android.R.attr.textColorSecondary)
+            }
+            setTextColor(textColor)
+            
+            val bg = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(bgColor)
+            }
+            background = bg
+            layoutParams = LinearLayout.LayoutParams(circleSize, circleSize)
+        }
+        leftColumn.addView(stepCircle)
+
+        if (index < totalSteps - 1) {
+            val lineSegment = View(this).apply {
+                setBackgroundColor(androidx.core.graphics.ColorUtils.setAlphaComponent(getThemeColor(android.R.attr.textColorSecondary), STEP_LINE_ALPHA))
+                layoutParams = LinearLayout.LayoutParams(STEP_LINE_WIDTH_DP.dp(), LinearLayout.LayoutParams.MATCH_PARENT)
+            }
+            leftColumn.addView(lineSegment)
+        }
+        stepRow.addView(leftColumn)
+
+        val stepTextView = TextView(this).apply {
+            text = stepText
+            textSize = 16f
+            setPadding(STEP_TEXT_PADDING_START_DP.dp(), 0, 0, 0) 
+            setTextColor(if (index == 0) getThemeColor(android.R.attr.textColorPrimary) else getThemeColor(android.R.attr.textColorSecondary))
+            setLineSpacing(0f, 1.2f)
+        }
+        stepRow.addView(stepTextView)
+
+        parent.addView(stepRow)
+    }
+
+    private fun setupHistoryList(container: LinearLayout) {
         historyAdapter = HistoryAdapter(
             onItemClick = { entry ->
-                // Use the original URL to re-process through the standard pipeline
-                // This ensures consistent behavior with new URL inputs and proper loop detection
                 processAndNavigate(entry.originalUrl, skipImmediateCheck = true, skipHistoryUpdate = true)
             },
             onMenuClick = { view, entry -> showHistoryMenu(view, entry) },
@@ -496,7 +492,6 @@ class MainActivity : AppCompatActivity() {
         historyList = RecyclerView(this).apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = historyAdapter
-            // Disable animations to prevent old items from flashing during updates
             itemAnimator = null 
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -504,14 +499,19 @@ class MainActivity : AppCompatActivity() {
                 1f
             )
         }
-        contentContainer.addView(historyList)
-        
-        // Add Sidestep Counter at the bottom
-        contentContainer.addView(sidestepCounter)
-        // Note: Initial counter update is handled by loadHistory()
+        container.addView(historyList)
+    }
 
-        
-        setContentView(rootLayout)
+    private fun setupCounter(container: LinearLayout) {
+        sidestepCounter = TextView(this).apply {
+            textSize = SUBTITLE_TEXT_SIZE_SP
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+            gravity = Gravity.CENTER
+            setPadding(0, 16.dp(), 0, 8.dp())
+            visibility = View.GONE
+        }
+        container.addView(sidestepCounter)
     }
     
     private fun validateInput(text: String?) {
@@ -565,70 +565,76 @@ class MainActivity : AppCompatActivity() {
         if (historyEmpty && showWelcome) {
             sidestepCounter.text = ""
             sidestepCounter.visibility = View.GONE
+        } else if (isKpiMode == historyEmpty && lastCountValue == count) {
+            // Avoid redundant updates if count and mode haven't changed
             return
-        }
-        
-        sidestepCounter.visibility = View.VISIBLE
-        
-        // Avoid redundant updates if count and mode haven't changed
-        if (isKpiMode == historyEmpty && lastCountValue == count) return
-        
-        isKpiMode = historyEmpty
-        lastCountValue = count
-        
-        if (historyEmpty) {
-            // KPI Format
-            val countText = count.toString()
-            val label = "\n" + getString(R.string.label_sidesteps_performed)
-            val fullText = "$countText$label"
-            
-            val spannable = android.text.SpannableString(fullText)
-            
-            // Style the count: Much Larger (6x), Primary Color, BOLD
-            val primaryColor = getThemeColor(com.google.android.material.R.attr.colorPrimary)
-            
-            spannable.setSpan(
-                android.text.style.RelativeSizeSpan(COUNTER_SCALE_MULTIPLIER), 
-                0, countText.length,
-                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            spannable.setSpan(
-                android.text.style.ForegroundColorSpan(primaryColor),
-                0, countText.length,
-                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            spannable.setSpan(
-                android.text.style.StyleSpan(Typeface.BOLD),
-                0, countText.length,
-                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            
-            sidestepCounter.text = spannable
-            sidestepCounter.setTypeface(null, Typeface.NORMAL) // Unbold the label (whole view normal, span handles bold count)
-            sidestepCounter.textSize = 14f // Base size for the label
-            sidestepCounter.setLineSpacing(0f, LINE_SPACING_MULTIPLIER)
-            sidestepCounter.setPadding(0, COUNTER_PADDING_VERTICAL_LARGE_DP.dp(), 0, COUNTER_PADDING_VERTICAL_LARGE_DP.dp())
-            sidestepCounter.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                0,
-                1f
-            ).apply {
-                gravity = Gravity.CENTER
-            }
         } else {
-            // Standard Format
-            sidestepCounter.text = resources.getQuantityString(R.plurals.label_sidesteps_performed, count.toInt(), count)
-            sidestepCounter.textSize = 14f
-            sidestepCounter.setTypeface(null, Typeface.BOLD) // Keep footer bold
-            sidestepCounter.setTextColor(getThemeColor(android.R.attr.textColorSecondary))
-            sidestepCounter.setPadding(0, COUNTER_PADDING_TOP_DP.dp(), 0, COUNTER_PADDING_BOTTOM_DP.dp())
+            sidestepCounter.visibility = View.VISIBLE
+            isKpiMode = historyEmpty
+            lastCountValue = count
             
-            sidestepCounter.layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                0f
-            )
+            if (historyEmpty) {
+                setupKpiCounter(count)
+            } else {
+                setupStandardCounter(count)
+            }
         }
+    }
+
+    private fun setupKpiCounter(count: Long) {
+        // KPI Format
+        val countText = count.toString()
+        val label = "\n" + getString(R.string.label_sidesteps_performed)
+        val fullText = "$countText$label"
+        
+        val spannable = android.text.SpannableString(fullText)
+        
+        // Style the count: Much Larger (6x), Primary Color, BOLD
+        val primaryColor = getThemeColor(com.google.android.material.R.attr.colorPrimary)
+        
+        spannable.setSpan(
+            android.text.style.RelativeSizeSpan(COUNTER_SCALE_MULTIPLIER), 
+            0, countText.length,
+            android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        spannable.setSpan(
+            android.text.style.ForegroundColorSpan(primaryColor),
+            0, countText.length,
+            android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        spannable.setSpan(
+            android.text.style.StyleSpan(Typeface.BOLD),
+            0, countText.length,
+            android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+        )
+        
+        sidestepCounter.text = spannable
+        sidestepCounter.setTypeface(null, Typeface.NORMAL) // Unbold the label
+        sidestepCounter.textSize = 14f // Base size for the label
+        sidestepCounter.setLineSpacing(0f, LINE_SPACING_MULTIPLIER)
+        sidestepCounter.setPadding(0, COUNTER_PADDING_VERTICAL_LARGE_DP.dp(), 0, COUNTER_PADDING_VERTICAL_LARGE_DP.dp())
+        sidestepCounter.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            0,
+            1f
+        ).apply {
+            gravity = Gravity.CENTER
+        }
+    }
+
+    private fun setupStandardCounter(count: Long) {
+        // Standard Format
+        sidestepCounter.text = resources.getQuantityString(R.plurals.label_sidesteps_performed, count.toInt(), count)
+        sidestepCounter.textSize = 14f
+        sidestepCounter.setTypeface(null, Typeface.BOLD) // Keep footer bold
+        sidestepCounter.setTextColor(getThemeColor(android.R.attr.textColorSecondary))
+        sidestepCounter.setPadding(0, COUNTER_PADDING_TOP_DP.dp(), 0, COUNTER_PADDING_BOTTOM_DP.dp())
+        
+        sidestepCounter.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            0f
+        )
     }
     
     private fun createInputBackground(): android.graphics.drawable.Drawable {
@@ -701,157 +707,190 @@ class MainActivity : AppCompatActivity() {
         processAndNavigate(url)
     }
 
+    private data class UrlProcessingResult(
+        val unshortenedUrl: String,
+        val cleanedUrl: String,
+        val redirectUrl: String,
+        val initialTitle: String?
+    )
+
     private fun processAndNavigate(url: String, skipImmediateCheck: Boolean = false, skipHistoryUpdate: Boolean = false) {
-        // Mark that a URL has been processed
+        markUrlProcessed()
+        val sanitizedUrl = UrlCleaner.ensureProtocol(url)
+        
+        lifecycleScope.launch {
+            try {
+                val result = processUrlInBackground(sanitizedUrl)
+                
+                handleNavigation(result.redirectUrl, result.unshortenedUrl, skipImmediateCheck)
+                
+                if (!skipHistoryUpdate) {
+                    saveToHistory(url, result)
+                }
+                
+                updateUiAfterNavigation()
+
+            } catch (e: Exception) {
+                if (!isDestroyed && !isFinishing) {
+                    Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun markUrlProcessed() {
         PreferenceManager.getDefaultSharedPreferences(this).edit {
             putBoolean("has_processed_url", true)
         }
-        val sanitizedUrl = UrlCleaner.ensureProtocol(url)
-        lifecycleScope.launch {
+    }
+
+    private suspend fun processUrlInBackground(url: String): UrlProcessingResult {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        
+        // Step 1: Unshorten
+        val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
+        val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
+        val unshortenedUrl = if (shouldUnshorten) {
             try {
-                val prefs = PreferenceManager.getDefaultSharedPreferences(this@MainActivity)
-                
-                // Step 1: Unshorten (Network call) - Respect setting
-                val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
-                val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
-                val unshortenedUrl = if (shouldUnshorten) {
-                    try {
-                        UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
-                    } catch (e: Exception) {
-                        sanitizedUrl
-                    }
-                } else {
-                    sanitizedUrl
-                }
-                
-                val isPreviewEnabled = prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)
-
-                // Step 2: Extract initial title from resolved URL
-                val initialTitle = if (isPreviewEnabled) {
-                    when {
-                        UrlCleaner.isTwitterOrXUrl(unshortenedUrl) -> {
-                            val username = getTwitterUsername(unshortenedUrl)
-                            if (username != null) "@$username" else null
-                        }
-                        UrlCleaner.isTikTokUrl(unshortenedUrl) -> {
-                            val username = getTikTokUsername(unshortenedUrl)
-                            if (username != null) "@$username" else null
-                        }
-                        UrlCleaner.isRedditUrl(unshortenedUrl) -> getRedditTitle(unshortenedUrl)
-                        else -> null
-                    }
-                } else {
-                     UrlCleaner.getServiceName(unshortenedUrl)
-                }
-
-                // Step 3: Determine Redirect URL - Respect tracking setting
-                val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
-                val cleaned = if (shouldRemoveTracking) {
-                    UrlCleaner.cleanUrl(unshortenedUrl)
-                } else {
-                    unshortenedUrl
-                }
-                val redirectUrl = SettingsUtils.resolveTargetUrl(this@MainActivity, cleaned, unshortenedUrl)
-
-                // Step 5: Open URL (Respect Immediate Navigation)
-                var wasNavigated = false
-                try {
-                    if (isDestroyed || isFinishing) return@launch
-                    
-                    val isImmediate = skipImmediateCheck || prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
-                    
-                    if (isImmediate) {
-                        val finalRedirectUrl = UrlCleaner.ensureProtocol(redirectUrl)
-                        
-                        // Determine if we should use in-app WebView
-                        if (SettingsUtils.shouldOpenInWebView(this@MainActivity, unshortenedUrl)) {
-                            val webIntent = Intent(this@MainActivity, WebViewActivity::class.java).apply {
-                                putExtra(WebViewActivity.EXTRA_URL, finalRedirectUrl)
-                            }
-                            startActivity(webIntent)
-                        } else {
-                            // Standard external redirect with loop detection
-                            val redirectIntent = Intent(Intent.ACTION_VIEW, finalRedirectUrl.toUri()).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                            }
-                            
-                            // Detection for loops - ONLY set package if we are one of the handlers
-                            val handlers = packageManager.queryIntentActivities(redirectIntent, 0)
-                            val selfHandler = handlers.find { it.activityInfo.packageName == packageName }
-                            
-                            if (selfHandler != null) {
-                                val otherHandler = handlers.firstOrNull { it.activityInfo.packageName != packageName }
-                                if (otherHandler != null) {
-                                    redirectIntent.setPackage(otherHandler.activityInfo.packageName)
-                                    startActivity(redirectIntent)
-                                } else {
-                                    // If we are the only handler, we have to use WebView to avoid loop
-                                    val webIntent = Intent(this@MainActivity, WebViewActivity::class.java).apply {
-                                        putExtra(WebViewActivity.EXTRA_URL, finalRedirectUrl)
-                                    }
-                                    startActivity(webIntent)
-                                }
-                            } else {
-                                // We are not a handler, just let the system handle it (Better for browser choice)
-                                startActivity(redirectIntent)
-                            }
-                        }
-                        
-                        // Increment sidestep counter ONLY if navigating
-                        incrementSidestepCount()
-                        wasNavigated = true
-                    } else {
-                        Toast.makeText(this@MainActivity, "Link processed and added to history", Toast.LENGTH_SHORT).show()
-                    }
-                } catch (e: Exception) {
-                    if (!isDestroyed && !isFinishing) {
-                        Toast.makeText(this@MainActivity, "Could not open URL: ${e.message}", Toast.LENGTH_LONG).show()
-                    }
-                }
-
-                // Step 4: Save to History (Background) - Moved after navigation to prioritize speed
-                if (!skipHistoryUpdate) {
-                    val entry = HistoryManager.HistoryEntry(
-                        originalUrl = url,
-                        cleanedUrl = cleaned,
-                        processedUrl = redirectUrl,
-                        timestamp = System.currentTimeMillis(),
-                        title = initialTitle,
-                        unshortenedUrl = unshortenedUrl
-                    )
-                    
-                    // Note: HistoryManager functions now handle Dispatchers.IO internally
-                    HistoryManager.addToHistory(this@MainActivity, entry)
-                    HistoryManager.applyRetentionPolicy(this@MainActivity)
-                    
-                    // Trigger preview fetch immediately after saving
-                    if (PreferenceManager.getDefaultSharedPreferences(this@MainActivity).getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE) != "never") {
-                        val savedEntry = HistoryManager.getHistory(this@MainActivity).firstOrNull { 
-                            it.originalUrl == url && it.timestamp == entry.timestamp 
-                        }
-                        if (savedEntry != null) {
-                            fetchPreview(savedEntry)
-                        }
-                    }
-                }
-
-                if (!isDestroyed && !isFinishing) {
-                    updateCounterUI(HistoryManager.getHistory(this@MainActivity))
-                }
-
-                // Step 6: Handle UI cleanup
-                if (!isDestroyed && !isFinishing) {
-                    urlInput.text.clear()
-                    // Scroll to top after history reloads to show the new item
-                    loadHistory {
-                        historyList.smoothScrollToPosition(0)
-                    }
-                    urlInput.clearFocus()
-                }
-
+                UrlUnshortener.unshorten(url, resolveHtml)
             } catch (e: Exception) {
-                Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                url
             }
+        } else {
+            url
+        }
+        
+        // Step 2: Extract initial title
+        val initialTitle = fetchInitialTitle(unshortenedUrl)
+
+        // Step 3: Determine Redirect URL
+        val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
+        val cleanedUrl = if (shouldRemoveTracking) {
+            UrlCleaner.cleanUrl(unshortenedUrl)
+        } else {
+            unshortenedUrl
+        }
+        val redirectUrl = SettingsUtils.resolveTargetUrl(this, cleanedUrl, unshortenedUrl)
+        
+        return UrlProcessingResult(unshortenedUrl, cleanedUrl, redirectUrl, initialTitle)
+    }
+
+    private fun fetchInitialTitle(url: String): String? {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (!prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)) {
+            return UrlCleaner.getServiceName(url)
+        }
+
+        return when {
+            UrlCleaner.isTwitterOrXUrl(url) -> {
+                val username = getTwitterUsername(url)
+                if (username != null) "@$username" else null
+            }
+            UrlCleaner.isTikTokUrl(url) -> {
+                val username = getTikTokUsername(url)
+                if (username != null) "@$username" else null
+            }
+            UrlCleaner.isRedditUrl(url) -> getRedditTitle(url)
+            else -> null
+        }
+    }
+
+    private fun handleNavigation(redirectUrl: String, unshortenedUrl: String, skipImmediateCheck: Boolean) {
+        if (isDestroyed || isFinishing) return
+        
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val isImmediate = skipImmediateCheck || prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
+        
+        if (isImmediate) {
+            navigateToUrl(redirectUrl, unshortenedUrl)
+        } else {
+            Toast.makeText(this, "Link processed and added to history", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun navigateToUrl(redirectUrl: String, originalHostUrl: String) {
+        try {
+            val finalRedirectUrl = UrlCleaner.ensureProtocol(redirectUrl)
+            
+            // Determine if we should use in-app WebView
+            if (SettingsUtils.shouldOpenInWebView(this, originalHostUrl)) {
+                val webIntent = Intent(this, WebViewActivity::class.java).apply {
+                    putExtra(WebViewActivity.EXTRA_URL, finalRedirectUrl)
+                }
+                startActivity(webIntent)
+            } else {
+                launchExternalIntent(finalRedirectUrl)
+            }
+            
+            incrementSidestepCount()
+        } catch (e: Exception) {
+            if (!isDestroyed && !isFinishing) {
+                Toast.makeText(this, "Could not open URL: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun launchExternalIntent(url: String) {
+        val redirectIntent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        
+        val handlers = packageManager.queryIntentActivities(redirectIntent, 0)
+        val selfHandler = handlers.find { it.activityInfo.packageName == packageName }
+        
+        if (selfHandler != null) {
+            val otherHandler = handlers.firstOrNull { it.activityInfo.packageName != packageName }
+            if (otherHandler != null) {
+                redirectIntent.setPackage(otherHandler.activityInfo.packageName)
+                startActivity(redirectIntent)
+            } else {
+                // If we are the only handler, use WebView
+                val webIntent = Intent(this, WebViewActivity::class.java).apply {
+                    putExtra(WebViewActivity.EXTRA_URL, url)
+                }
+                startActivity(webIntent)
+            }
+        } else {
+            startActivity(redirectIntent)
+        }
+    }
+
+    private suspend fun saveToHistory(originalUrl: String, result: UrlProcessingResult) {
+        val entry = HistoryManager.HistoryEntry(
+            originalUrl = originalUrl,
+            cleanedUrl = result.cleanedUrl,
+            processedUrl = result.redirectUrl,
+            timestamp = System.currentTimeMillis(),
+            title = result.initialTitle,
+            unshortenedUrl = result.unshortenedUrl
+        )
+        
+        HistoryManager.addToHistory(this, entry)
+        HistoryManager.applyRetentionPolicy(this)
+        
+        // Trigger preview fetch immediately after saving
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        if (prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE) != "never") {
+            val savedEntry = HistoryManager.getHistory(this).firstOrNull { 
+                it.originalUrl == originalUrl && it.timestamp == entry.timestamp 
+            }
+            if (savedEntry != null) {
+                fetchPreview(savedEntry)
+            }
+        }
+        
+        if (!isDestroyed && !isFinishing) {
+            updateCounterUI(HistoryManager.getHistory(this))
+        }
+    }
+
+    private fun updateUiAfterNavigation() {
+        if (!isDestroyed && !isFinishing) {
+            urlInput.text.clear()
+            loadHistory {
+                historyList.smoothScrollToPosition(0)
+            }
+            urlInput.clearFocus()
         }
     }
 
@@ -861,18 +900,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun shouldShowWelcomeGuide(): Boolean {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        if (prefs.getBoolean("has_processed_url", false)) {
-            return false
-        }
+        if (prefs.getBoolean("has_processed_url", false)) return false
         
         val commonDomains = listOf("twitter.com", "reddit.com", "instagram.com", "tiktok.com", "youtube.com", "open.spotify.com")
-        for (domain in commonDomains) {
-            if (SettingsUtils.isAppDefaultHandlerForDomain(this, domain)) {
-                return false
-            }
-        }
-        
-        return true
+        return commonDomains.none { SettingsUtils.isAppDefaultHandlerForDomain(this, it) }
     }
 
     private fun loadHistory(runAfterUpdate: (() -> Unit)? = null) {
@@ -1044,11 +1075,8 @@ class MainActivity : AppCompatActivity() {
             val uri = url.toUri()
             val pathSegments = uri.pathSegments
             val commentsIndex = pathSegments.indexOf("comments")
-            if (commentsIndex != -1 && commentsIndex + 1 < pathSegments.size) {
-                // Return null for now as we don't use idLong
-                return null 
-            }
-            null
+            // Return null for now as we don't use idLong
+            if (commentsIndex != -1 && commentsIndex + 1 < pathSegments.size) null else null
         } catch (e: Exception) {
             null
         }
@@ -1078,25 +1106,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getTikTokTimestamp(url: String?): Long? {
-         if (url == null) return null
          return try {
              // tiktok.com/@user/video/VIDEO_ID
-             val uri = url.toUri()
-             val pathSegments = uri.pathSegments
-             // Find segment that is purely numeric and length > 15 (snowflake IDs are 19 digits usually)
-             // or simply the segment after "video"?
-             
-             // Path usually: /@username/video/7238472389472384
-             val videoIndex = pathSegments.indexOf("video")
-             if (videoIndex != -1 && videoIndex + 1 < pathSegments.size) {
-                 val idString = pathSegments[videoIndex + 1]
-                 val videoId = idString.toLongOrNull() ?: return null
-                 
-                 // TikTok Snowflake: first 32 bits are timestamp in seconds
-                 val timestampSeconds = videoId ushr 32
-                 return timestampSeconds * 1000L // Convert to millis
+             url?.toUri()?.let { uri ->
+                 val pathSegments = uri.pathSegments
+                 val videoIndex = pathSegments.indexOf("video")
+                 if (videoIndex != -1 && videoIndex + 1 < pathSegments.size) {
+                     pathSegments[videoIndex + 1].toLongOrNull()?.let { videoId ->
+                         // TikTok Snowflake: first 32 bits are timestamp in seconds
+                         (videoId ushr 32) * 1000L
+                     }
+                 } else null
              }
-             null
          } catch (e: Exception) {
              null
          }
@@ -1147,41 +1168,42 @@ class MainActivity : AppCompatActivity() {
     private fun getDisplayTitle(entry: HistoryManager.HistoryEntry): String {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         if (!prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)) {
-             val title = entry.title
-             return if (title.isNullOrBlank()) UrlCleaner.getServiceName(entry.unshortenedUrl ?: entry.originalUrl) else title
+             return entry.title.takeUnless { it.isNullOrBlank() } 
+                 ?: UrlCleaner.getServiceName(entry.unshortenedUrl ?: entry.originalUrl)
         }
 
         val contentUrl = entry.unshortenedUrl ?: entry.originalUrl
-        val isYouTube = UrlCleaner.isYouTubeUrl(contentUrl)
-        val isTwitter = UrlCleaner.isTwitterOrXUrl(contentUrl)
-        val isTikTok = UrlCleaner.isTikTokUrl(contentUrl)
-        val isReddit = UrlCleaner.isRedditUrl(contentUrl)
-        val isMedium = UrlCleaner.isMediumUrl(contentUrl)
-        val isImdb = UrlCleaner.isImdbUrl(contentUrl)
-        val isWikipedia = UrlCleaner.isWikipediaUrl(contentUrl)
-        val isGoodreads = UrlCleaner.isGoodreadsUrl(contentUrl)
-        val isGoogleMaps = UrlCleaner.isGoogleMapsUrl(contentUrl)
+        val validTitle = entry.title.takeUnless { it.isNullOrBlank() }
 
-        val title = entry.title
-        val validTitle = if (title.isNullOrBlank()) null else title
+        return validTitle ?: resolveServiceTitle(contentUrl)
+    }
 
-        return when {
-            isTwitter -> validTitle ?: getTwitterUsername(contentUrl) ?: "Twitter"
-            isTikTok -> validTitle ?: getTikTokUsername(contentUrl) ?: "TikTok"
-            isReddit -> validTitle ?: getRedditTitle(contentUrl) ?: "Reddit"
-            isYouTube -> validTitle ?: getYouTubeTitle(contentUrl) ?: "YouTube"
-            isMedium -> validTitle ?: "Medium"
-            isImdb -> validTitle ?: "IMDb"
-            isWikipedia -> validTitle ?: "Wikipedia"
-            isGoodreads -> validTitle ?: "Goodreads"
-            isGoogleMaps -> validTitle ?: "Google Maps"
-            UrlCleaner.isGeniusUrl(contentUrl) -> validTitle ?: "Genius"
-            UrlCleaner.isGitHubUrl(contentUrl) -> validTitle ?: "GitHub"
-            UrlCleaner.isStackOverflowUrl(contentUrl) -> validTitle ?: "StackOverflow"
-            contentUrl.contains("nytimes.com") -> validTitle ?: "The New York Times"
-            contentUrl.contains("instagram.com") -> validTitle ?: "Instagram"
-            else -> validTitle ?: UrlCleaner.getServiceName(contentUrl)
-        }
+    private data class ServiceTitleRule(
+        val condition: (String) -> Boolean,
+        val titleProvider: (String) -> String?
+    )
+
+    private val serviceTitleRules = listOf(
+        ServiceTitleRule({ UrlCleaner.isTwitterOrXUrl(it) }, { getTwitterUsername(it) ?: "Twitter" }),
+        ServiceTitleRule({ UrlCleaner.isTikTokUrl(it) }, { getTikTokUsername(it) ?: "TikTok" }),
+        ServiceTitleRule({ UrlCleaner.isRedditUrl(it) }, { getRedditTitle(it) ?: "Reddit" }),
+        ServiceTitleRule({ UrlCleaner.isYouTubeUrl(it) }, { getYouTubeTitle(it) ?: "YouTube" }),
+        ServiceTitleRule({ UrlCleaner.isMediumUrl(it) }, { "Medium" }),
+        ServiceTitleRule({ UrlCleaner.isImdbUrl(it) }, { "IMDb" }),
+        ServiceTitleRule({ UrlCleaner.isWikipediaUrl(it) }, { "Wikipedia" }),
+        ServiceTitleRule({ UrlCleaner.isGoodreadsUrl(it) }, { "Goodreads" }),
+        ServiceTitleRule({ UrlCleaner.isGoogleMapsUrl(it) }, { "Google Maps" }),
+        ServiceTitleRule({ UrlCleaner.isGeniusUrl(it) }, { "Genius" }),
+        ServiceTitleRule({ UrlCleaner.isGitHubUrl(it) }, { "GitHub" }),
+        ServiceTitleRule({ UrlCleaner.isStackOverflowUrl(it) }, { "StackOverflow" }),
+        ServiceTitleRule({ it.contains("nytimes.com") }, { "The New York Times" }),
+        ServiceTitleRule({ it.contains("instagram.com") }, { "Instagram" })
+    )
+
+    private fun resolveServiceTitle(url: String): String {
+        return serviceTitleRules.firstNotNullOfOrNull { rule ->
+            if (rule.condition(url)) rule.titleProvider(url) else null
+        } ?: UrlCleaner.getServiceName(url)
     }
 
     private fun extractDomain(url: String): String {
@@ -1222,14 +1244,16 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun getTwitterTimestamp(url: String?): Long? {
-        if (url == null) return null
         return try {
-            val pattern = java.util.regex.Pattern.compile("status/(\\d+)")
-            val matcher = pattern.matcher(url)
-            if (matcher.find()) {
-                val tweetId = matcher.group(1)?.toLongOrNull() ?: return null
-                (tweetId shr 22) + 1288834974657L
-            } else null
+            url?.let {
+                val pattern = java.util.regex.Pattern.compile("status/(\\d+)")
+                val matcher = pattern.matcher(it)
+                if (matcher.find()) {
+                    matcher.group(1)?.toLongOrNull()?.let { tweetId -> 
+                       (tweetId shr 22) + 1288834974657L
+                    }
+                } else null
+            }
         } catch (e: Exception) {
             null
         }

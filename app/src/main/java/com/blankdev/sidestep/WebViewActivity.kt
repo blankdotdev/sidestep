@@ -129,8 +129,9 @@ class WebViewActivity : AppCompatActivity() {
             return if (typedValue.resourceId != 0) {
                 try {
                     androidx.core.content.ContextCompat.getColor(this, typedValue.resourceId)
-                } catch (e: Exception) {
+                } catch (e: android.content.res.Resources.NotFoundException) {
                     // Fallback for cases where resourceId is not a color
+                    android.util.Log.w(TAG, "Resource not found for theme color, using raw data", e)
                     typedValue.data
                 }
             } else {

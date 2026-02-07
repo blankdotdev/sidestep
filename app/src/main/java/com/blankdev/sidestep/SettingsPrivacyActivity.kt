@@ -48,10 +48,18 @@ class SettingsPrivacyActivity : AppCompatActivity() {
         val historyGroup = findViewById<MaterialButtonToggleGroup>(R.id.historyToggleGroup)
         val customContainer = findViewById<android.view.View>(R.id.customHistoryContainer)
         val privacyCard = findViewById<android.view.View>(R.id.cardPrivacyData)
-        val sliderDays = findViewById<Slider>(R.id.sliderDays)
-        val sliderItems = findViewById<Slider>(R.id.sliderItems)
         
-        // Set initial state
+        initializeHistoryState(prefs, historyGroup, customContainer, privacyCard)
+        setupHistorySliders(prefs)
+        setupHistoryListeners(prefs, historyGroup, customContainer, privacyCard)
+    }
+
+    private fun initializeHistoryState(
+        prefs: android.content.SharedPreferences,
+        historyGroup: MaterialButtonToggleGroup,
+        customContainer: android.view.View,
+        privacyCard: android.view.View
+    ) {
         val currentMode = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
         when (currentMode) {
             "never" -> historyGroup.check(R.id.btnHistoryNever)
@@ -59,18 +67,20 @@ class SettingsPrivacyActivity : AppCompatActivity() {
             else -> historyGroup.check(R.id.btnHistoryAuto)
         }
         
-        // Visibility
         customContainer.visibility = if (currentMode == HistoryManager.DEFAULT_RETENTION_MODE) android.view.View.VISIBLE else android.view.View.GONE
         privacyCard.visibility = if (currentMode == "never") android.view.View.GONE else android.view.View.VISIBLE
+    }
+
+    private fun setupHistorySliders(prefs: android.content.SharedPreferences) {
+        val sliderDays = findViewById<Slider>(R.id.sliderDays)
+        val sliderItems = findViewById<Slider>(R.id.sliderItems)
         
-        // Sliders initial values
         val daysOptions = HISTORY_DAYS_OPTIONS
         val itemsOptions = HISTORY_ITEMS_OPTIONS
 
         val savedDays = prefs.getString(HistoryManager.KEY_HISTORY_DAYS, HistoryManager.DEFAULT_HISTORY_DAYS.toString())?.toIntOrNull() ?: HistoryManager.DEFAULT_HISTORY_DAYS
         val savedItems = prefs.getString(HistoryManager.KEY_HISTORY_ITEMS, HistoryManager.DEFAULT_HISTORY_ITEMS.toString())?.toIntOrNull() ?: HistoryManager.DEFAULT_HISTORY_ITEMS
 
-        // Map saved value to nearest index
         val daysIndex = daysOptions.indexOf(savedDays).takeIf { it >= 0 } 
             ?: daysOptions.indices.minByOrNull { kotlin.math.abs(daysOptions[it] - savedDays) } ?: 2
         
@@ -79,52 +89,54 @@ class SettingsPrivacyActivity : AppCompatActivity() {
 
         sliderDays.value = daysIndex.toFloat()
         sliderItems.value = itemsIndex.toFloat()
-
-        // Toggle Listener
-        historyGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                val newMode = when (checkedId) {
-                    R.id.btnHistoryNever -> "never"
-                    R.id.btnHistoryForever -> "forever"
-                    else -> HistoryManager.DEFAULT_RETENTION_MODE
-                }
-                
-                if (newMode == "never" && !prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)) {
-                    // Revert UI
-                    when (prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)) {
-                        "forever" -> historyGroup.check(R.id.btnHistoryForever)
-                        else -> historyGroup.check(R.id.btnHistoryAuto)
-                    }
-                    android.widget.Toast.makeText(this, "History must be enabled if Immediate Navigation is OFF", android.widget.Toast.LENGTH_LONG).show()
-                } else {
-                    prefs.edit { putString(HistoryManager.KEY_HISTORY_RETENTION, newMode) }
-                    
-                    if (newMode == HistoryManager.DEFAULT_RETENTION_MODE) {
-                        customContainer.visibility = android.view.View.VISIBLE
-                    } else {
-                        customContainer.visibility = android.view.View.GONE
-                    }
-                    
-                    if (newMode == "never") {
-                        privacyCard.visibility = android.view.View.GONE
-                    } else {
-                        privacyCard.visibility = android.view.View.VISIBLE
-                    }
-                }
-            }
-        }
         
-        // Slider Listeners
         sliderDays.addOnChangeListener { _, value, _ ->
             val index = value.toInt().coerceIn(0, daysOptions.lastIndex)
-            val selectedDays = daysOptions[index]
-            prefs.edit { putString(HistoryManager.KEY_HISTORY_DAYS, selectedDays.toString()) }
+            prefs.edit { putString(HistoryManager.KEY_HISTORY_DAYS, daysOptions[index].toString()) }
         }
         
         sliderItems.addOnChangeListener { _, value, _ ->
             val index = value.toInt().coerceIn(0, itemsOptions.lastIndex)
-            val selectedItems = itemsOptions[index]
-            prefs.edit { putString(HistoryManager.KEY_HISTORY_ITEMS, selectedItems.toString()) }
+            prefs.edit { putString(HistoryManager.KEY_HISTORY_ITEMS, itemsOptions[index].toString()) }
+        }
+    }
+
+    private fun setupHistoryListeners(
+        prefs: android.content.SharedPreferences,
+        historyGroup: MaterialButtonToggleGroup,
+        customContainer: android.view.View,
+        privacyCard: android.view.View
+    ) {
+        historyGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                handlehistoryToggle(prefs, historyGroup, checkedId, customContainer, privacyCard)
+            }
+        }
+    }
+
+    private fun handlehistoryToggle(
+        prefs: android.content.SharedPreferences,
+        historyGroup: MaterialButtonToggleGroup,
+        checkedId: Int,
+        customContainer: android.view.View,
+        privacyCard: android.view.View
+    ) {
+        val newMode = when (checkedId) {
+            R.id.btnHistoryNever -> "never"
+            R.id.btnHistoryForever -> "forever"
+            else -> HistoryManager.DEFAULT_RETENTION_MODE
+        }
+        
+        if (newMode == "never" && !prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)) {
+            // Revert UI if needed logic
+            val current = prefs.getString(HistoryManager.KEY_HISTORY_RETENTION, HistoryManager.DEFAULT_RETENTION_MODE)
+            if (current == "forever") historyGroup.check(R.id.btnHistoryForever) else historyGroup.check(R.id.btnHistoryAuto)
+            
+            android.widget.Toast.makeText(this, "History must be enabled if Immediate Navigation is OFF", android.widget.Toast.LENGTH_LONG).show()
+        } else {
+            prefs.edit { putString(HistoryManager.KEY_HISTORY_RETENTION, newMode) }
+            customContainer.visibility = if (newMode == HistoryManager.DEFAULT_RETENTION_MODE) android.view.View.VISIBLE else android.view.View.GONE
+            privacyCard.visibility = if (newMode == "never") android.view.View.GONE else android.view.View.VISIBLE
         }
     }
 

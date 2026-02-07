@@ -11,12 +11,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.core.net.toUri
+import android.util.Log
 
 /**
  * A UI-less activity that handles incoming URL intents and performs redirects.
  * This provides a faster experience by avoiding loading the main UI for simple redirects.
  */
 class RedirectActivity : AppCompatActivity() {
+
+    companion object {
+        private const val TAG = "RedirectActivity"
+        private const val UNSHORTEN_TIMEOUT_MS = 10000L
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,123 +76,159 @@ class RedirectActivity : AppCompatActivity() {
         val appContext = applicationContext // Capture for coroutine usage
 
         // Use a detached scope so the job isn't cancelled when Activity finishes
-        // This ensures the redirect happens even if the transparent activity is destroyed immediately
         kotlinx.coroutines.CoroutineScope(Dispatchers.Main).launch {
             try {
                 val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
-                val sanitizedUrl = UrlCleaner.ensureProtocol(url)
-
-                // Step 1: Unshorten with timeout (Network call) - Respect setting
-                val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
-                val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
-
-                val unshortenedUrl = if (shouldUnshorten) {
-                    try {
-                        kotlinx.coroutines.withTimeout(10000) {  // 10 second timeout
-                             UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
-                         }
-                    } catch (e: Exception) {
-                        sanitizedUrl  // Use original URL if timeout/error
-                    }
-                } else {
-                    sanitizedUrl
-                }
-                
-                // Step 2: Clean and resolve target - Respect tracking setting
-                val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
-                val cleaned = if (shouldRemoveTracking) {
-                    UrlCleaner.cleanUrl(unshortenedUrl)
-                } else {
-                    unshortenedUrl
-                }
-                val redirectUrl = SettingsUtils.resolveTargetUrl(appContext, cleaned, unshortenedUrl)
-                val finalUrl = UrlCleaner.ensureProtocol(redirectUrl)
-
-                // Step 4: Perform Redirect - Priority 1
                 val isImmediate = prefs.getBoolean(SettingsActivity.KEY_IMMEDIATE_NAVIGATION, true)
-                var wasNavigated = false
                 
-                if (isImmediate) {
-                    if (SettingsUtils.shouldOpenInWebView(appContext, unshortenedUrl)) {
-                        val webIntent = Intent(appContext, WebViewActivity::class.java).apply {
-                            putExtra(WebViewActivity.EXTRA_URL, finalUrl)
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        appContext.startActivity(webIntent)
-                    } else {
-                        val redirectIntent = Intent(Intent.ACTION_VIEW, finalUrl.toUri()).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                        }
-                        
-                        // Detection for loops - ONLY set package if we are one of the handlers
-                        val handlers = appContext.packageManager.queryIntentActivities(redirectIntent, 0)
-                        val selfHandler = handlers.find { it.activityInfo.packageName == appContext.packageName }
-                        
-                        if (selfHandler != null) {
-                            val otherHandler = handlers.firstOrNull { it.activityInfo.packageName != appContext.packageName }
-                            if (otherHandler != null) {
-                                redirectIntent.setPackage(otherHandler.activityInfo.packageName)
-                                appContext.startActivity(redirectIntent)
-                            } else {
-                                // Fallback to MainActivity if no other handler found or to show error
-                                val mainIntent = Intent(appContext, MainActivity::class.java).apply {
-                                    data = finalUrl.toUri()
-                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                }
-                                appContext.startActivity(mainIntent)
-                            }
-                        } else {
-                            // We are not a handler, just let the system handle it
-                            appContext.startActivity(redirectIntent)
-                        }
-                    }
-                    wasNavigated = true
+                // 1. Unshorten
+                val unshortenedUrl = unshortenUrl(appContext, url)
+                
+                // 2. Clean & Resolve Target
+                val (cleanedUrl, finalUrl) = resolveEffectiveUrl(appContext, unshortenedUrl)
+
+                // 3. Navigate
+                val wasNavigated = if (isImmediate) {
+                    handleRedirectNavigation(appContext, unshortenedUrl, finalUrl)
                 } else {
-                    // Start MainActivity to show history
-                    val mainIntent = Intent(appContext, MainActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    }
-                    appContext.startActivity(mainIntent)
+                    launchMainHistory(appContext)
+                    false
                 }
 
-                // Step 3: Save to History (Background) - Priority 2
-                withContext(Dispatchers.IO) {
-                    val entry = HistoryManager.HistoryEntry(
-                        originalUrl = url,
-                        cleanedUrl = cleaned,
-                        processedUrl = finalUrl,
-                        timestamp = System.currentTimeMillis(),
-                        unshortenedUrl = unshortenedUrl,
-                        isPreviewFetched = false
-                    )
-                    HistoryManager.addToHistory(appContext, entry)
-                    HistoryManager.applyRetentionPolicy(appContext)
-                    
-                    // Update global count
-                    if (wasNavigated) {
-                        val currentCount = prefs.getLong("sidestep_count", 0L)
-                        prefs.edit()
-                            .putLong("sidestep_count", currentCount + 1)
-                            .putBoolean("has_processed_url", true)
-                            .apply()
-                    }
-                }
+                // 4. Save History
+                saveHistoryEntry(appContext, url, cleanedUrl, finalUrl, unshortenedUrl, wasNavigated)
 
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(appContext, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    // Fallback to MainActivity on error
-                    val mainIntent = Intent(appContext, MainActivity::class.java).apply {
-                        putExtra("error_url", url)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    appContext.startActivity(mainIntent)
-                }
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                Log.e(TAG, "Error processing redirect", e)
+                handleRedirectError(appContext, url)
             }
         }
         
-        // Finish immediately for seamless experience
         finish()
+    }
+
+    private suspend fun unshortenUrl(context: android.content.Context, url: String): String {
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        val sanitizedUrl = UrlCleaner.ensureProtocol(url)
+        val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
+        val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
+
+        return if (shouldUnshorten) {
+            try {
+                kotlinx.coroutines.withTimeout(UNSHORTEN_TIMEOUT_MS) {
+                     UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
+                 }
+            } catch (ignored: kotlinx.coroutines.TimeoutCancellationException) {
+                 sanitizedUrl
+             } catch (ignored: Exception) {
+                 sanitizedUrl
+             }
+        } else {
+            sanitizedUrl
+        }
+    }
+
+    private fun resolveEffectiveUrl(context: android.content.Context, unshortenedUrl: String): Pair<String, String> {
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
+        
+        val cleaned = if (shouldRemoveTracking) {
+            UrlCleaner.cleanUrl(unshortenedUrl)
+        } else {
+            unshortenedUrl
+        }
+        
+        val redirectUrl = SettingsUtils.resolveTargetUrl(context, cleaned, unshortenedUrl)
+        val finalUrl = UrlCleaner.ensureProtocol(redirectUrl)
+        
+        return Pair(cleaned, finalUrl)
+    }
+
+    private fun handleRedirectNavigation(context: android.content.Context, unshortenedUrl: String, finalUrl: String): Boolean {
+        if (SettingsUtils.shouldOpenInWebView(context, unshortenedUrl)) {
+            val webIntent = Intent(context, WebViewActivity::class.java).apply {
+                putExtra(WebViewActivity.EXTRA_URL, finalUrl)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(webIntent)
+            return true
+        } else {
+            val redirectIntent = Intent(Intent.ACTION_VIEW, finalUrl.toUri()).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            
+            val handlers = context.packageManager.queryIntentActivities(redirectIntent, 0)
+            val selfHandler = handlers.find { it.activityInfo.packageName == context.packageName }
+            
+            if (selfHandler != null) {
+                val otherHandler = handlers.firstOrNull { it.activityInfo.packageName != context.packageName }
+                if (otherHandler != null) {
+                    redirectIntent.setPackage(otherHandler.activityInfo.packageName)
+                    context.startActivity(redirectIntent)
+                    return true
+                } else {
+                    // Fallback to MainActivity
+                    val mainIntent = Intent(context, MainActivity::class.java).apply {
+                        data = finalUrl.toUri()
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(mainIntent)
+                    return true
+                }
+            } else {
+                context.startActivity(redirectIntent)
+                return true
+            }
+        }
+    }
+
+    private fun launchMainHistory(context: android.content.Context) {
+        val mainIntent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        context.startActivity(mainIntent)
+    }
+
+    private suspend fun saveHistoryEntry(
+        context: android.content.Context, 
+        originalUrl: String, 
+        cleanedUrl: String, 
+        finalUrl: String, 
+        unshortenedUrl: String, 
+        wasNavigated: Boolean
+    ) {
+        withContext(Dispatchers.IO) {
+            val entry = HistoryManager.HistoryEntry(
+                originalUrl = originalUrl,
+                cleanedUrl = cleanedUrl,
+                processedUrl = finalUrl,
+                timestamp = System.currentTimeMillis(),
+                unshortenedUrl = unshortenedUrl,
+                isPreviewFetched = false
+            )
+            HistoryManager.addToHistory(context, entry)
+            HistoryManager.applyRetentionPolicy(context)
+            
+            if (wasNavigated) {
+                val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                val currentCount = prefs.getLong("sidestep_count", 0L)
+                prefs.edit()
+                    .putLong("sidestep_count", currentCount + 1)
+                    .putBoolean("has_processed_url", true)
+                    .apply()
+            }
+        }
+    }
+
+    private suspend fun handleRedirectError(context: android.content.Context, url: String) {
+        withContext(Dispatchers.Main) {
+            Toast.makeText(context, "Failed to process link", Toast.LENGTH_SHORT).show()
+            val mainIntent = Intent(context, MainActivity::class.java).apply {
+                putExtra("error_url", url)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(mainIntent)
+        }
     }
 
 

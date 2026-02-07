@@ -1,6 +1,7 @@
 package com.blankdev.sidestep
 
 import java.net.URI
+import java.net.URISyntaxException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -326,13 +327,15 @@ object AlternativeInstancesFetcher {
             val pattern = Pattern.compile("\\|\\[(.*?)\\]\\((.*?)\\)\\|")
             val matcher = pattern.matcher(html)
             
-            while (matcher.find()) {
-                val url = matcher.group(2) ?: continue
-                val domain = try { URI(url).host } catch (e: Exception) { null } ?: continue
-                if (isAlternativeInstance(domain)) {
-                    instances.add(Instance(domain))
+            
+            // Extract all instances from markdown table
+            generateSequence { if (matcher.find()) matcher else null }
+                .mapNotNull { m ->
+                    val url = m.group(2) ?: return@mapNotNull null
+                    val domain = try { URI(url).host } catch (ignored: URISyntaxException) { null }
+                    domain?.takeIf { isAlternativeInstance(it) }
                 }
-            }
+                .forEach { domain -> instances.add(Instance(domain)) }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch instances", e)
         }
@@ -361,42 +364,46 @@ object AlternativeInstancesFetcher {
             // Each row starts with <tr> and contains columns. 
             // We'll split by <tr> to process row by row more safely.
             val rows = html.split("<tr>")
-            for (row in rows) {
-                if (!row.contains("nitter")) continue
-                
-                // Handle HTML entities like &#x2F;
-                val domainMatcher = Pattern.compile("href=\"https?(?::|&#[xX]3[aA];)(?:&#[xX]2[fF];|/){2}([a-z0-9.-]+\\.[a-z]{2,})\"", Pattern.CASE_INSENSITIVE).matcher(row)
-                val domain = if (domainMatcher.find()) {
-                    domainMatcher.group(1) ?: continue
-                } else {
-                    // Fallback to simple domain match if href fails
-                    val simpleDomainMatcher = Pattern.compile(">([a-z0-9.-]+\\.nitter\\.[a-z]{2,})<", Pattern.CASE_INSENSITIVE).matcher(row)
-                    if (simpleDomainMatcher.find()) simpleDomainMatcher.group(1) ?: continue else continue
-                }
-                
-                if (!isAlternativeInstance(domain)) continue
-                
-                val healthy = row.contains("aria-label=\"healthy\"") || row.contains("✅")
-                val unhealthy = row.contains("aria-label=\"unhealthy\"") || row.contains("❌")
-                val health = if (healthy) "Healthy" else if (unhealthy) "Down" else "Issues"
-                
-                // The uptime % is usually in the 6th column (td). Let's extract all percentages.
-                // We'll filter for percentages that look like uptime (usually > 50%) if possible,
-                // or just take the last one in the row which is often the "All Time %".
-                val pctMatcher = Pattern.compile("(\\d{1,3}(?:\\.\\d+)?%)").matcher(row)
-                val percentages = mutableListOf<String>()
-                while (pctMatcher.find()) {
-                    percentages.add(pctMatcher.group(1))
-                }
-                
-                val uptime = if (percentages.isNotEmpty()) percentages.last() else null
-                
-                instances.add(Instance(domain, uptime = uptime, uptime7d = uptime, health = health))
-            }
+            instances.addAll(
+                rows.mapNotNull { row -> parseNitterRow(row) }
+            )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch instances", e)
         }
         return instances
+    }
+
+    private fun parseNitterRow(row: String): Instance? {
+        if (!row.contains("nitter")) return null
+        
+        // Handle HTML entities like &#x2F;
+        val domainMatcher = Pattern.compile("href=\"https?(?::|&#[xX]3[aA];)(?:&#[xX]2[fF];|/){2}([a-z0-9.-]+\\.[a-z]{2,})\"", Pattern.CASE_INSENSITIVE).matcher(row)
+        val domain = if (domainMatcher.find()) {
+            domainMatcher.group(1) ?: return null
+        } else {
+            // Fallback to simple domain match if href fails
+            val simpleDomainMatcher = Pattern.compile(">([a-z0-9.-]+\\.nitter\\.[a-z]{2,})<", Pattern.CASE_INSENSITIVE).matcher(row)
+            if (simpleDomainMatcher.find()) simpleDomainMatcher.group(1) ?: return null else return null
+        }
+        
+        if (!isAlternativeInstance(domain)) return null
+        
+        val healthy = row.contains("aria-label=\"healthy\"") || row.contains("✅")
+        val unhealthy = row.contains("aria-label=\"unhealthy\"") || row.contains("❌")
+        val health = if (healthy) "Healthy" else if (unhealthy) "Down" else "Issues"
+        
+        // The uptime % is usually in the 6th column (td). Let's extract all percentages.
+        // We'll filter for percentages that look like uptime (usually > 50%) if possible,
+        // or just take the last one in the row which is often the "All Time %".
+        val pctMatcher = Pattern.compile("(\\d{1,3}(?:\\.\\d+)?%)").matcher(row)
+        val percentages = mutableListOf<String>()
+        while (pctMatcher.find()) {
+            percentages.add(pctMatcher.group(1))
+        }
+        
+        val uptime = if (percentages.isNotEmpty()) percentages.last() else null
+        
+        return Instance(domain, uptime = uptime, uptime7d = uptime, health = health)
     }
 
     private fun fetchFromStatusPage(statusUrl: String): List<Instance> {
@@ -479,21 +486,32 @@ object AlternativeInstancesFetcher {
 
     private fun isAlternativeInstance(domain: String): Boolean {
         val low = domain.lowercase()
+        
+        // Exclude non-instance domains first
         val exclusions = setOf("github", "ssllabs", "d420.de", "google", "cloudflare", "uptimerobot", "statuspage", "favicon", "gravatar")
         if (exclusions.any { low.contains(it) }) return false
         
-        return low.contains("nitter") || low.contains("redlib") || low.contains("reddit") || 
-               low.contains("lr.") || low.contains("rl.") || low == "xcancel.com" || 
-               low == "safereddit.com" || low == "librdit.com" || low == "twiiit.com" ||
-               low.contains("invidious") || low.contains("inv.") || low == "yewtu.be" ||
-               low.contains("piped") || low == "pipedapi.kavin.rocks" ||
-                low.contains("libremdb") || low == "imdb.rivo.cc" ||
-                low.contains("scribe.rip") || low == "scribe.nixnet.services" ||
-                low.contains("wikiless") || low.contains("biblioreads") ||
-                low.contains("dumb") || low.contains("gothub") || low.contains("anonymousoverflow") || low.contains("overflow.") ||
-                low.contains("priviblur") || low.contains("pb.") || low == "tb.opnxng.com" || low.contains("tumblr") ||
-                low.contains("ruraldictionary") || low == "rd.vern.cc" || low == "rd.bloat.cat" || low.contains("urbandictionary") ||
-                low.contains("rimgo") || low == "imgur.artemislena.eu" || low.contains("imgur") ||
-                low.contains("intellectual")
+        // Match by keyword patterns
+        val instanceKeywords = setOf(
+            "nitter", "redlib", "reddit", "lr.", "rl.",
+            "invidious", "inv.", "piped",
+            "libremdb", "scribe.rip", "wikiless", "biblioreads",
+            "dumb", "gothub", "anonymousoverflow", "overflow.",
+            "priviblur", "pb.", "tumblr",
+            "ruraldictionary", "urbandictionary",
+            "rimgo", "imgur",
+            "intellectual"
+        )
+        
+        // Match specific exact domains
+        val specificDomains = setOf(
+            "xcancel.com", "safereddit.com", "librdit.com", "twiiit.com",
+            "yewtu.be", "pipedapi.kavin.rocks",
+            "imdb.rivo.cc", "scribe.nixnet.services",
+            "tb.opnxng.com", "rd.vern.cc", "rd.bloat.cat",
+            "imgur.artemislena.eu"
+        )
+        
+        return instanceKeywords.any { low.contains(it) } || specificDomains.contains(low)
     }
 }

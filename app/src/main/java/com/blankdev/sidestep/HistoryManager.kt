@@ -24,6 +24,12 @@ object HistoryManager {
     const val KEY_HISTORY_DAYS = "history_days"
     const val KEY_HISTORY_ITEMS = "history_items"
     
+    private const val LEGACY_PARTS_MIN_SIZE = 3
+    private const val HOURS_IN_DAY = 24
+    private const val MINUTES_IN_HOUR = 60
+    private const val SECONDS_IN_MINUTE = 60
+    private const val MILLIS_IN_SECOND = 1000L
+    
     const val DEFAULT_HISTORY_DAYS = 14
     const val DEFAULT_HISTORY_ITEMS = 25
     const val DEFAULT_RETENTION_MODE = "auto"
@@ -123,14 +129,15 @@ object HistoryManager {
                 ))
             }
             mutableList
-        } catch (e: Exception) {
+        } catch (e: org.json.JSONException) {
             // Fallback: Try parsing legacy pipe-delimited format
+            android.util.Log.i("HistoryManager", "JSON parse failed, attempting legacy format", e)
             try {
                 val legacyList = jsonString.split("\n")
                     .filter { it.isNotEmpty() }
                     .mapNotNull { line ->
                         val parts = line.split("|")
-                        if (parts.size >= 3) {
+                        if (parts.size >= LEGACY_PARTS_MIN_SIZE) {
                             HistoryEntry(
                                 originalUrl = parts[1],
                                 cleanedUrl = parts[1],
@@ -145,7 +152,7 @@ object HistoryManager {
                     prefs.edit(commit = true) { remove("history") } // Purge legacy key forever
                 }
                 legacyList
-            } catch (e2: Exception) {
+            } catch (ignored: Exception) {
                 emptyList()
             }
         }
@@ -231,7 +238,7 @@ object HistoryManager {
                     var changed = false
                     
                     // Filter by days
-                    val cutoffTime = System.currentTimeMillis() - (days * 24 * 60 * 60 * 1000L)
+                    val cutoffTime = System.currentTimeMillis() - (days * HOURS_IN_DAY * MINUTES_IN_HOUR * SECONDS_IN_MINUTE * MILLIS_IN_SECOND)
                     if (history.any { it.timestamp < cutoffTime }) {
                         history.removeAll { it.timestamp < cutoffTime }
                         changed = true

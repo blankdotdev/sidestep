@@ -173,140 +173,116 @@ object UrlCleaner {
         // Clean path segments first
         inputUrl = cleanPathSegments(inputUrl)
         
-        try {
+        return try {
             val uri = URI(inputUrl)
-            val query = uri.query ?: return inputUrl
+            val query = uri.query
             
-            val params = query.split("&")
-            val preservedParams = mutableListOf<String>()
-            
-            for (param in params) {
-                val parts = param.split("=", limit = 2)
-                val name = parts[0]
-                
-                val isTracking = TRACKING_PARAMS.contains(name) || 
-                               // Amazon
-                               name.startsWith("ref_") || 
-                               name.startsWith("pf_rd_") ||
-                               name.startsWith("pd_rd_") ||
-                               name.startsWith("cm_sw_") ||
-                               name.startsWith("asc_") ||
-                               // UTM variants
-                               name.startsWith("utm_") ||
-                               // Analytics
-                               name.startsWith("_ga") ||
-                               name.startsWith("_gl") ||
-                               name.startsWith("gaa_") ||
-                               name.startsWith("pk_") || // Piwik/Matomo
-                               name.startsWith("matomo_") ||
-                               name.startsWith("at_") || // Adobe Target
-                               name.startsWith("sc_") || // Snapchat/Emarsys
-                               // Email marketing
-                               name.startsWith("oly_") || // Olytics
-                               name.startsWith("vero_") || // Vero
-                               name.startsWith("_hs") || // HubSpot
-                               name.startsWith("hsa_") || // HubSpot Ads
-                               name.startsWith("mkt_") || // Marketo
-                               name.startsWith("bsft_") || // Blueshift
-                               name.startsWith("dm_") || // Dotdigital
-                               // Social media
-                               name.startsWith("tw") || // Twitter
-                               name.startsWith("fb") || // Facebook
-                               name.startsWith("ig_") || // Instagram
-                               name.startsWith("li_") || // LinkedIn
-                               name.startsWith("trk") || // LinkedIn tracking
-                               // Affiliate
-                               name.startsWith("aff_") ||
-                               name.startsWith("sub") || // sub1, sub2, etc.
-                               name.startsWith("af_") || // AppsFlyer
-                               // Misc
-                               name.startsWith("wicked") || // Wicked Reports
-                               name.startsWith("ns_") // Nielsen/Navigation
-                
-                // UrbanDictionary requires the 'term' parameter to function
-                val isPseudoTracking = isTracking && isUrbanDictionaryUrl(inputUrl) && name == "term"
-                
-                if (!isTracking || isPseudoTracking) {
-                    preservedParams.add(param)
-                }
+            if (query == null) {
+                inputUrl
+            } else {
+                val newQuery = filterQueryParams(query, inputUrl)
+                URI(uri.scheme, uri.authority, uri.path, newQuery, uri.fragment).toString()
             }
-            
-            val newQuery = if (preservedParams.isEmpty()) null else preservedParams.joinToString("&")
-            
-            return URI(uri.scheme, uri.authority, uri.path, newQuery, uri.fragment).toString()
-        } catch (e: URISyntaxException) {
-            Log.e(TAG, "Failed to parse URI: $inputUrl", e)
-            return inputUrl
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error cleaning URL: $inputUrl", e)
-            return inputUrl
+            Log.e(TAG, "Failed to parse URI: $inputUrl", e)
+            inputUrl
         }
     }
 
+    private fun filterQueryParams(query: String, url: String): String? {
+        val params = query.split("&")
+        val preservedParams = params.filter { param ->
+            val parts = param.split("=", limit = 2)
+            val name = parts[0]
+            val isTracking = isTrackingParam(name)
+            
+            // UrbanDictionary requires the 'term' parameter to function
+            val isPseudoTracking = isTracking && isUrbanDictionaryUrl(url) && name == "term"
+            
+            !isTracking || isPseudoTracking
+        }
+        return if (preservedParams.isEmpty()) null else preservedParams.joinToString("&")
+    }
+
+    private fun isTrackingParam(name: String): Boolean {
+         if (TRACKING_PARAMS.contains(name)) return true
+         
+         val prefixes = listOf(
+            // Amazon
+            "ref_", "pf_rd_", "pd_rd_", "cm_sw_", "asc_",
+            // UTM
+            "utm_",
+            // Analytics
+            "_ga", "_gl", "gaa_", "pk_", "matomo_", "at_", "sc_",
+            // Email marketing
+            "oly_", "vero_", "_hs", "hsa_", "mkt_", "bsft_", "dm_",
+            // Social media
+            "tw", "fb", "ig_", "li_", "trk",
+            // Affiliate
+            "aff_", "sub", "af_",
+            // Misc
+            "wicked", "ns_"
+         )
+         return prefixes.any { name.startsWith(it) }
+    }
+
     fun normalizeYouTubeUrl(url: String): String {
-        try {
+        return try {
             val uri = URI(url)
-            val host = uri.host?.lowercase() ?: return url
-            
-            if (host.contains("youtu.be")) {
-                val path = uri.path ?: ""
-                val segments = path.split("/").filter { it.isNotEmpty() }
-                val videoId = segments.firstOrNull() ?: return url
-                
-                // Construct new URL with v=ID
-                val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
-                return URI("https", "www.youtube.com", "/watch", newQuery, uri.fragment).toString()
-            }
-            
-            if (host.contains("youtube.com") && uri.path?.contains("/shorts/") == true) {
-                val path = uri.path ?: ""
-                val segments = path.split("/").filter { it.isNotEmpty() }
-                val videoId = segments.lastOrNull() ?: return url
-                
-                val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
-                return URI("https", "www.youtube.com", "/watch", newQuery, uri.fragment).toString()
+            val host = uri.host?.lowercase()
+
+            when {
+                host?.contains("youtu.be") == true -> {
+                    val segments = (uri.path ?: "").split("/").filter { it.isNotEmpty() }
+                    segments.firstOrNull()?.let { videoId ->
+                        val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
+                        URI("https", "www.youtube.com", "/watch", newQuery, uri.fragment).toString()
+                    } ?: url
+                }
+                host?.contains("youtube.com") == true && uri.path?.contains("/shorts/") == true -> {
+                    val segments = (uri.path ?: "").split("/").filter { it.isNotEmpty() }
+                    segments.lastOrNull()?.let { videoId ->
+                        val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
+                        URI("https", "www.youtube.com", "/watch", newQuery, uri.fragment).toString()
+                    } ?: url
+                }
+                else -> url
             }
         } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to normalize YouTube URL: $url", e)
+            url
         }
-        
-        return url
     }
 
     /**
      * Convert facebook.com/.../videos/ID or facebook.com/reel/ID to facebook.com/watch?v=ID
      */
     fun normalizeFacebookUrl(url: String): String {
-        try {
+        return try {
             val uri = URI(url)
-            val host = uri.host?.lowercase() ?: return url
+            val host = uri.host?.lowercase()
             
-            if (host.contains("facebook.com")) {
+            if (host?.contains("facebook.com") == true) {
                 val path = uri.path ?: ""
                 
-                // Pattern 1: /username/videos/ID/ or /username/videos/some-title/ID/
+                // Try video pattern first, then reel pattern
                 val videoPattern = """/videos/(?:[^/]+/)?(\d+)/?""".toRegex()
-                val videoMatch = videoPattern.find(path)
-                if (videoMatch != null) {
-                    val videoId = videoMatch.groupValues[1]
-                    val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
-                    return URI("https", "www.facebook.com", "/watch", newQuery, uri.fragment).toString()
-                }
-                
-                // Pattern 2: /reel/ID/
                 val reelPattern = """/reel/(\d+)/?""".toRegex()
-                val reelMatch = reelPattern.find(path)
-                if (reelMatch != null) {
-                    val videoId = reelMatch.groupValues[1]
-                    val newQuery = if (uri.query.isNullOrEmpty()) "v=$videoId" else "v=$videoId&${uri.query}"
-                    return URI("https", "www.facebook.com", "/watch", newQuery, uri.fragment).toString()
-                }
+                
+                val videoId = videoPattern.find(path)?.groupValues?.get(1)
+                    ?: reelPattern.find(path)?.groupValues?.get(1)
+                
+                videoId?.let { id ->
+                    val newQuery = if (uri.query.isNullOrEmpty()) "v=$id" else "v=$id&${uri.query}"
+                    URI("https", "www.facebook.com", "/watch", newQuery, uri.fragment).toString()
+                } ?: url
+            } else {
+                url
             }
         } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to normalize Facebook URL: $url", e)
+            url
         }
-        
-        return url
     }
     
     /**
@@ -484,83 +460,93 @@ object UrlCleaner {
      * Convert Google Maps URL to OpenStreetMap URL
      */
     fun convertGoogleMapsToOsm(url: String): String {
-        try {
+        return try {
             val uri = URI(url)
-            
-            // Pattern 1: @lat,long,zoom format (e.g., @37.7749,-122.4194,15z)
-            val atPattern = "@([^,]+),([^,]+),([0-9.]+)z?".toRegex()
-            val atMatch = atPattern.find(url)
-            if (atMatch != null) {
-                val lat = atMatch.groupValues[1]
-                val long = atMatch.groupValues[2]
-                val zoom = atMatch.groupValues[3].replace("z", "")
-                return "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=$zoom/$lat/$long"
-            }
-            
-            // Pattern 2: /place/ format (e.g., /place/San+Francisco)
             val path = uri.path ?: ""
-            if (path.contains("/place/")) {
-                val placeName = path.substringAfter("/place/").substringBefore("/")
-                val decoded = URLDecoder.decode(placeName, "UTF-8")
-                return "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
-            }
-            
-            // Pattern 3: /dir/ format (e.g., /dir/start/end)
-            if (path.contains("/dir/")) {
-                val parts = path.substringAfter("/dir/").split("/")
-                if (parts.size >= 2) {
-                    val from = URLDecoder.decode(parts[0], "UTF-8")
-                    val to = URLDecoder.decode(parts[1], "UTF-8")
-                    return "https://www.openstreetmap.org/directions?from=${URLEncoder.encode(from, "UTF-8")}&to=${URLEncoder.encode(to, "UTF-8")}"
-                }
-            }
-
-            // Pattern 4: /search/ format (e.g., /maps/search/San+Francisco)
-            if (path.contains("/search/")) {
-                val query = path.substringAfter("/search/").substringBefore("/")
-                if (query.isNotEmpty()) {
-                    val decoded = URLDecoder.decode(query, "UTF-8")
-                    return "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
-                }
-            }
-            
-            // Pattern 4: Query parameter 'q' or 'query' (e.g., ?q=San+Francisco or /search?query=San+Francisco)
-            val qParam = uri.query?.let { q ->
-                val qPattern = "(?:^|&)(?:q|query|search_query)=([^&]+)".toRegex()
-                qPattern.find(q)?.groupValues?.get(1)
-            }
-            if (qParam != null) {
-                val decoded = URLDecoder.decode(qParam, "UTF-8")
-                return "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
-            }
-
-            // Pattern 5: Query parameter 'll' (lat,long)
             val query = uri.query
-            if (query != null && query.contains("ll=")) {
-                val llPattern = "ll=([^&]+)".toRegex()
-                val llMatch = llPattern.find(query)
-                if (llMatch != null) {
-                    val coords = llMatch.groupValues[1].split(",")
-                    if (coords.size >= 2) {
-                        val lat = coords[0]
-                        val long = coords[1]
-                        return "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=15/$lat/$long"
-                    }
-                }
-            }
+
+            sequenceOf(
+                { matchMapsCoordinates(url) },
+                { matchMapsPlace(path) },
+                { matchMapsDirection(path) },
+                { matchMapsSearchPath(path) },
+                { matchMapsQueryParam(query) },
+                { matchMapsLatLongParam(query) }
+            ).firstNotNullOfOrNull { it() } 
+            ?: "https://www.openstreetmap.org"
         } catch (e: Exception) {
             Log.e(TAG, "Failed to convert Google Maps URL to OSM: $url", e)
+            "https://www.openstreetmap.org"
         }
-        
-        // Fallback: just open OpenStreetMap homepage
-        return "https://www.openstreetmap.org"
     }
+
+    private fun matchMapsCoordinates(url: String): String? {
+        val atPattern = "@([^,]+),([^,]+),([0-9.]+)z?".toRegex()
+        val atMatch = atPattern.find(url) ?: return null
+        val lat = atMatch.groupValues[1]
+        val long = atMatch.groupValues[2]
+        val zoom = atMatch.groupValues[3].replace("z", "")
+        return "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=$zoom/$lat/$long"
+    }
+
+    private fun matchMapsPlace(path: String): String? {
+        if (!path.contains("/place/")) return null
+        val placeName = path.substringAfter("/place/").substringBefore("/")
+        val decoded = URLDecoder.decode(placeName, "UTF-8")
+        return "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
+    }
+
+    private fun matchMapsDirection(path: String): String? {
+        return path.takeIf { it.contains("/dir/") }
+            ?.substringAfter("/dir/")
+            ?.split("/")
+            ?.takeIf { it.size >= 2 }
+            ?.let { parts ->
+                val from = URLDecoder.decode(parts[0], "UTF-8")
+                val to = URLDecoder.decode(parts[1], "UTF-8")
+                "https://www.openstreetmap.org/directions?from=${URLEncoder.encode(from, "UTF-8")}&to=${URLEncoder.encode(to, "UTF-8")}"
+            }
+    }
+
+    private fun matchMapsSearchPath(path: String): String? {
+        return path.takeIf { it.contains("/search/") }
+            ?.substringAfter("/search/")
+            ?.substringBefore("/")
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { query ->
+                val decoded = URLDecoder.decode(query, "UTF-8")
+                "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
+            }
+    }
+
+    private fun matchMapsQueryParam(query: String?): String? {
+        return query?.let { q ->
+            val qPattern = "(?:^|&)(?:q|query|search_query)=([^&]+)".toRegex()
+            qPattern.find(q)?.groupValues?.get(1)?.let { qParam ->
+                val decoded = URLDecoder.decode(qParam, "UTF-8")
+                "https://www.openstreetmap.org/search?query=${URLEncoder.encode(decoded, "UTF-8")}"
+            }
+        }
+    }
+
+    private fun matchMapsLatLongParam(query: String?): String? {
+        return query?.takeIf { it.contains("ll=") }?.let { q ->
+            val llPattern = "ll=([^&]+)".toRegex()
+            llPattern.find(q)?.groupValues?.get(1)?.split(",")?.takeIf { it.size >= 2 }?.let { coords ->
+                val lat = coords[0]
+                val long = coords[1]
+                "https://www.openstreetmap.org/?mlat=$lat&mlon=$long#map=15/$lat/$long"
+            }
+        }
+    }
+
+
 
     /**
      * Extracts a nested URL from query parameters if present (e.g., Google redirect links)
      */
     private fun extractNestedUrl(url: String): String? {
-        try {
+        return try {
             val uri = URI(url)
             val query = uri.query ?: return null
             
@@ -570,32 +556,38 @@ object UrlCleaner {
                 "redir", "redirect_url", "adurl", "q"
             )
             
-            val params = query.split("&")
-            for (param in params) {
-                val parts = param.split("=", limit = 2)
-                if (parts.size == 2 && redirectParams.contains(parts[0].lowercase())) {
+            query.split("&")
+                .firstNotNullOfOrNull { param ->
+                    val parts = param.split("=", limit = 2)
+                    if (parts.size != 2 || !redirectParams.contains(parts[0].lowercase())) {
+                        return@firstNotNullOfOrNull null
+                    }
+                    
                     val decodedValue = try {
                         URLDecoder.decode(parts[1], "UTF-8")
-                    } catch (e: Exception) {
+                    } catch (ignored: java.io.UnsupportedEncodingException) {
                         null
                     }
                     
-                    if (decodedValue != null && (decodedValue.startsWith("http://") || decodedValue.startsWith("https://"))) {
-                        // Validate it's a valid URI
-                        return try {
-                            URI(decodedValue)
-                            decodedValue
-                        } catch (e: Exception) {
-                            null
-                        }
+                    decodedValue?.takeIf { 
+                        (it.startsWith("http://") || it.startsWith("https://")) && isValidNestedUrl(it)
                     }
                 }
-            }
         } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to extract nested URL: $url", e)
+            null
         }
-        return null
     }
+    
+    private fun isValidNestedUrl(url: String): Boolean {
+        return try {
+            URI(url)
+            true
+        } catch (ignored: URISyntaxException) {
+            false
+        }
+    }
+
 
     private fun getHost(url: String): String {
         return try {
@@ -604,6 +596,19 @@ object UrlCleaner {
             Log.e(TAG, "Failed to get host from URL: $url", e)
             ""
         }
+    }
+
+
+    /**
+     * Calculates the TLD segment count for domain parsing (e.g., .com = 1, .co.uk = 2)
+     */
+    private fun calculateTldCount(domainParts: List<String>): Int {
+        if (domainParts.size < TLD_PARSING_MIN_PARTS) return 1
+        if (domainParts.last().length > TLD_MAX_LENGTH) return 1
+        
+        val secondLast = domainParts[domainParts.size - 2]
+        val isDoubleTld = secondLast in listOf("co", "com", "net", "org") || secondLast.length <= 2
+        return if (isDoubleTld) 2 else 1
     }
 
     /**
@@ -615,119 +620,138 @@ object UrlCleaner {
         val host = getHost(url)
         if (host.isEmpty()) return "Link"
         
-        return when {
-            host.contains("youtube.com") || host.contains("youtu.be") -> "YouTube"
-            host.contains("twitter.com") || host.contains("x.com") || 
-            host.contains("vxtwitter.com") || host.contains("fxtwitter.com") -> "Twitter"
-            host.contains("tiktok.com") -> "TikTok"
-            host.contains("reddit.com") || host.contains("redd.it") -> "Reddit"
-            host.contains("imdb.com") -> "IMDb"
-            host.contains("medium.com") -> "Medium"
-            host.contains("wikipedia.org") -> "Wikipedia"
-            host.contains("goodreads.com") -> "Goodreads"
-            host.contains("genius.com") -> "Genius"
-            host.contains("github.com") -> "GitHub"
-            host.contains("stackoverflow.com") || host.contains("stackexchange.com") -> "StackOverflow"
-            host.contains("instagram.com") -> "Instagram"
-            host.contains("facebook.com") -> "Facebook"
-            host.contains("amazon") -> "Amazon"
-            host.contains("apple.news") || host.contains("news.apple.com") -> "Apple News"
-            host.contains("bitly.com") || host.contains("bit.ly") -> "Bitly"
-            host.contains("tinyurl.com") -> "TinyURL"
-            host.contains("tiny.cc") -> "Tiny.cc"
-            host.contains("shorten.ly") -> "Shorten.ly"
-            host.contains("shorturl.fm") -> "ShortURL"
-            host.contains("short.io") -> "Short.io"
-            host.contains("bl.ink") -> "BL.INK"
-            host.contains("t.ly") -> "T.ly"
-            host.contains("snip.ly") -> "Sniply"
-            host.contains("rebrandly.com") -> "Rebrandly"
-            host.contains("maps.google.") || (host.contains("google.") && url.contains("/maps")) -> "Google Maps"
-            host.contains("tumblr.com") -> "Tumblr"
-            host.contains("urbandictionary.com") -> "UrbanDictionary"
-            host.contains("imgur.com") -> "Imgur"
-            host.contains("spotify.com") -> "Spotify"
-            host.contains("podcasts.apple.com") -> "Apple Podcasts"
-            else -> {
-                // Smart Generic Fallback
-                var cleanHost = host.lowercase(Locale.getDefault())
-                val prefixes = listOf("www.", "m.", "mobile.")
-                for (prefix in prefixes) {
-                    if (cleanHost.startsWith(prefix)) {
-                        cleanHost = cleanHost.substring(prefix.length)
-                    }
+        return getKnownPlatformName(host, url) ?: getGenericServiceName(host)
+    }
+
+    private data class PlatformRule(val name: String, val identifiers: List<String>)
+
+    private val PLATFORM_RULES = listOf(
+        PlatformRule("YouTube", listOf("youtube.com", "youtu.be")),
+        PlatformRule("Twitter", listOf("twitter.com", "x.com", "vxtwitter.com", "fxtwitter.com")),
+        PlatformRule("TikTok", listOf("tiktok.com")),
+        PlatformRule("Reddit", listOf("reddit.com", "redd.it")),
+        PlatformRule("IMDb", listOf("imdb.com")),
+        PlatformRule("Medium", listOf("medium.com")),
+        PlatformRule("Wikipedia", listOf("wikipedia.org")),
+        PlatformRule("Goodreads", listOf("goodreads.com")),
+        PlatformRule("Genius", listOf("genius.com")),
+        PlatformRule("GitHub", listOf("github.com")),
+        PlatformRule("StackOverflow", listOf("stackoverflow.com", "stackexchange.com")),
+        PlatformRule("Instagram", listOf("instagram.com")),
+        PlatformRule("Facebook", listOf("facebook.com")),
+        PlatformRule("Amazon", listOf("amazon")),
+        PlatformRule("Apple News", listOf("apple.news", "news.apple.com")),
+        PlatformRule("Bitly", listOf("bitly.com", "bit.ly")),
+        PlatformRule("TinyURL", listOf("tinyurl.com")),
+        PlatformRule("Tiny.cc", listOf("tiny.cc")),
+        PlatformRule("Shorten.ly", listOf("shorten.ly")),
+        PlatformRule("ShortURL", listOf("shorturl.fm")),
+        PlatformRule("Short.io", listOf("short.io")),
+        PlatformRule("BL.INK", listOf("bl.ink")),
+        PlatformRule("T.ly", listOf("t.ly")),
+        PlatformRule("Sniply", listOf("snip.ly")),
+        PlatformRule("Rebrandly", listOf("rebrandly.com")),
+        PlatformRule("Tumblr", listOf("tumblr.com")),
+        PlatformRule("UrbanDictionary", listOf("urbandictionary.com")),
+        PlatformRule("Imgur", listOf("imgur.com")),
+        PlatformRule("Spotify", listOf("spotify.com")),
+        PlatformRule("Apple Podcasts", listOf("podcasts.apple.com"))
+    )
+
+    private fun getKnownPlatformName(host: String, url: String): String? {
+        // Special case for Google Maps which needs URL check
+        if (host.contains("maps.google.") || (host.contains("google.") && url.contains("/maps"))) {
+            return "Google Maps"
+        }
+
+        return PLATFORM_RULES.firstOrNull { rule ->
+            rule.identifiers.any { host.contains(it) }
+        }?.name
+    }
+
+    private fun getGenericServiceName(host: String): String {
+        // Smart Generic Fallback
+        val cleanHost = stripWwwPrefix(host)
+        val parts = cleanHost.split(".")
+        
+        if (parts.size < 2) {
+             return cleanHost.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+        }
+
+        // Determine TLD length (e.g., .com vs .co.uk)
+        val tldCount = calculateTldCount(parts)
+        val nameParts = parts.dropLast(tldCount)
+        
+        return if (nameParts.isEmpty()) {
+            "Link"
+        } else {
+            val mainNameRaw = nameParts.last().lowercase(Locale.getDefault())
+            
+            // Heuristics
+            tryFormatMediaName(mainNameRaw) 
+                ?: if (nameParts.size >= 2) {
+                    formatSubdomainSwap(nameParts)
+                } else {
+                    formatFinalName(mainNameRaw)
                 }
-                
-                val parts = cleanHost.split(".")
-                if (parts.size < 2) return cleanHost.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+        }
+    }
 
-                // Determine TLD length (e.g., .com vs .co.uk)
-                val tldCount = if (parts.size >= 3 && 
-                                   parts.last().length <= 3 && 
-                                   parts[parts.size - 2].let { it == "co" || it == "com" || it == "net" || it == "org" || it.length <= 2 }) 2 else 1
-                
-                val nameParts = parts.dropLast(tldCount)
-                if (nameParts.isEmpty()) return "Link"
-
-                // Extract the main name (join parts if multiple subdomains but usually we want the last one before TLD)
-                var mainName = nameParts.last().lowercase(Locale.getDefault())
-                
-                // Heuristic 1: Media Suffixes (e.g., washingtonpost -> Washington Post)
-                val mediaSuffixes = listOf(
-                    "post", "times", "today", "journal", "american", "mechanics", 
-                    "review", "digest", "gazette", "herald", "tribune", "observer",
-                    "insider", "weekly", "daily", "monthly", "report", "news", "yorker",
-                    "atlantic", "guardian", "independent", "standard", "express"
-                )
-                
-                for (suffix in mediaSuffixes) {
-                    if (mainName.endsWith(suffix) && mainName != suffix) {
-                        val prefixPart = mainName.substring(0, mainName.length - suffix.length)
-                        
-                        // Handle common acronyms in prefix (e.g., usa, ny)
-                        val formattedPrefix = when (prefixPart) {
-                            "usa" -> "USA"
-                            "ny" -> "NY"
-                            "wsj" -> "WSJ"
-                            "bbc" -> "BBC"
-                            "npr" -> "NPR"
-                            "mit" -> "MIT"
-                            else -> prefixPart.replaceFirstChar { it.titlecase(Locale.getDefault()) }
-                        }
-                        
-                        val formattedSuffix = suffix.replaceFirstChar { it.titlecase(Locale.getDefault()) }
-                        mainName = "$formattedPrefix $formattedSuffix"
-                        break
-                    }
-                }
-
-                // Heuristic 2: Subdomain Swap (e.g. finance.yahoo -> Yahoo Finance)
-                if (mainName == nameParts.last().lowercase(Locale.getDefault()) && nameParts.size >= 2) {
-                    val reversed = nameParts.reversed()
-                    return reversed.joinToString(" ") { part ->
-                         val lower = part.lowercase(Locale.getDefault())
-                         when {
-                             lower == "usa" -> "USA"
-                             lower == "ny" -> "NY"
-                             lower.startsWith("the") && lower.length > 5 -> "The " + lower.substring(3).replaceFirstChar { it.titlecase(Locale.getDefault()) }
-                             else -> part.replaceFirstChar { it.titlecase(Locale.getDefault()) }
-                         }
-                    }.trim()
-                }
-
-                // Final formatting for single main name or already split name
-                val finalParts = mainName.split(" ")
-                return finalParts.joinToString(" ") { part ->
-                    val lower = part.lowercase(Locale.getDefault())
-                    if (lower.startsWith("the") && lower.length > 5) {
-                        "The " + lower.substring(3).replaceFirstChar { it.titlecase(Locale.getDefault()) }
-                    } else if (setOf("usa", "ny", "wsj", "bbc", "npr", "mit").contains(lower)) {
-                        lower.uppercase(Locale.getDefault())
-                    } else {
-                        part.replaceFirstChar { it.titlecase(Locale.getDefault()) }
-                    }
-                }.trim()
+    private fun stripWwwPrefix(host: String): String {
+        var cleanHost = host.lowercase(Locale.getDefault())
+        val prefixes = listOf("www.", "m.", "mobile.")
+        for (prefix in prefixes) {
+            if (cleanHost.startsWith(prefix)) {
+                cleanHost = cleanHost.substring(prefix.length)
             }
+        }
+        return cleanHost
+    }
+
+    private fun tryFormatMediaName(mainName: String): String? {
+        val mediaSuffixes = listOf(
+            "post", "times", "today", "journal", "american", "mechanics", 
+            "review", "digest", "gazette", "herald", "tribune", "observer",
+            "insider", "weekly", "daily", "monthly", "report", "news", "yorker",
+            "atlantic", "guardian", "independent", "standard", "express"
+        )
+        
+        for (suffix in mediaSuffixes) {
+            if (mainName.endsWith(suffix) && mainName != suffix) {
+                val prefixPart = mainName.substring(0, mainName.length - suffix.length)
+                val formattedPrefix = formatAcronymOrName(prefixPart)
+                val formattedSuffix = suffix.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+                return "$formattedPrefix $formattedSuffix"
+            }
+        }
+        return null
+    }
+
+    private fun formatSubdomainSwap(nameParts: List<String>): String {
+        return nameParts.reversed().joinToString(" ") { part ->
+             formatAcronymOrName(part)
+        }.trim()
+    }
+
+    private fun formatFinalName(mainName: String): String {
+        val finalParts = mainName.split(" ")
+        return finalParts.joinToString(" ") { part ->
+            formatAcronymOrName(part)
+        }.trim()
+    }
+
+    private fun formatAcronymOrName(part: String): String {
+        val lower = part.lowercase(Locale.getDefault())
+        return when {
+            lower == "usa" -> "USA"
+            lower == "ny" -> "NY"
+            lower == "wsj" -> "WSJ"
+            lower == "bbc" -> "BBC"
+            lower == "npr" -> "NPR"
+            lower == "mit" -> "MIT"
+            lower.startsWith("the") && lower.length > MIN_THE_DOMAIN_LENGTH -> 
+                "The " + lower.substring(THE_PREFIX_LENGTH).replaceFirstChar { it.titlecase(Locale.getDefault()) }
+            else -> part.replaceFirstChar { it.titlecase(Locale.getDefault()) }
         }
     }
 
@@ -739,28 +763,23 @@ object UrlCleaner {
         
         val cleanedFull = cleanUrl(url)
         
-        try {
+        return try {
             val uri = URI(cleanedFull)
-            var host = uri.host ?: return cleanedFull
+            val host = uri.host
             val path = uri.path ?: ""
             
-            val prefixes = listOf("www.", "m.", "mobile.")
-            for (prefix in prefixes) {
-                if (host.startsWith(prefix)) {
-                    host = host.substring(prefix.length)
+            host?.let { h ->
+                val prefixes = listOf("www.", "m.", "mobile.")
+                val cleanHost = prefixes.fold(h) { acc, prefix ->
+                    if (acc.startsWith(prefix)) acc.substring(prefix.length) else acc
                 }
-            }
-            
-            var display = "$host$path"
-            if (display.endsWith("/")) {
-                display = display.substring(0, display.length - 1)
-            }
-            
-            return display
-            
+                
+                val display = "$cleanHost$path"
+                if (display.endsWith("/")) display.substring(0, display.length - 1) else display
+            } ?: cleanedFull
         } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to get cleaned display URL: $url", e)
-            return cleanedFull
+            cleanedFull
         }
     }
 
@@ -823,6 +842,12 @@ object UrlCleaner {
             return url
         }
     }
+
+    private const val MAPS_ZOOM_INDEX = 3
+    private const val TLD_PARSING_MIN_PARTS = 3
+    private const val TLD_MAX_LENGTH = 3
+    private const val THE_PREFIX_LENGTH = 3
+    private const val MIN_THE_DOMAIN_LENGTH = 5
 
     private const val TAG = "UrlCleaner"
 }

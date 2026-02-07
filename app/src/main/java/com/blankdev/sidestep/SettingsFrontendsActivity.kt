@@ -19,6 +19,7 @@ import androidx.core.net.toUri
 import android.content.Intent
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import android.content.ActivityNotFoundException
 
 class SettingsFrontendsActivity : AppCompatActivity() {
 
@@ -79,79 +80,8 @@ class SettingsFrontendsActivity : AppCompatActivity() {
     private fun setupToggles() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         
-        // Setup specialized YouTube Type toggle (Invidious vs Piped)
-        val youtubeTypeToggle = findViewById<MaterialButtonToggleGroup>(R.id.toggleYouTubeType)
-        val youtubeType = prefs.getString(SettingsActivity.KEY_YOUTUBE_TYPE, "invidious")
-        if (youtubeType == "piped") {
-            youtubeTypeToggle.check(R.id.btnYouTubePiped)
-        } else {
-            youtubeTypeToggle.check(R.id.btnYouTubeInvidious)
-        }
-
-        youtubeTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                val youtubeInput = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.inputYouTubeDomain)
-                val currentDomain = youtubeInput.text?.toString()?.trim()
-                val oldType = prefs.getString(SettingsActivity.KEY_YOUTUBE_TYPE, "invidious")
-                val newType = if (checkedId == R.id.btnYouTubePiped) "piped" else "invidious"
-                
-                if (oldType != newType) {
-                    val oldKey = if (oldType == "piped") SettingsActivity.KEY_YOUTUBE_DOMAIN_PIPED else SettingsActivity.KEY_YOUTUBE_DOMAIN_INVIDIOUS
-                    if (!currentDomain.isNullOrEmpty()) {
-                        prefs.edit { putString(oldKey, currentDomain) }
-                    }
-                    
-                    prefs.edit { putString(SettingsActivity.KEY_YOUTUBE_TYPE, newType) }
-                    
-                    val newKey = if (newType == "piped") SettingsActivity.KEY_YOUTUBE_DOMAIN_PIPED else SettingsActivity.KEY_YOUTUBE_DOMAIN_INVIDIOUS
-                    val newDefault = if (newType == "piped") SettingsActivity.DEFAULT_PIPED_DOMAIN else SettingsActivity.DEFAULT_YOUTUBE_DOMAIN
-                    val savedDomain = prefs.getString(newKey, newDefault)
-                    
-                    youtubeInput.setText(savedDomain)
-                    prefs.edit { putString(SettingsActivity.KEY_YOUTUBE_DOMAIN, savedDomain) }
-                }
-            }
-        }
-
-        // Setup specialized Genius Type toggle (Dumb vs Intellectual)
-        val geniusTypeToggle = findViewById<MaterialButtonToggleGroup>(R.id.toggleGeniusType)
-        val geniusType = prefs.getString(SettingsActivity.KEY_GENIUS_TYPE, "dumb")
-        if (geniusType == "intellectual") {
-            geniusTypeToggle.check(R.id.btnGeniusIntellectual)
-            findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.inputLayoutGenius).hint = getString(R.string.intellectual_instance)
-        } else {
-            geniusTypeToggle.check(R.id.btnGeniusDumb)
-            findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.inputLayoutGenius).hint = getString(R.string.dumb_instance)
-        }
-
-        geniusTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
-            if (isChecked) {
-                val geniusInput = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.inputGeniusDomain)
-                val currentDomain = geniusInput.text?.toString()?.trim()
-                val oldType = prefs.getString(SettingsActivity.KEY_GENIUS_TYPE, "dumb")
-                val newType = if (checkedId == R.id.btnGeniusIntellectual) "intellectual" else "dumb"
-                
-                if (oldType != newType) {
-                    val oldKey = if (oldType == "intellectual") SettingsActivity.KEY_GENIUS_DOMAIN_INTELLECTUAL else SettingsActivity.KEY_GENIUS_DOMAIN_DUMB
-                    if (!currentDomain.isNullOrEmpty()) {
-                        prefs.edit { putString(oldKey, currentDomain) }
-                    }
-                    
-                    prefs.edit { putString(SettingsActivity.KEY_GENIUS_TYPE, newType) }
-                    
-                    val newKey = if (newType == "intellectual") SettingsActivity.KEY_GENIUS_DOMAIN_INTELLECTUAL else SettingsActivity.KEY_GENIUS_DOMAIN_DUMB
-                    val newDefault = if (newType == "intellectual") SettingsActivity.DEFAULT_INTELLECTUAL_DOMAIN else SettingsActivity.DEFAULT_GENIUS_DOMAIN
-                    val savedDomain = prefs.getString(newKey, newDefault)
-                    
-                    geniusInput.setText(savedDomain)
-                    prefs.edit { putString(SettingsActivity.KEY_GENIUS_DOMAIN, savedDomain) }
-                    
-                    // Update hint
-                    findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.inputLayoutGenius).hint = 
-                        if (newType == "intellectual") getString(R.string.intellectual_instance) else getString(R.string.dumb_instance)
-                }
-            }
-        }
+        setupYouTubeToggle(prefs)
+        setupGeniusToggle(prefs)
 
         // Setup standard platform toggles
         setupPlatformToggle(R.id.toggleTwitterMode, R.id.twitterDomainContainer, SettingsActivity.KEY_TWITTER_CLEAN_ONLY, "x.com", R.id.btnTwitterClean, R.id.btnTwitterRedirect, SettingsActivity.KEY_ALTERNATIVE_DOMAIN, SettingsActivity.DEFAULT_ALTERNATIVE_DOMAIN)
@@ -168,6 +98,90 @@ class SettingsFrontendsActivity : AppCompatActivity() {
         setupPlatformToggle(R.id.toggleRuralDictionaryMode, R.id.rural_dictionaryDomainContainer, SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, "urbandictionary.com", R.id.btnRuralDictionaryClean, R.id.btnRuralDictionaryRedirect, SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN)
         setupPlatformToggle(R.id.toggleRimgoMode, R.id.rimgoDomainContainer, SettingsActivity.KEY_RIMGO_CLEAN_ONLY, "imgur.com", R.id.btnRimgoClean, R.id.btnRimgoRedirect, SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN)
         setupPlatformToggle(R.id.toggleGoogleMapsMode, R.id.googlemapsDomainContainer, SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, "google.com", R.id.btnGoogleMapsClean, R.id.btnGoogleMapsRedirect, SettingsActivity.KEY_GOOGLE_MAPS_DOMAIN, SettingsActivity.DEFAULT_GOOGLE_MAPS_DOMAIN)
+    }
+
+    private fun setupYouTubeToggle(prefs: android.content.SharedPreferences) {
+        val youtubeTypeToggle = findViewById<MaterialButtonToggleGroup>(R.id.toggleYouTubeType)
+        val youtubeType = prefs.getString(SettingsActivity.KEY_YOUTUBE_TYPE, "invidious")
+        if (youtubeType == "piped") {
+            youtubeTypeToggle.check(R.id.btnYouTubePiped)
+        } else {
+            youtubeTypeToggle.check(R.id.btnYouTubeInvidious)
+        }
+
+        youtubeTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                handleYouTubeToggleChange(checkedId, prefs)
+            }
+        }
+    }
+
+    private fun handleYouTubeToggleChange(checkedId: Int, prefs: android.content.SharedPreferences) {
+        val youtubeInput = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.inputYouTubeDomain)
+        val currentDomain = youtubeInput.text?.toString()?.trim()
+        val oldType = prefs.getString(SettingsActivity.KEY_YOUTUBE_TYPE, "invidious")
+        val newType = if (checkedId == R.id.btnYouTubePiped) "piped" else "invidious"
+        
+        if (oldType != newType) {
+            val oldKey = if (oldType == "piped") SettingsActivity.KEY_YOUTUBE_DOMAIN_PIPED else SettingsActivity.KEY_YOUTUBE_DOMAIN_INVIDIOUS
+            if (!currentDomain.isNullOrEmpty()) {
+                prefs.edit { putString(oldKey, currentDomain) }
+            }
+            
+            prefs.edit { putString(SettingsActivity.KEY_YOUTUBE_TYPE, newType) }
+            
+            val newKey = if (newType == "piped") SettingsActivity.KEY_YOUTUBE_DOMAIN_PIPED else SettingsActivity.KEY_YOUTUBE_DOMAIN_INVIDIOUS
+            val newDefault = if (newType == "piped") SettingsActivity.DEFAULT_PIPED_DOMAIN else SettingsActivity.DEFAULT_YOUTUBE_DOMAIN
+            val savedDomain = prefs.getString(newKey, newDefault)
+            
+            youtubeInput.setText(savedDomain)
+            prefs.edit { putString(SettingsActivity.KEY_YOUTUBE_DOMAIN, savedDomain) }
+        }
+    }
+
+    private fun setupGeniusToggle(prefs: android.content.SharedPreferences) {
+        val geniusTypeToggle = findViewById<MaterialButtonToggleGroup>(R.id.toggleGeniusType)
+        val geniusType = prefs.getString(SettingsActivity.KEY_GENIUS_TYPE, "dumb")
+        if (geniusType == "intellectual") {
+            geniusTypeToggle.check(R.id.btnGeniusIntellectual)
+            findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.inputLayoutGenius).hint = getString(R.string.intellectual_instance)
+        } else {
+            geniusTypeToggle.check(R.id.btnGeniusDumb)
+            findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.inputLayoutGenius).hint = getString(R.string.dumb_instance)
+        }
+
+        geniusTypeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                handleGeniusToggleChange(checkedId, prefs)
+            }
+        }
+    }
+
+    private fun handleGeniusToggleChange(checkedId: Int, prefs: android.content.SharedPreferences) {
+        val geniusInput = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.inputGeniusDomain)
+        val currentDomain = geniusInput.text?.toString()?.trim()
+        val oldType = prefs.getString(SettingsActivity.KEY_GENIUS_TYPE, "dumb")
+        val newType = if (checkedId == R.id.btnGeniusIntellectual) "intellectual" else "dumb"
+        
+        if (oldType != newType) {
+            val oldKey = if (oldType == "intellectual") SettingsActivity.KEY_GENIUS_DOMAIN_INTELLECTUAL else SettingsActivity.KEY_GENIUS_DOMAIN_DUMB
+            if (!currentDomain.isNullOrEmpty()) {
+                prefs.edit { putString(oldKey, currentDomain) }
+            }
+            
+            prefs.edit { putString(SettingsActivity.KEY_GENIUS_TYPE, newType) }
+            
+            val newKey = if (newType == "intellectual") SettingsActivity.KEY_GENIUS_DOMAIN_INTELLECTUAL else SettingsActivity.KEY_GENIUS_DOMAIN_DUMB
+            val newDefault = if (newType == "intellectual") SettingsActivity.DEFAULT_INTELLECTUAL_DOMAIN else SettingsActivity.DEFAULT_GENIUS_DOMAIN
+            val savedDomain = prefs.getString(newKey, newDefault)
+            
+            geniusInput.setText(savedDomain)
+            prefs.edit { putString(SettingsActivity.KEY_GENIUS_DOMAIN, savedDomain) }
+            
+            // Update hint
+            findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.inputLayoutGenius).hint = 
+                if (newType == "intellectual") getString(R.string.intellectual_instance) else getString(R.string.dumb_instance)
+        }
     }
 
 
@@ -264,8 +278,8 @@ class SettingsFrontendsActivity : AppCompatActivity() {
                     putString(SettingsActivity.KEY_YOUTUBE_DOMAIN, value)
                 }
             }
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { /* Unused */ }
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { /* Unused */ }
         })
 
         findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSelectYouTube).setOnClickListener {
@@ -294,8 +308,8 @@ class SettingsFrontendsActivity : AppCompatActivity() {
                     putString(SettingsActivity.KEY_GENIUS_DOMAIN, value)
                 }
             }
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { /* Unused */ }
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { /* Unused */ }
         })
 
         findViewById<com.google.android.material.button.MaterialButton>(R.id.btnSelectGenius).setOnClickListener {
@@ -351,8 +365,8 @@ class SettingsFrontendsActivity : AppCompatActivity() {
     private fun setupSaveListener(input: com.google.android.material.textfield.TextInputEditText, key: String) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         input.addTextChangedListener(object : android.text.TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) { /* Unused */ }
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { /* Unused */ }
             override fun afterTextChanged(s: android.text.Editable?) {
                 val value = s?.toString()?.trim()
                 if (!value.isNullOrEmpty()) {
@@ -379,7 +393,8 @@ class SettingsFrontendsActivity : AppCompatActivity() {
                     try {
                         val intent = Intent(Intent.ACTION_VIEW, "https://organicmaps.app".toUri())
                         startActivity(intent)
-                    } catch (e: Exception) {
+                    } catch (e: ActivityNotFoundException) {
+                        android.util.Log.w("SettingsFrontendsActivity", "Could not open Organic Maps URL", e)
                         android.widget.Toast.makeText(this@SettingsFrontendsActivity, "Could not open URL", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 }

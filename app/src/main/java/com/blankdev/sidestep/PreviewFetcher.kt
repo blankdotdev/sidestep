@@ -52,7 +52,7 @@ object PreviewFetcher {
     }
     
     private fun fetchViaDuckDuckGo(targetUrl: String): PreviewData? {
-        try {
+        return try {
             // Searching and matching of exact URLs is better without quotes for many domains like Yahoo and Grayzone
             val query = java.net.URLEncoder.encode(targetUrl, "UTF-8")
             val searchUrl = "https://html.duckduckgo.com/html?q=$query"
@@ -73,107 +73,127 @@ object PreviewFetcher {
             if (!response.isSuccessful) {
                 println("Sidestep: Preview fetch failed with code ${response.code}")
                 response.close()
-                return null
-            }
-            
-            val html = response.body?.string() ?: ""
-            response.close()
-            
-            // Parse first result - resilient to both HTML version (result__a) and Lite version (result-link)
-            val titlePattern = Pattern.compile("class=[\"']result(?:__a|-link)[\"'][^>]*>([^<]+)</a>", Pattern.CASE_INSENSITIVE)
-            val titleMatcher = titlePattern.matcher(html)
-            
-            var title: String? = null
-            var author: String? = null
-            
-            if (titleMatcher.find()) {
-                title = decodeHtml(titleMatcher.group(1))
-                // Clean YouTube titles from DDG
-                if (title?.endsWith(" - YouTube") == true) {
-                    title = title.removeSuffix(" - YouTube")
-                }
-                println("Sidestep: Preview title found: $title")
+                null
             } else {
-                println("Sidestep: No title found in DDG response (HTML length: ${html.length})")
-                // Fallback debug: print first 500 chars of HTML if it looks tiny (potential bot block)
-                if (html.length < MIN_HTML_DEBUG_SIZE) println("Sidestep: DDG response snippet: ${html.take(DEBUG_SNIPPET_LENGTH)}")
-            }
-            
-            // Extract Snippet for Date - resilient to both HTML version (result__snippet) and Lite version (result-snippet)
-            val snippetPattern = Pattern.compile("class=[\"']result(?:__snippet|-snippet)[\"'][^>]*>(.*?)</a>", Pattern.CASE_INSENSITIVE or Pattern.DOTALL)
-            val snippetMatcher = snippetPattern.matcher(html)
-            var timestamp: Long? = null
-            var description: String? = null
-            
-            if (snippetMatcher.find()) {
-                val snippet = decodeHtml(snippetMatcher.group(1)) ?: ""
-                description = snippet
+                val html = response.body?.string() ?: ""
+                response.close()
                 
-                // Improved author/channel extraction for YouTube/X/TikTok
-                if (targetUrl.contains("youtube.com") || targetUrl.contains("youtu.be")) {
-                    val authorPattern = Pattern.compile("^([^·•\\|]+)[·•\\|]", Pattern.CASE_INSENSITIVE)
-                    val authorMatcher = authorPattern.matcher(snippet)
-                    if (authorMatcher.find()) {
-                        author = authorMatcher.group(1)?.trim()
+                // Parse first result - resilient to both HTML version (result__a) and Lite version (result-link)
+                val titlePattern = Pattern.compile("class=[\"']result(?:__a|-link)[\"'][^>]*>([^<]+)</a>", Pattern.CASE_INSENSITIVE)
+                val titleMatcher = titlePattern.matcher(html)
+                
+                var title: String? = null
+                var author: String? = null
+                
+                if (titleMatcher.find()) {
+                    title = decodeHtml(titleMatcher.group(1))
+                    // Clean YouTube titles from DDG
+                    if (title?.endsWith(" - YouTube") == true) {
+                        title = title.removeSuffix(" - YouTube")
                     }
-                } else if (targetUrl.contains("twitter.com") || targetUrl.contains("x.com")) {
-                     val authorPattern = Pattern.compile("^([^\\(]+)\\s+\\(@[^\\)]+\\)", Pattern.CASE_INSENSITIVE)
-                     val authorMatcher = authorPattern.matcher(snippet)
-                     if (authorMatcher.find()) {
-                         author = authorMatcher.group(1)?.trim()
-                     }
-                }
-
-                // Look for date at start of snippet
-                val dateRegex = Pattern.compile("([A-Z][a-z]{2}\\s+\\d{1,2},?\\s+\\d{4})")
-                val dateMatch = dateRegex.matcher(snippet)
-                if (dateMatch.find()) {
-                    timestamp = parseIsoDate(dateMatch.group(1))
+                    println("Sidestep: Preview title found: $title")
                 } else {
-                    val relativeRegex = Pattern.compile("(\\d+)\\s+(day|hour|minute)s?\\s+ago", Pattern.CASE_INSENSITIVE)
-                    val relMatch = relativeRegex.matcher(snippet)
-                    if (relMatch.find()) {
-                        val amount = relMatch.group(1)?.toLongOrNull() ?: 0L
-                        val unit = relMatch.group(2)?.lowercase()
-                        val now = System.currentTimeMillis()
-                        timestamp = when(unit) {
-                            "day" -> now - (amount * HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND)
-                            "hour" -> now - (amount * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND)
-                            "minute" -> now - (amount * SECONDS_PER_MINUTE * MS_PER_SECOND)
-                            else -> null
-                        }
-                    }
+                    println("Sidestep: No title found in DDG response (HTML length: ${html.length})")
+                    // Fallback debug: print first 500 chars of HTML if it looks tiny (potential bot block)
+                    if (html.length < MIN_HTML_DEBUG_SIZE) println("Sidestep: DDG response snippet: ${html.take(DEBUG_SNIPPET_LENGTH)}")
+                }
+                
+                // Extract Snippet for Date - resilient to both HTML version (result__snippet) and Lite version (result-snippet)
+                val snippetPattern = Pattern.compile("class=[\"']result(?:__snippet|-snippet)[\"'][^>]*>(.*?)</a>", Pattern.CASE_INSENSITIVE or Pattern.DOTALL)
+                val snippetMatcher = snippetPattern.matcher(html)
+                var timestamp: Long? = null
+                var description: String? = null
+                
+                if (snippetMatcher.find()) {
+                    val snippet = decodeHtml(snippetMatcher.group(1)) ?: ""
+                    val snippetData = parseSnippetData(snippet, targetUrl)
+                    description = snippetData.description
+                    author = snippetData.author ?: author
+                    timestamp = snippetData.timestamp
+                }
+                
+                if (title != null) {
+                    PreviewData(title = title, author = author, timestamp = timestamp, description = description)
+                } else {
+                    null
                 }
             }
-            
-            if (title != null) {
-                return PreviewData(title = title, author = author, timestamp = timestamp, description = description)
-            }
-        } catch (e: Exception) {
-            println("Sidestep: Preview fetch exception: ${e.message}")
+        } catch (e: java.io.IOException) {
+            println("Sidestep: Preview fetch network error: ${e.message}")
+            null
+        } catch (e: java.net.URISyntaxException) {
+            println("Sidestep: Preview fetch URI error: ${e.message}")
+            null
         }
-        return null
+    }
+    
+    private data class SnippetData(
+        val description: String,
+        val author: String?,
+        val timestamp: Long?
+    )
+    
+    private fun parseSnippetData(snippet: String, targetUrl: String): SnippetData {
+        var author: String? = null
+        var timestamp: Long? = null
+        
+        // Improved author/channel extraction for YouTube/X/TikTok
+        if (targetUrl.contains("youtube.com") || targetUrl.contains("youtu.be")) {
+            val authorPattern = Pattern.compile("^([^·•\\|]+)[·•\\|]", Pattern.CASE_INSENSITIVE)
+            val authorMatcher = authorPattern.matcher(snippet)
+            if (authorMatcher.find()) {
+                author = authorMatcher.group(1)?.trim()
+            }
+        } else if (targetUrl.contains("twitter.com") || targetUrl.contains("x.com")) {
+            val authorPattern = Pattern.compile("^([^\\(]+)\\s+\\(@[^\\)]+\\)", Pattern.CASE_INSENSITIVE)
+            val authorMatcher = authorPattern.matcher(snippet)
+            if (authorMatcher.find()) {
+                author = authorMatcher.group(1)?.trim()
+            }
+        }
+
+        // Look for date at start of snippet
+        val dateRegex = Pattern.compile("([A-Z][a-z]{2}\\s+\\d{1,2},?\\s+\\d{4})")
+        val dateMatch = dateRegex.matcher(snippet)
+        if (dateMatch.find()) {
+            timestamp = parseIsoDate(dateMatch.group(1))
+        } else {
+            val relativeRegex = Pattern.compile("(\\d+)\\s+(day|hour|minute)s?\\s+ago", Pattern.CASE_INSENSITIVE)
+            val relMatch = relativeRegex.matcher(snippet)
+            if (relMatch.find()) {
+                val amount = relMatch.group(1)?.toLongOrNull() ?: 0L
+                val unit = relMatch.group(2)?.lowercase()
+                val now = System.currentTimeMillis()
+                timestamp = when(unit) {
+                    "day" -> now - (amount * HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND)
+                    "hour" -> now - (amount * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND)
+                    "minute" -> now - (amount * SECONDS_PER_MINUTE * MS_PER_SECOND)
+                    else -> null
+                }
+            }
+        }
+        
+        return SnippetData(snippet, author, timestamp)
     }
 
     private fun isYouTubeUrl(url: String): Boolean {
         return try {
             val host = java.net.URI(url).host?.lowercase() ?: ""
             host.contains("youtube.com") || host.contains("youtu.be")
-        } catch (e: Exception) {
+        } catch (ignored: java.net.URISyntaxException) {
             false
         }
     }
 
     private fun extractNitterDate(html: String, url: String): String? {
-         if (!url.contains("nitter")) return null // Basic check (imperfect if custom domain but standard defaults use 'nitter')
+         if (!url.contains("nitter")) return null 
          // Look for <span class="tweet-date"><a ... title="Apr 2, 2024 · 5:30 PM UTC">
          val pattern = Pattern.compile("class=\"tweet-date\"[^>]*>\\s*<a[^>]+title=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE)
          val matcher = pattern.matcher(html)
-         if (matcher.find()) return matcher.group(1)
-         return null
+         return if (matcher.find()) matcher.group(1) else null
     }
 
-    private fun extractRedlibDate(html: String, url: String): String? {
+    private fun extractRedlibDate(@Suppress("UnusedParameter") html: String, url: String): String? {
         if (!url.contains("reddit") && !url.contains("libreddit") && !url.contains("redlib")) return null
         // Redlib often uses <time datetime="..."> which is caught by extractTimeTag, but just in case
         return null
@@ -223,12 +243,15 @@ object PreviewFetcher {
                 // but since we want to avoid complex dependencies in this utility if possible, 
                 // we'll stick to basic decoding or use the standard Html.fromHtml if available.
                 result = android.text.Html.fromHtml(result, android.text.Html.FROM_HTML_MODE_LEGACY).toString()
-            } catch (e: Exception) {
+            } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
                 // Fallback to simpler Html.fromHtml for older APIs or if it fails
+                android.util.Log.w("PreviewFetcher", "HTML parsing failed, trying deprecated method", e)
                 try {
                     @Suppress("DEPRECATION")
                     result = android.text.Html.fromHtml(result).toString()
-                } catch (ignored: Exception) {}
+                } catch (ignored: Exception) {
+                    // Keep original if HTML parsing fails
+                }
             }
         }
         
@@ -250,24 +273,24 @@ object PreviewFetcher {
             "MMM d, yyyy"
         )
         
-        for (format in isoFormats) {
+        // Sequence to find first valid parse
+        return isoFormats.asSequence().mapNotNull { format ->
             try {
                 val sdf = java.text.SimpleDateFormat(format, java.util.Locale.US)
                 if (format.endsWith("'Z'")) sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
-                return sdf.parse(dateStr)?.time
-            } catch (ignored: Exception) {}
-        }
-        
-        // Fallback: Try parsing as pure numeric Unix timestamp (seconds or milliseconds)
-        try {
+                sdf.parse(dateStr)?.time
+            } catch (ignored: Exception) { null }
+        }.firstOrNull() ?: tryParseNumericTimestamp(dateStr)
+    }
+
+    private fun tryParseNumericTimestamp(dateStr: String): Long? {
+         return try {
             val longVal = dateStr.trim().toLong()
-            return if (longVal > TIMESTAMP_MS_THRESHOLD) {
+            if (longVal > TIMESTAMP_MS_THRESHOLD) {
                 longVal // milliseconds
             } else if (longVal > TIMESTAMP_SECONDS_THRESHOLD) {
                 longVal * MS_PER_SECOND // seconds
             } else null
-        } catch (ignored: Exception) {}
-        
-        return null
+        } catch (ignored: Exception) { null }
     }
 }

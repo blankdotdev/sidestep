@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import com.blankdev.sidestep.BuildConfig
 import android.util.Log
 import org.json.JSONException
+import android.content.ActivityNotFoundException
 
 data class CustomRedirect(
     val id: String,
@@ -70,27 +71,8 @@ object SettingsUtils {
             }
             
             // Enforce default order if it matches the default set (hack for stale data)
-            if ((list.size == DEFAULT_REDIRECT_COUNT_LEGACY || list.size == DEFAULT_REDIRECT_COUNT_CURRENT) && list.any { it.originalDomain == "nytimes.com" } && list.count { it.originalDomain == "tiktok.com" } == 2) {
-                val updatedList = if (list.size == DEFAULT_REDIRECT_COUNT_LEGACY) {
-                    list.toMutableList().apply {
-                        if (none { it.id == "default_spotify" }) add(CustomRedirect("default_spotify", "open.spotify.com", "song.link", true, true))
-                        if (none { it.id == "default_apple_podcasts" }) add(CustomRedirect("default_apple_podcasts", "podcasts.apple.com", "pods.link", true, true))
-                    }
-                } else {
-                    list
-                }
-
-                return updatedList.sortedWith(compareBy<CustomRedirect> { 
-                    when {
-                        it.originalDomain == "nytimes.com" -> SORT_PRIORITY_NYTIMES
-                        it.originalDomain == "tiktok.com" && !it.isAppend -> SORT_PRIORITY_TIKTOK_SWAP // Domain Swap
-                        it.originalDomain == "tiktok.com" && it.isAppend -> SORT_PRIORITY_TIKTOK_APPEND // Append
-                        it.originalDomain == "instagram.com" -> SORT_PRIORITY_INSTAGRAM
-                        it.originalDomain == "open.spotify.com" -> SORT_PRIORITY_SPOTIFY
-                        it.originalDomain == "podcasts.apple.com" -> SORT_PRIORITY_APPLE_PODCASTS
-                        else -> SORT_PRIORITY_OTHER
-                    }
-                })
+            if (isLegacyRedirectList(list)) {
+                return sortDefaultRedirects(list)
             }
             
             list
@@ -113,6 +95,54 @@ object SettingsUtils {
             array.put(obj)
         }
         prefs.edit { putString(SettingsActivity.KEY_CUSTOM_REDIRECTS, array.toString()) }
+    }
+
+    /**
+     * Checks if the list matches legacy redirect structure for migration
+     */
+    private fun isLegacyRedirectList(list: List<CustomRedirect>): Boolean {
+        return (list.size == DEFAULT_REDIRECT_COUNT_LEGACY || list.size == DEFAULT_REDIRECT_COUNT_CURRENT) &&
+               list.any { it.originalDomain == "nytimes.com" } &&
+               list.count { it.originalDomain == "tiktok.com" } == 2
+    }
+
+    /**
+     * Sort default redirects with legacy migration support
+     */
+    private fun sortDefaultRedirects(list: List<CustomRedirect>): List<CustomRedirect> {
+        val updatedList = if (list.size == DEFAULT_REDIRECT_COUNT_LEGACY) {
+            list.toMutableList().apply {
+                if (none { it.id == "default_spotify" }) add(CustomRedirect("default_spotify", "open.spotify.com", "song.link", true, true))
+                if (none { it.id == "default_apple_podcasts" }) add(CustomRedirect("default_apple_podcasts", "podcasts.apple.com", "pods.link", true, true))
+            }
+        } else {
+            list
+        }
+
+        return updatedList.sortedWith(compareBy<CustomRedirect> { 
+            when {
+                it.originalDomain == "nytimes.com" -> SORT_PRIORITY_NYTIMES
+                it.originalDomain == "tiktok.com" && !it.isAppend -> SORT_PRIORITY_TIKTOK_SWAP
+                it.originalDomain == "tiktok.com" && it.isAppend -> SORT_PRIORITY_TIKTOK_APPEND
+                it.originalDomain == "instagram.com" -> SORT_PRIORITY_INSTAGRAM
+                it.originalDomain == "open.spotify.com" -> SORT_PRIORITY_SPOTIFY
+                it.originalDomain == "podcasts.apple.com" -> SORT_PRIORITY_APPLE_PODCASTS
+                else -> SORT_PRIORITY_OTHER
+            }
+        })
+    }
+
+
+    /**
+     * Checks if the given type supports live instance fetching
+     */
+    private fun supportsInstanceFetching(type: String): Boolean {
+        return type in listOf(
+            "twitter", "youtube", "piped", "reddit", "medium",
+            "goodreads", "genius", "intellectual", "github",
+            "stackoverflow", "wikipedia", "imdb", "tumblr",
+            "rural-dictionary", "rimgo"
+        )
     }
 
     fun saveCustomRedirect(context: Context, redirect: CustomRedirect) {
@@ -182,8 +212,8 @@ object SettingsUtils {
                         return true
                     }
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to check domain verification status", e)
+            } catch (e: android.content.pm.PackageManager.NameNotFoundException) {
+                Log.e(TAG, "Package not found for domain verification", e)
             }
         }
         
@@ -197,7 +227,8 @@ object SettingsUtils {
             return if (typedValue.resourceId != 0) {
                 try {
                     androidx.core.content.ContextCompat.getColor(context, typedValue.resourceId)
-                } catch (e: Exception) {
+                } catch (e: android.content.res.Resources.NotFoundException) {
+                    Log.w(TAG, "Resource not found for theme color", e)
                     typedValue.data
                 }
             } else {
@@ -242,11 +273,34 @@ object SettingsUtils {
         // to avoid the endless redirect loop that would happen if we sent a VIEW intent
         return try {
             checkDomain(context, unshortenedUrl)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error checking domain for WebView", e)
+        } catch (e: java.net.URISyntaxException) {
+            Log.e(TAG, "Error parsing URL for WebView check", e)
             false
         }
     }
+
+    private data class ServiceHandler(
+        val fetcher: suspend () -> List<AlternativeInstancesFetcher.Instance>?,
+        val defaultProvider: () -> List<AlternativeInstancesFetcher.Instance>?
+    )
+
+    private val serviceHandlers = mapOf(
+        "twitter" to ServiceHandler({ AlternativeInstancesFetcher.fetchNitterInstances() }, { AlternativeInstancesFetcher.getNitterDefaults() }),
+        "youtube" to ServiceHandler({ AlternativeInstancesFetcher.fetchInvidiousInstances() }, { AlternativeInstancesFetcher.getInvidiousDefaults() }),
+        "piped" to ServiceHandler({ AlternativeInstancesFetcher.fetchPipedInstances() }, { AlternativeInstancesFetcher.getPipedDefaults() }),
+        "reddit" to ServiceHandler({ AlternativeInstancesFetcher.fetchRedlibInstances() }, { AlternativeInstancesFetcher.getRedlibDefaults() }),
+        "imdb" to ServiceHandler({ AlternativeInstancesFetcher.fetchLibremdbInstances() }, { AlternativeInstancesFetcher.getImdbDefaults() }),
+        "medium" to ServiceHandler({ AlternativeInstancesFetcher.fetchScribeInstances() }, { AlternativeInstancesFetcher.getMediumDefaults() }),
+        "wikipedia" to ServiceHandler({ AlternativeInstancesFetcher.fetchWikilessInstances() }, { AlternativeInstancesFetcher.getWikilessDefaults() }),
+        "goodreads" to ServiceHandler({ AlternativeInstancesFetcher.fetchBiblioReadsInstances() }, { AlternativeInstancesFetcher.getBiblioReadsDefaults() }),
+        "genius" to ServiceHandler({ AlternativeInstancesFetcher.fetchDumbInstances() }, { AlternativeInstancesFetcher.getDumbDefaults() }),
+        "github" to ServiceHandler({ AlternativeInstancesFetcher.fetchGotHubInstances() }, { AlternativeInstancesFetcher.getGotHubDefaults() }),
+        "stackoverflow" to ServiceHandler({ AlternativeInstancesFetcher.fetchAnonymousOverflowInstances() }, { AlternativeInstancesFetcher.getAnonymousOverflowDefaults() }),
+        "rural-dictionary" to ServiceHandler({ AlternativeInstancesFetcher.fetchRuralDictionaryInstances() }, { AlternativeInstancesFetcher.getRuralDictionaryDefaults() }),
+        "rimgo" to ServiceHandler({ AlternativeInstancesFetcher.fetchRimgoInstances() }, { AlternativeInstancesFetcher.getRimgoDefaults() }),
+        "tumblr" to ServiceHandler({ AlternativeInstancesFetcher.fetchPriviblurInstances() }, { AlternativeInstancesFetcher.getPriviblurDefaults() }),
+        "intellectual" to ServiceHandler({ AlternativeInstancesFetcher.fetchIntellectualInstances() }, { AlternativeInstancesFetcher.getIntellectualDefaults() })
+    )
 
     fun fetchLatestInstances(activity: AppCompatActivity, type: String, onFetched: (List<AlternativeInstancesFetcher.Instance>) -> Unit) {
         activity.lifecycleScope.launch {
@@ -257,23 +311,11 @@ object SettingsUtils {
                 .create()
             progressDialog.show()
 
-            val fetched = when (type) {
-                "twitter" -> AlternativeInstancesFetcher.fetchNitterInstances()
-                "youtube" -> AlternativeInstancesFetcher.fetchInvidiousInstances()
-                "piped" -> AlternativeInstancesFetcher.fetchPipedInstances()
-                "reddit" -> AlternativeInstancesFetcher.fetchRedlibInstances()
-                "imdb" -> AlternativeInstancesFetcher.fetchLibremdbInstances()
-                "medium" -> AlternativeInstancesFetcher.fetchScribeInstances()
-                "wikipedia" -> AlternativeInstancesFetcher.fetchWikilessInstances()
-                "goodreads" -> AlternativeInstancesFetcher.fetchBiblioReadsInstances()
-                "genius" -> AlternativeInstancesFetcher.fetchDumbInstances()
-                "github" -> AlternativeInstancesFetcher.fetchGotHubInstances()
-                "stackoverflow" -> AlternativeInstancesFetcher.fetchAnonymousOverflowInstances()
-                "rural-dictionary" -> AlternativeInstancesFetcher.fetchRuralDictionaryInstances()
-                "rimgo" -> AlternativeInstancesFetcher.fetchRimgoInstances()
-                "tumblr" -> AlternativeInstancesFetcher.fetchPriviblurInstances()
-                "intellectual" -> AlternativeInstancesFetcher.fetchIntellectualInstances()
-                else -> AlternativeInstancesFetcher.fetchRedlibInstances()
+            val handler = serviceHandlers[type]
+            val fetched = if (handler != null) {
+                handler.fetcher() ?: emptyList()
+            } else {
+                AlternativeInstancesFetcher.fetchRedlibInstances() ?: emptyList()
             }
             
             progressDialog.dismiss()
@@ -283,30 +325,44 @@ object SettingsUtils {
     }
 
     fun showInstancePicker(activity: AppCompatActivity, type: String, targetInput: com.google.android.material.textfield.TextInputEditText, currentInstances: List<AlternativeInstancesFetcher.Instance>? = null) {
-        val instances = (currentInstances ?: when (type) {
-            "twitter" -> getCachedInstances(activity, "twitter") ?: AlternativeInstancesFetcher.getNitterDefaults()
-            "youtube" -> getCachedInstances(activity, "youtube") ?: AlternativeInstancesFetcher.getInvidiousDefaults()
-            "piped" -> getCachedInstances(activity, "piped") ?: AlternativeInstancesFetcher.getPipedDefaults()
-            "imdb" -> getCachedInstances(activity, "imdb") ?: AlternativeInstancesFetcher.getImdbDefaults()
-            "medium" -> getCachedInstances(activity, "medium") ?: AlternativeInstancesFetcher.getMediumDefaults()
-            "wikipedia" -> getCachedInstances(activity, "wikipedia") ?: AlternativeInstancesFetcher.getWikilessDefaults()
-            "goodreads" -> getCachedInstances(activity, "goodreads") ?: AlternativeInstancesFetcher.getBiblioReadsDefaults()
-            "genius" -> getCachedInstances(activity, "genius") ?: AlternativeInstancesFetcher.getDumbDefaults()
-            "github" -> getCachedInstances(activity, "github") ?: AlternativeInstancesFetcher.getGotHubDefaults()
-            "stackoverflow" -> getCachedInstances(activity, "stackoverflow") ?: AlternativeInstancesFetcher.getAnonymousOverflowDefaults()
-            "rural-dictionary" -> getCachedInstances(activity, "rural-dictionary") ?: AlternativeInstancesFetcher.getRuralDictionaryDefaults()
-            "tumblr" -> getCachedInstances(activity, "tumblr") ?: AlternativeInstancesFetcher.getPriviblurDefaults()
-            "rimgo" -> getCachedInstances(activity, "rimgo") ?: AlternativeInstancesFetcher.getRimgoDefaults()
-            "intellectual" -> getCachedInstances(activity, "intellectual") ?: AlternativeInstancesFetcher.getIntellectualDefaults()
-            else -> getCachedInstances(activity, "reddit") ?: AlternativeInstancesFetcher.getRedlibDefaults()
-        }).filter { instance ->
+        val instances = currentInstances ?: getInstancesForType(activity, type)
+        val filteredInstances = filterValidInstances(instances)
+        val displayList = createInstanceDisplayList(activity, filteredInstances)
+
+        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+            .setTitle("Select instance")
+            .setItems(displayList) { _, which ->
+                val selected = filteredInstances[which]
+                targetInput.setText(selected.domain)
+            }
+            .setNegativeButton("Cancel", null)
+            
+        if (supportsInstanceFetching(type)) {
+            builder.setNeutralButton("🔄 Pull latest") { _, _ ->
+                fetchLatestInstances(activity, type) { fetchedInstances ->
+                    showInstancePicker(activity, type, targetInput, fetchedInstances)
+                }
+            }
+        }
+            
+        builder.show()
+    }
+
+    private fun getInstancesForType(context: Context, type: String): List<AlternativeInstancesFetcher.Instance> {
+        return getCachedInstances(context, type) ?: serviceHandlers[type]?.defaultProvider?.invoke() ?: emptyList()
+    }
+
+    private fun filterValidInstances(instances: List<AlternativeInstancesFetcher.Instance>): List<AlternativeInstancesFetcher.Instance> {
+        return instances.filter { instance ->
             val isDown = instance.health == HEALTH_DOWN || 
                          (instance.health == HEALTH_UNHEALTHY || instance.health == HEALTH_DEAD)
             val isZeroUptime = instance.uptime?.startsWith("0") == true || instance.uptime7d?.startsWith("0") == true
             !(isDown && isZeroUptime)
         }
+    }
 
-        val displayList = instances.map { instance ->
+    private fun createInstanceDisplayList(context: Context, instances: List<AlternativeInstancesFetcher.Instance>): Array<CharSequence> {
+        return instances.map { instance ->
             val uptime = instance.uptimeValue
             val (colorId, emoji) = when {
                 instance.health == HEALTH_HEALTHY || uptime >= UPTIME_THRESHOLD_HEALTHY -> R.color.status_green_pastel to HEALTH_EMOJI
@@ -322,7 +378,7 @@ object SettingsUtils {
                 val fullText = "${instance.domain} | $uptimeStr | $emoji"
                 val spannable = android.text.SpannableString(fullText)
                 
-                val color = androidx.core.content.ContextCompat.getColor(activity, colorId)
+                val color = androidx.core.content.ContextCompat.getColor(context, colorId)
                 val start = fullText.lastIndexOf(emoji)
                 if (start >= 0) {
                     spannable.setSpan(
@@ -335,26 +391,6 @@ object SettingsUtils {
                 spannable
             }
         }.map { it as CharSequence }.toTypedArray()
-
-        val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
-            .setTitle("Select instance")
-            .setItems(displayList) { _, which ->
-                val selected = instances[which]
-                targetInput.setText(selected.domain)
-            }
-            .setNegativeButton("Cancel", null)
-
-            .setNegativeButton("Cancel", null)
-            
-        if (type == "twitter" || type == "youtube" || type == "piped" || type == "reddit" || type == "medium" || type == "goodreads" || type == "genius" || type == "intellectual" || type == "github" || type == "stackoverflow" || type == "wikipedia" || type == "imdb" || type == "tumblr" || type == "rural-dictionary" || type == "rimgo") {
-            builder.setNeutralButton("🔄 Pull latest") { _, _ ->
-                fetchLatestInstances(activity, type) { fetchedInstances ->
-                    showInstancePicker(activity, type, targetInput, fetchedInstances)
-                }
-            }
-        }
-            
-        builder.show()
     }
 
     private fun saveCachedInstances(context: Context, type: String, instances: List<AlternativeInstancesFetcher.Instance>) {
@@ -401,30 +437,30 @@ object SettingsUtils {
         val redirects = getCustomRedirects(context)
         var appliedCustom = false
         
-        for (redirect in redirects) {
-            if (!redirect.isEnabled) continue
+        
+        // Try to find matching custom redirect
+        val matchingRedirect = redirects.firstOrNull { redirect ->
+            if (!redirect.isEnabled) return@firstOrNull false
             
             val originalDomain = redirect.originalDomain.lowercase()
-            val redirectDomain = redirect.redirectDomain
-            val isAppend = redirect.isAppend
-            
             val uri = unshortenedUrl.toUri()
             val host = uri.host?.lowercase() ?: ""
             
-            // Match if host contains the original domain (e.g. "www.tiktok.com" contains "tiktok.com")
-            if (host.contains(originalDomain) || unshortenedUrl.contains(originalDomain, ignoreCase = true)) {
-                if (isAppend) {
-                    var base = redirectDomain
-                    if (!base.startsWith("http")) base = "https://$base"
-                    if (!base.contains("?") && !base.endsWith("/")) base = "$base/"
-                    redirectUrl = "$base$cleanedUrl"
-                } else {
-                    redirectUrl = UrlCleaner.replaceDomain(cleanedUrl, redirectDomain)
-                }
-                appliedCustom = true
-                break
-            }
+            host.contains(originalDomain) || unshortenedUrl.contains(originalDomain, ignoreCase = true)
         }
+        
+        if (matchingRedirect != null) {
+            redirectUrl = if (matchingRedirect.isAppend) {
+                var base = matchingRedirect.redirectDomain
+                if (!base.startsWith("http")) base = "https://$base"
+                if (!base.contains("?") && !base.endsWith("/")) base = "$base/"
+                "$base$cleanedUrl"
+            } else {
+                UrlCleaner.replaceDomain(cleanedUrl, matchingRedirect.redirectDomain)
+            }
+            appliedCustom = true
+        }
+
 
         if (!appliedCustom) {
             val domainMapping = listOf(
@@ -530,8 +566,8 @@ object SettingsUtils {
                             }
                             context.startActivity(webIntent)
                         }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to open URL: $redirectUrl", e)
+                    } catch (e: ActivityNotFoundException) {
+                        Log.e(TAG, "No app to open URL: $redirectUrl", e)
                         android.widget.Toast.makeText(context, "Could not open URL", android.widget.Toast.LENGTH_SHORT).show()
                     }
                     bottomSheetDialog.dismiss()
@@ -549,7 +585,8 @@ object SettingsUtils {
             try {
                 val intent = Intent(Intent.ACTION_VIEW, "https://github.com/blankdotdev".toUri())
                 context.startActivity(intent)
-            } catch (e: Exception) {
+            } catch (e: ActivityNotFoundException) {
+                Log.w(TAG, "Could not open GitHub URL", e)
                 android.widget.Toast.makeText(context, "Could not open GitHub", android.widget.Toast.LENGTH_SHORT).show()
             }
             bottomSheetDialog.dismiss()
