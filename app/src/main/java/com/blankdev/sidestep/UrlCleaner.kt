@@ -183,7 +183,7 @@ object UrlCleaner {
                 val newQuery = filterQueryParams(query, inputUrl)
                 URI(uri.scheme, uri.authority, uri.path, newQuery, uri.fragment).toString()
             }
-        } catch (e: Exception) {
+        } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to parse URI: $inputUrl", e)
             inputUrl
         }
@@ -474,7 +474,7 @@ object UrlCleaner {
                 { matchMapsLatLongParam(query) }
             ).firstNotNullOfOrNull { it() } 
             ?: "https://www.openstreetmap.org"
-        } catch (e: Exception) {
+        } catch (e: URISyntaxException) {
             Log.e(TAG, "Failed to convert Google Maps URL to OSM: $url", e)
             "https://www.openstreetmap.org"
         }

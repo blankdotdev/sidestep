@@ -2,6 +2,7 @@ package com.blankdev.sidestep
 
 import java.net.URI
 import java.net.URISyntaxException
+import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -130,7 +131,11 @@ object AlternativeInstancesFetcher {
             if (results.isEmpty()) {
                 results.addAll(fetchNitterFromWiki())
             }
-        } catch (e: Exception) { Log.e(TAG, "Failed to fetch instances", e) }
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching Nitter instances", e)
+        } catch (e: org.json.JSONException) {
+            Log.e(TAG, "JSON parsing error for Nitter instances", e)
+        }
         
         if (results.isEmpty()) {
             results.addAll(getNitterDefaults())
@@ -174,7 +179,11 @@ object AlternativeInstancesFetcher {
                     }
                 }
             }
-        } catch (e: Exception) { Log.e(TAG, "Failed to fetch instances", e) }
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching Redlib instances", e)
+        } catch (e: org.json.JSONException) {
+            Log.e(TAG, "JSON parsing error for Redlib instances", e)
+        }
         
         if (results.isEmpty()) {
             results.addAll(getRedlibDefaults())
@@ -197,7 +206,7 @@ object AlternativeInstancesFetcher {
             for (i in 0 until root.length()) {
                 val obj = root.getJSONObject(i)
                 val url = obj.optString("url")
-                val domain = try { URI(url).host } catch (e: Exception) { null } ?: continue
+                val domain = try { URI(url).host } catch (e: java.net.URISyntaxException) { null } ?: continue
                 
                 val uptime = obj.optString("uptime") // "99.92%"
                 val status = obj.optString("status") // "up" or "down"
@@ -216,8 +225,10 @@ object AlternativeInstancesFetcher {
                     ))
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch instances", e)
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching Invidious instances", e)
+        } catch (e: org.json.JSONException) {
+            Log.e(TAG, "JSON parsing error for Invidious instances", e)
         }
         
         if (instances.isEmpty()) {
@@ -261,13 +272,15 @@ object AlternativeInstancesFetcher {
             if (clearnetList != null) {
                 for (i in 0 until clearnetList.length()) {
                     val url = clearnetList.getString(i)
-                    val domain = try { URI(url).host } catch (e: Exception) { null } ?: continue
+                    val domain = try { URI(url).host } catch (e: java.net.URISyntaxException) { null } ?: continue
                     // LibRedirect json doesn't have uptime data, so we just list them
                     results.add(Instance(domain)) 
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch instances", e)
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching Rimgo instances", e)
+        } catch (e: org.json.JSONException) {
+            Log.e(TAG, "JSON parsing error for Rimgo instances", e)
         }
         return@withContext results
     }
@@ -336,8 +349,8 @@ object AlternativeInstancesFetcher {
                     domain?.takeIf { isAlternativeInstance(it) }
                 }
                 .forEach { domain -> instances.add(Instance(domain)) }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch instances", e)
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching Scribe instances", e)
         }
         
         if (instances.isEmpty()) {
@@ -367,8 +380,8 @@ object AlternativeInstancesFetcher {
             instances.addAll(
                 rows.mapNotNull { row -> parseNitterRow(row) }
             )
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch instances", e)
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching Nitter instances from wiki", e)
         }
         return instances
     }
@@ -455,8 +468,8 @@ object AlternativeInstancesFetcher {
                     seenDomains.add(domain)
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch instances", e)
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching instances from status page", e)
         }
         return instances
     }
@@ -481,8 +494,8 @@ object AlternativeInstancesFetcher {
                     instances.add(Instance(domain))
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to fetch instances", e)
+        } catch (e: IOException) {
+            Log.e(TAG, "Network error fetching Nitter instances from markdown", e)
         }
         return instances
     }
