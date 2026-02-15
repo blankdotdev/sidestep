@@ -34,17 +34,15 @@ object UrlUnshortener {
             while (hops < maxHops && shouldContinue) {
                 val result = processUnshorteningHop(currentUrl, resolveHtml)
                 
-                when {
-                    result.shouldStop -> shouldContinue = false
-                    result.newUrl != null && result.newUrl != currentUrl -> {
-                        currentUrl = result.newUrl
-                        if (result.shouldContinue) {
-                            hops++
-                        } else {
-                            shouldContinue = false
-                        }
+                if (result.newUrl != null && result.newUrl != currentUrl) {
+                    currentUrl = result.newUrl
+                    if (result.shouldContinue && !result.shouldStop) {
+                        hops++
+                    } else {
+                        shouldContinue = false
                     }
-                    else -> shouldContinue = false
+                } else if (result.shouldStop) {
+                    shouldContinue = false
                 }
             }
             currentUrl
@@ -142,6 +140,7 @@ object UrlUnshortener {
             """<meta\s+content=["']([^"']+)["']\s+name=["']og:url["']""".toRegex(RegexOption.IGNORE_CASE),
             // 3. Canonical
             """<link\s+rel=["']canonical["']\s+href=["']([^"']+)["']""".toRegex(RegexOption.IGNORE_CASE),
+            """<link\s+href=["']([^"']+)["']\s+rel=["']canonical["']""".toRegex(RegexOption.IGNORE_CASE),
             // 4. JS Replace
             """window\.location\.replace\s*\(\s*["']([^"']+)["']\s*\)""".toRegex(RegexOption.IGNORE_CASE),
             """window\.location\.href\s*=\s*["']([^"']+)["']""".toRegex(RegexOption.IGNORE_CASE),

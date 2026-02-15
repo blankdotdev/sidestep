@@ -61,10 +61,6 @@
                 <data android:host="www.twitter.com" />
                 <data android:host="x.com" />
                 <data android:host="www.x.com" />
-                <data android:host="vxtwitter.com" />
-                <data android:host="www.vxtwitter.com" />
-                <data android:host="fxtwitter.com" />
-                <data android:host="www.fxtwitter.com" />
             </intent-filter>
 
             <!-- TikTok -->
