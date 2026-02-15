@@ -1,3 +1,32 @@
+## [1.2.1] - 2026-02-15
+
+### Fixed
+- Resolved `UrlUnshortener` logic error where unshortening loop would stop prematurely.
+- Improved canonical link parsing to handle swapped attributes in `UrlUnshortener`.
+- Fixed `TestOptions` configuration in `build.gradle.kts` to resolve `android.util.Log` mocking issues during unit tests.
+
+### Changed
+- Updated Gradle Wrapper to 9.3.1.
+- Updated `kotlin-test` dependency to 2.3.10.
+
+## [1.2.0] - 2026-02-15
+
+### Security
+- Resolved multiple Polynomial ReDoS vulnerabilities in `AlternativeInstancesFetcher` and `UrlCleaner`.
+- Implemented input length limiting for regex operations as defense-in-depth.
+- Addressed 50+ security findings including compilation warnings and exception handling.
+
+### Changed
+- Downgraded Kotlin to 2.1.10 for better compatibility.
+- Switched CodeQL to build-mode none to support Kotlin 2.3 analysis.
+- Upgraded Gradle to 9.3.0.
+- Upgraded workflows to JDK 25.
+
+### Refactored
+- Major code quality improvements to eliminate complexity violations.
+- Fixed 108 detekt violations across 7 files.
+- Refactored link handling: split filters, removed `autoVerify`, and fixed Twitter status logic.
+
 ## [1.1.9] - 2026-02-02
 
 ### Security
