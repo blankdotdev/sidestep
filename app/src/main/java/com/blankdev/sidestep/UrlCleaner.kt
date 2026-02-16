@@ -64,7 +64,7 @@ object UrlCleaner {
         "pd_rd_i", "pd_rd_r", "pd_rd_w", "pd_rd_wg",
         "qid", "sr", "keywords", "dib", "dib_tag", "sp_csd", "psc",
         "th", "_encoding", "smid",
-        "social_share", "cm_sw_r_cso_cp_apan_dp",
+        "social_share", "cm_sw_r_cso_cp_apan_dp", "cm_sp",
         
         // ===== TikTok Tracking =====
         "_r", "_t", "checksum", "share_app_id", "share_author_id", "share_link_id",

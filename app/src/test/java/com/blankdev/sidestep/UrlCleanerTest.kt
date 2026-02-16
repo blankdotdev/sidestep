@@ -385,4 +385,12 @@ class UrlCleanerTest {
         val clean = UrlCleaner.cleanUrl(url)
         assertEquals("https://vxtwitter.com/user/status/123", clean)
     }
+    @Test
+    fun testCleanUrl_removesCmSpParam() {
+        val url = "https://www.td.com/ca/en/investing/direct-investing/direct-investing-offer?cm_sp=:GOOGLE:Direct+Investing+-+Brand+-+Core+-+English+(26_S_WL_WDI_AO_ACQ_EN_BRA)+AP:26193:DIF:Brand+-+Core+-+Investing&gclsrc=aw.ds&gad_source=1&gad_campaignid=299938722&gclid=CjwKCAiAncvMBhBEEiwA9GU_flxtUnj71mAwmoS_nKDVkMjHpm4LEwuu5-ytKtOwHQEHwoPH4DLmxhoC0-cQAvD_BwE"
+        val expected = "https://www.td.com/ca/en/investing/direct-investing/direct-investing-offer"
+        val cleaned = UrlCleaner.cleanUrl(url)
+        
+        assertEquals(expected, cleaned)
+    }
 }

@@ -1,3 +1,8 @@
+## [1.2.2] - 2026-02-16
+
+### Fixed
+- Removed `cm_sp` tracking parameter from URLs (Coremetrics/IBM Analytics).
+
 ## [1.2.1] - 2026-02-15
 
 ### Fixed
