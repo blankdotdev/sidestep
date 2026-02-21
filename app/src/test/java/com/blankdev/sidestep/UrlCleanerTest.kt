@@ -356,6 +356,14 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun testCleanUrl_removesAmazonSearchAndTrackingParams() {
+        val url = "https://www.amazon.ca/Foldable-Smart-Intelligent-Muslim-Prayer/dp/B0CHW9ZPQY/ref=mp_s_a_1_8_mod_primary_new?crid=35NIWJEIHQ2UH&dib=eyJ2IjoiMSJ9&dib_tag=se&keywords=prayer+mat+for+beginners&qid=1771644082&sbo=RZvfv%2F%2FHxDF%2BO5021pAnSA%3D%3D&sprefix=prayer+mat%2Caps%2C214&sr=8-8"
+        val result = UrlCleaner.cleanUrl(url)
+        assertEquals("https://www.amazon.ca/Foldable-Smart-Intelligent-Muslim-Prayer/dp/B0CHW9ZPQY", result)
+    }
+
+
+    @Test
     fun testCleanUrl_removesGenericPathParams() {
         val url = "https://example.com/article/source=rss/title"
         val result = UrlCleaner.cleanUrl(url)

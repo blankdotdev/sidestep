@@ -63,7 +63,7 @@ object UrlCleaner {
         "pf_rd_i", "pf_rd_m", "pf_rd_p", "pf_rd_r", "pf_rd_s", "pf_rd_t",
         "pd_rd_i", "pd_rd_r", "pd_rd_w", "pd_rd_wg",
         "qid", "sr", "keywords", "dib", "dib_tag", "sp_csd", "psc",
-        "th", "_encoding", "smid",
+        "th", "_encoding", "smid", "crid", "sbo", "sprefix",
         "social_share", "cm_sw_r_cso_cp_apan_dp", "cm_sp",
         
         // ===== TikTok Tracking =====
