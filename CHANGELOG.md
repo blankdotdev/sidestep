@@ -1,3 +1,12 @@
+## [1.2.3] - 2026-03-04
+
+### Fixed
+- Added missing Amazon tracking parameters (`crid`, `sbo`, `sprefix`).
+- Removed `taid` tracking parameter from URLs.
+
+### Changed
+- Upgraded Android Gradle Plugin to 9.0.1.
+
 ## [1.2.2] - 2026-02-16
 
 ### Fixed

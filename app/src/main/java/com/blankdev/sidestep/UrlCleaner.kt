@@ -122,6 +122,7 @@ object UrlCleaner {
         "source", "medium", "campaign", "content", "term",
         "referrer", "referral", "referer",
         "cid", "cmpid", "campaign_id", "ad_id", "adset_id",
+        "taid",
         "glid", "ef_id",
         "srsltid",  // Google Shopping
         

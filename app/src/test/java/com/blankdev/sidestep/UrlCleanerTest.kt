@@ -401,4 +401,15 @@ class UrlCleanerTest {
         
         assertEquals(expected, cleaned)
     }
+
+    @Test
+    fun testCleanUrl_removesCTVNewsTaidParam() {
+        val url = "https://www.ctvnews.ca/montreal/article/quebec-probing-reports-of-israeli-soldiers-speaking-in-montreal-schools/?cid=sm%3Atrueanthem%3Actvmontreal%3Atwitterpost%E2%80%8B&taid=69a0f3acb050d80001bce8b4&utm_campaign=trueAnthem%3A+Trending+Content&utm_medium=trueAnthem&utm_source=twitter"
+        val expected = "https://www.ctvnews.ca/montreal/article/quebec-probing-reports-of-israeli-soldiers-speaking-in-montreal-schools/"
+        val cleaned = UrlCleaner.cleanUrl(url)
+        
+        assertEquals(expected, cleaned)
+        assertFalse(cleaned.contains("taid="))
+        assertFalse(cleaned.contains("cid="))
+    }
 }
