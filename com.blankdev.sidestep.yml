@@ -1,10 +1,13 @@
 Categories:
   - Internet
   - Security
-License: AGPL-3.0-or-later
+License: AGPL-3.0-only
 AuthorName: blankdotdev
 SourceCode: https://github.com/blankdotdev/sidestep
 IssueTracker: https://github.com/blankdotdev/sidestep/issues
+
+AllowedAPKSigningKeys:
+  - d5699817ccce5ff60b8c4b1afaa7e8a861e3a6eac0bf40c6fcea210efc574056
 
 AutoName: Sidestep
 
@@ -75,7 +78,16 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.2.3
+    versionCode: 15
+    commit: b81fd178d4edf7056d8c5f0aecc4bb9f88c8d1e0
+    subdir: app
+    gradle:
+      - yes
+    binaries:
+      - https://github.com/blankdotdev/sidestep/releases/download/v1.2.3/app-release.apk
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.1.8
-CurrentVersionCode: 10
+CurrentVersion: 1.2.3
+CurrentVersionCode: 15
