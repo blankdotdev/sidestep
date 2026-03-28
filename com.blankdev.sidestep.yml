@@ -87,7 +87,16 @@ Builds:
     binaries:
       - https://github.com/blankdotdev/sidestep/releases/download/v1.2.3/app-release.apk
 
+  - versionName: 1.2.4
+    versionCode: 16
+    commit: 1a4d5e74d426f7aa5f063506b97b3511897e48c5
+    subdir: app
+    gradle:
+      - yes
+    binaries:
+      - https://github.com/blankdotdev/sidestep/releases/download/v1.2.4/app-release.apk
+
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.2.3
-CurrentVersionCode: 15
+CurrentVersion: 1.2.4
+CurrentVersionCode: 16
