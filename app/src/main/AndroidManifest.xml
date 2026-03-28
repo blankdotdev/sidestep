@@ -90,6 +90,7 @@
 
                 <data android:host="reddit.com" />
                 <data android:host="www.reddit.com" />
+                <data android:host="old.reddit.com" />
                 <data android:host="redd.it" />
             </intent-filter>
 
@@ -167,6 +168,10 @@
                 <!-- Imgur -->
                 <data android:host="imgur.com" />
                 <data android:host="www.imgur.com" />
+
+                <!-- Fandom -->
+                <data android:host="fandom.com" />
+                <data android:host="www.fandom.com" />
 
                 <!-- Google Share -->
                 <data android:host="share.google" />

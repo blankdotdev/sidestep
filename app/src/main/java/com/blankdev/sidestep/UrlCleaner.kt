@@ -303,7 +303,27 @@ object UrlCleaner {
         
         try {
             val uri = URI(url)
-            return URI(uri.scheme ?: "https", domainToUse, uri.path, uri.query, uri.fragment).toString()
+            var newPath = uri.path ?: ""
+            
+            // Special handling for Fandom -> BreezeWiki to preserve the wiki name
+            // BreezeWiki expects the wiki name as the first path segment (e.g., breezewiki.com/minecraft/wiki/...)
+            if (isFandomUrl(url)) {
+                val host = uri.host?.lowercase(Locale.getDefault()) ?: ""
+                val fandomSuffix = ".fandom.com"
+                if (host.endsWith(fandomSuffix) && host != "www.fandom.com") {
+                    val wikiName = host.removeSuffix(fandomSuffix)
+                    // Ensure the wiki name isn't already the first path segment
+                    if (!newPath.startsWith("/$wikiName/") && newPath != "/$wikiName") {
+                        newPath = if (newPath.startsWith("/")) {
+                            "/$wikiName$newPath"
+                        } else {
+                            "/$wikiName/$newPath"
+                        }
+                    }
+                }
+            }
+            
+            return URI(uri.scheme ?: "https", domainToUse, newPath, uri.query, uri.fragment).toString()
         } catch (e: URISyntaxException) {
             // Fallback for malformed URLs
             Log.e(TAG, "Failed to replace domain in URL: $url", e)
@@ -449,14 +469,24 @@ object UrlCleaner {
         return host.contains("facebook.com")
     }
 
-     /**
-      * Check if a URL is an Imgur URL
-      */
+    /**
+     * Check if a URL is an Imgur URL
+     */
     fun isImgurUrl(url: String?): Boolean {
         if (url == null) return false
         val host = getHost(url)
         return host.contains("imgur.com")
     }
+
+    /**
+     * Check if a URL is a Fandom URL
+     */
+    fun isFandomUrl(url: String?): Boolean {
+        if (url == null) return false
+        val host = getHost(url)
+        return host.contains("fandom.com")
+    }
+
     /**
      * Convert Google Maps URL to OpenStreetMap URL
      */
@@ -646,6 +676,7 @@ object UrlCleaner {
         PlatformRule("Tumblr", listOf("tumblr.com")),
         PlatformRule("UrbanDictionary", listOf("urbandictionary.com")),
         PlatformRule("Imgur", listOf("imgur.com")),
+        PlatformRule("Fandom", listOf("fandom.com")),
         PlatformRule("Spotify", listOf("spotify.com")),
         PlatformRule("Apple Podcasts", listOf("podcasts.apple.com"))
     )

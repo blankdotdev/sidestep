@@ -18,6 +18,7 @@ Android app that intercepts social media URLs and redirects them to alternative 
 <a href="https://apt.izzysoft.de/fdroid/index/apk/com.blankdev.sidestep" target="_blank" rel="noopener">
   <img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" style="margin:0;vertical-align:middle;height:80px;">
 </a>
+<a href="https://liberapay.com/BlankDotDev/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg" style="margin:0;vertical-align:middle;height:72px;"></a>
 
 ## Features
 
@@ -38,6 +39,7 @@ Bypass closed ecosystems and access a more open internet - with a less cluttered
 | **Tumblr**          | [Priviblur](https://github.com/syeopite/priviblur)             |
 | **UrbanDictionary** | [RuralDictionary](https://codeberg.org/zortazert/rural-dictionary)       |
 | **Imgur**           | [Rimgo](https://codeberg.org/rimgo/rimgo)                 |
+| **Fandom**          | [BreezeWiki](https://breezewiki.com)                      |
 | **GitHub**          | [GotHub](https://github.com/neofelix/gothub)                |
 | **StackOverflow**   | [AnonymousOverflow](https://github.com/httpjamesm/AnonymousOverflow)     |
 
@@ -82,6 +84,13 @@ Sidestep is available as a direct APK download (under [Releases](https://github.
 3. Select **Open in app** for supported domains
 4. Supported links will now automatically route through Sidestep
 
+
+## Support
+
+If you find Sidestep useful and would like to support its development, you can donate via Liberapay:
+
+<script src="https://liberapay.com/BlankDotDev/widgets/button.js"></script>
+<noscript><a href="https://liberapay.com/BlankDotDev/donate"><img alt="Donate using Liberapay" src="https://liberapay.com/assets/widgets/donate.svg"></a></noscript>
 
 ## Verification
 

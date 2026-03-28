@@ -232,6 +232,15 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun testIsRedditUrl() {
+        assertTrue(UrlCleaner.isRedditUrl("https://reddit.com/r/Android"))
+        assertTrue(UrlCleaner.isRedditUrl("https://www.reddit.com/r/Android"))
+        assertTrue(UrlCleaner.isRedditUrl("https://old.reddit.com/r/Android"))
+        assertTrue(UrlCleaner.isRedditUrl("https://redd.it/123"))
+        assertFalse(UrlCleaner.isRedditUrl("https://example.com"))
+    }
+
+    @Test
     fun testIsImgurUrl() {
         assertTrue(UrlCleaner.isImgurUrl("https://imgur.com/gallery/abc"))
         assertTrue(UrlCleaner.isImgurUrl("https://www.imgur.com/abc"))
@@ -411,5 +420,39 @@ class UrlCleanerTest {
         assertEquals(expected, cleaned)
         assertFalse(cleaned.contains("taid="))
         assertFalse(cleaned.contains("cid="))
+    }
+
+    @Test
+    fun testIsFandomUrl() {
+        assertTrue(UrlCleaner.isFandomUrl("https://minecraft.fandom.com/wiki/Creeper"))
+        assertTrue(UrlCleaner.isFandomUrl("https://www.fandom.com/articles"))
+        assertFalse(UrlCleaner.isFandomUrl("https://example.com"))
+    }
+
+    @Test
+    fun testGetServiceName_fandom() {
+        assertEquals("Fandom", UrlCleaner.getServiceName("https://minecraft.fandom.com/wiki/Creeper"))
+        assertEquals("Fandom", UrlCleaner.getServiceName("https://www.fandom.com"))
+    }
+
+    @Test
+    fun testReplaceDomain_fandomWithSubdomain() {
+        val url = "https://minecraft.fandom.com/wiki/Creeper"
+        val result = UrlCleaner.replaceDomain(url, "breezewiki.com")
+        assertEquals("https://breezewiki.com/minecraft/wiki/Creeper", result)
+    }
+
+    @Test
+    fun testReplaceDomain_fandomNoSubdomain() {
+        val url = "https://www.fandom.com/articles/something"
+        val result = UrlCleaner.replaceDomain(url, "breezewiki.com")
+        assertEquals("https://breezewiki.com/articles/something", result)
+    }
+
+    @Test
+    fun testReplaceDomain_fandomEmptyPath() {
+        val url = "https://marvel.fandom.com"
+        val result = UrlCleaner.replaceDomain(url, "breezewiki.com")
+        assertEquals("https://breezewiki.com/marvel/", result)
     }
 }

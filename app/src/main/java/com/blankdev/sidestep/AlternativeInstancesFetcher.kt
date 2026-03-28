@@ -115,6 +115,11 @@ object AlternativeInstancesFetcher {
         "intellectual.insprill.net", "intellectual.privacydev.net"
     )
 
+    private val BREEZEWIKI_FALLBACK_DOMAINS = listOf(
+        "breezewiki.com", "antifandom.com", "bw.artemislena.eu", "breezewiki.pussthecat.org",
+        "breeze.mint.lgbt", "z.opnxng.com", "breezewiki.hyperreal.coffee"
+    )
+
     fun getWikilessDefaults(): List<Instance> = WIKILESS_FALLBACK_DOMAINS.map { Instance(it) }
     fun getBiblioReadsDefaults(): List<Instance> = BIBLIOREADS_FALLBACK_DOMAINS.map { Instance(it) }
     fun getDumbDefaults(): List<Instance> = DUMB_FALLBACK_DOMAINS.map { Instance(it) }
@@ -123,6 +128,7 @@ object AlternativeInstancesFetcher {
     fun getRuralDictionaryDefaults(): List<Instance> = RURAL_DICTIONARY_FALLBACK_DOMAINS.map { Instance(it) }
     fun getRimgoDefaults(): List<Instance> = RIMGO_FALLBACK_DOMAINS.map { Instance(it) }
     fun getIntellectualDefaults(): List<Instance> = INTELLECTUAL_FALLBACK_DOMAINS.map { Instance(it) }
+    fun getBreezeWikiDefaults(): List<Instance> = BREEZEWIKI_FALLBACK_DOMAINS.map { Instance(it) }
 
     suspend fun fetchNitterInstances(): List<Instance> = withContext(Dispatchers.IO) {
         val results = mutableListOf<Instance>()
@@ -325,6 +331,11 @@ object AlternativeInstancesFetcher {
         return if (fetched.isEmpty()) getIntellectualDefaults() else fetched
     }
 
+    suspend fun fetchBreezeWikiInstances(): List<Instance> {
+        val fetched = fetchLibRedirectInstances("breezewiki")
+        return if (fetched.isEmpty()) getBreezeWikiDefaults() else fetched
+    }
+
     suspend fun fetchPriviblurInstances(): List<Instance> = withContext(Dispatchers.IO) {
         val instances = mutableListOf<Instance>()
         try {
@@ -521,8 +532,9 @@ object AlternativeInstancesFetcher {
             "priviblur", "pb.", "tumblr",
             "ruraldictionary", "urbandictionary",
             "rimgo", "imgur",
-            "intellectual"
+            "intellectual", "breezewiki", "antifandom"
         )
+
         
         // Match specific exact domains
         val specificDomains = setOf(
@@ -530,8 +542,9 @@ object AlternativeInstancesFetcher {
             "yewtu.be", "pipedapi.kavin.rocks",
             "imdb.rivo.cc", "scribe.nixnet.services",
             "tb.opnxng.com", "rd.vern.cc", "rd.bloat.cat",
-            "imgur.artemislena.eu"
+            "imgur.artemislena.eu", "bw.artemislena.eu", "breeze.mint.lgbt", "z.opnxng.com"
         )
+
         
         return instanceKeywords.any { low.contains(it) } || specificDomains.contains(low)
     }

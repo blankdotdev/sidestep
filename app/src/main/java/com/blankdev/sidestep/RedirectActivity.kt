@@ -156,6 +156,9 @@ class RedirectActivity : AppCompatActivity() {
             }
             context.startActivity(webIntent)
             return true
+        } else if (SettingsUtils.shouldUseCustomTabs(context)) {
+            SettingsUtils.openUrlWithCustomTabs(context, finalUrl)
+            return true
         } else {
             val redirectIntent = Intent(Intent.ACTION_VIEW, finalUrl.toUri()).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK

@@ -53,7 +53,7 @@ class SettingsActivity : AppCompatActivity() {
         
         setupAutomationButtons()
         setupNavigationButtons()
-        setupAboutButton()
+        setupFooterButtons()
     }
 
     private fun setupNavigationButtons() {
@@ -136,6 +136,14 @@ class SettingsActivity : AppCompatActivity() {
                 }
             }
         }
+
+        // Custom Tabs
+        findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchCustomTabs)?.apply {
+            isChecked = prefs.getBoolean(KEY_USE_CUSTOM_TABS, false)
+            setOnCheckedChangeListener { _, isChecked ->
+                prefs.edit { putBoolean(KEY_USE_CUSTOM_TABS, isChecked) }
+            }
+        }
     }
 
     private fun openDefaultHandlerSettings() {
@@ -173,6 +181,7 @@ class SettingsActivity : AppCompatActivity() {
             "Genius" to "genius.com",
             "UrbanDictionary" to "urbandictionary.com",
             "Imgur" to "imgur.com",
+            "Fandom" to "fandom.com",
             "GitHub" to "github.com",
             "StackOverflow" to "stackoverflow.com",
             "Google Maps" to "maps.google.com"
@@ -265,9 +274,13 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
 
-    private fun setupAboutButton() {
+    private fun setupFooterButtons() {
         findViewById<android.view.View>(R.id.btnAbout)?.setOnClickListener {
             SettingsUtils.showAboutDialog(this)
+        }
+        findViewById<android.view.View>(R.id.btnDonate)?.setOnClickListener {
+            val intent = Intent(Intent.ACTION_VIEW, "https://liberapay.com/BlankDotDev/donate".toUri())
+            startActivity(intent)
         }
     }
 
@@ -357,6 +370,11 @@ class SettingsActivity : AppCompatActivity() {
         const val DEFAULT_RIMGO_DOMAIN = "imgur.artemislena.eu"
         const val KEY_RIMGO_CLEAN_ONLY = "rimgo_clean_only"
 
+        const val KEY_FANDOM_DOMAIN = "fandom_domain"
+        const val DEFAULT_FANDOM_DOMAIN = "breezewiki.com"
+        const val KEY_FANDOM_CLEAN_ONLY = "fandom_clean_only"
+
         const val KEY_CUSTOM_REDIRECTS = "custom_redirects"
+        const val KEY_USE_CUSTOM_TABS = "use_custom_tabs"
     }
 }

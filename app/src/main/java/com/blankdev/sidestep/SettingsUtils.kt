@@ -27,6 +27,7 @@ import com.blankdev.sidestep.BuildConfig
 import android.util.Log
 import org.json.JSONException
 import android.content.ActivityNotFoundException
+import androidx.browser.customtabs.CustomTabsIntent
 
 data class CustomRedirect(
     val id: String,
@@ -141,7 +142,7 @@ object SettingsUtils {
             "twitter", "youtube", "piped", "reddit", "medium",
             "goodreads", "genius", "intellectual", "github",
             "stackoverflow", "wikipedia", "imdb", "tumblr",
-            "rural-dictionary", "rimgo"
+            "rural-dictionary", "rimgo", "breezewiki"
         )
     }
 
@@ -165,7 +166,7 @@ object SettingsUtils {
         val domainsToCheck = when(domain) {
             "tiktok.com" -> listOf("tiktok.com", "www.tiktok.com", "v.tiktok.com", "vt.tiktok.com", "vm.tiktok.com")
             "x.com" -> listOf("x.com", "www.x.com", "twitter.com", "www.twitter.com")
-            "reddit.com" -> listOf("reddit.com", "www.reddit.com", "redd.it")
+            "reddit.com" -> listOf("reddit.com", "www.reddit.com", "old.reddit.com", "www.old.reddit.com", "redd.it")
             "youtube.com" -> listOf("youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be")
             "imdb.com" -> listOf("imdb.com", "www.imdb.com", "m.imdb.com")
             "medium.com" -> listOf("medium.com", "www.medium.com", "link.medium.com")
@@ -173,6 +174,7 @@ object SettingsUtils {
             "goodreads.com" -> listOf("goodreads.com", "www.goodreads.com")
             "urbandictionary.com" -> listOf("urbandictionary.com", "www.urbandictionary.com")
             "imgur.com" -> listOf("imgur.com", "www.imgur.com")
+            "fandom.com" -> listOf("fandom.com", "www.fandom.com")
             "maps.google.com", "google.com" -> listOf("maps.google.com", "www.maps.google.com")
             else -> listOf(domain)
         }
@@ -263,6 +265,8 @@ object SettingsUtils {
             UrlCleaner.isGitHubUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GITHUB_CLEAN_ONLY, false)
             UrlCleaner.isStackOverflowUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, false)
             UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, false)
+            UrlCleaner.isImgurUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_RIMGO_CLEAN_ONLY, false)
+            UrlCleaner.isFandomUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_FANDOM_CLEAN_ONLY, false)
             UrlCleaner.isGoogleMapsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)
             else -> false
         }
@@ -276,6 +280,37 @@ object SettingsUtils {
         } catch (e: java.net.URISyntaxException) {
             Log.e(TAG, "Error parsing URL for WebView check", e)
             false
+        }
+    }
+
+    fun shouldUseCustomTabs(context: Context): Boolean {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        return prefs.getBoolean(SettingsActivity.KEY_USE_CUSTOM_TABS, false)
+    }
+
+    fun openUrlWithCustomTabs(context: Context, url: String) {
+        try {
+            val builder = CustomTabsIntent.Builder()
+            
+            // Set toolbar color to match app theme
+            val color = getThemeColor(context, com.google.android.material.R.attr.colorPrimary)
+            val params = androidx.browser.customtabs.CustomTabColorSchemeParams.Builder()
+                .setToolbarColor(color)
+                .build()
+            builder.setDefaultColorSchemeParams(params)
+            
+            // Show share button
+            builder.setShareState(CustomTabsIntent.SHARE_STATE_ON)
+            
+            val customTabsIntent = builder.build()
+            customTabsIntent.launchUrl(context, url.toUri())
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to launch Custom Tab", e)
+            // Fallback to standard browser intent
+            val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
         }
     }
 
@@ -299,7 +334,8 @@ object SettingsUtils {
         "rural-dictionary" to ServiceHandler({ AlternativeInstancesFetcher.fetchRuralDictionaryInstances() }, { AlternativeInstancesFetcher.getRuralDictionaryDefaults() }),
         "rimgo" to ServiceHandler({ AlternativeInstancesFetcher.fetchRimgoInstances() }, { AlternativeInstancesFetcher.getRimgoDefaults() }),
         "tumblr" to ServiceHandler({ AlternativeInstancesFetcher.fetchPriviblurInstances() }, { AlternativeInstancesFetcher.getPriviblurDefaults() }),
-        "intellectual" to ServiceHandler({ AlternativeInstancesFetcher.fetchIntellectualInstances() }, { AlternativeInstancesFetcher.getIntellectualDefaults() })
+        "intellectual" to ServiceHandler({ AlternativeInstancesFetcher.fetchIntellectualInstances() }, { AlternativeInstancesFetcher.getIntellectualDefaults() }),
+        "breezewiki" to ServiceHandler({ AlternativeInstancesFetcher.fetchBreezeWikiInstances() }, { AlternativeInstancesFetcher.getBreezeWikiDefaults() })
     )
 
     fun fetchLatestInstances(activity: AppCompatActivity, type: String, onFetched: (List<AlternativeInstancesFetcher.Instance>) -> Unit) {
@@ -476,7 +512,8 @@ object SettingsUtils {
                 Pair({ UrlCleaner.isStackOverflowUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_STACKOVERFLOW_CLEAN_ONLY, Pair(SettingsActivity.KEY_STACKOVERFLOW_DOMAIN, SettingsActivity.DEFAULT_STACKOVERFLOW_DOMAIN))),
                 Pair({ UrlCleaner.isTumblrUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_TUMBLR_CLEAN_ONLY, Pair(SettingsActivity.KEY_TUMBLR_DOMAIN, SettingsActivity.DEFAULT_TUMBLR_DOMAIN))),
                 Pair({ UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, Pair(SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN))),
-                Pair({ UrlCleaner.isImgurUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_RIMGO_CLEAN_ONLY, Pair(SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN)))
+                Pair({ UrlCleaner.isImgurUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_RIMGO_CLEAN_ONLY, Pair(SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN))),
+                Pair({ UrlCleaner.isFandomUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_FANDOM_CLEAN_ONLY, Pair(SettingsActivity.KEY_FANDOM_DOMAIN, SettingsActivity.DEFAULT_FANDOM_DOMAIN)))
             )
 
             for ((condition, settings) in domainMapping) {
@@ -516,7 +553,7 @@ object SettingsUtils {
         val creditsHtml = """
             Sidestep is built upon the labor of many privacy-focused developers whose work adds a layer of protection from the surveillance industry. Alternative frontends allow for a less cluttered web experience; bypassing closed ecosystems and promoting a more open internet.
             <br><br>
-            Special thanks to <a href="https://github.com/zedeus/nitter">Nitter</a>, <a href="https://github.com/redlib-org/redlib">Redlib</a>, <a href="https://github.com/iv-org/invidious">Invidious</a>, <a href="https://github.com/TeamPiped/Piped">Piped</a>, <a href="https://github.com/zyachel/libremdb">LibreMDB</a>, <a href="https://sr.ht/~edwardloveall/Scribe">Scribe</a>, <a href="https://github.com/Metastem/wikiless">Wikiless</a>, <a href="https://github.com/nesaku/BiblioReads">BiblioReads</a>, <a href="https://github.com/rramiachraf/dumb">Dumb</a>, <a href="https://github.com/Insprill/intellectual">Intellectual</a>, <a href="https://github.com/neofelix/gothub">GotHub</a>, <a href="https://github.com/httpjamesm/AnonymousOverflow">AnonymousOverflow</a>, <a href="https://github.com/syeopite/priviblur">Priviblur</a>, <a href="https://codeberg.org/zortazert/rural-dictionary">RuralDictionary</a>, and <a href="https://codeberg.org/rimgo">rimgo</a>.
+            Special thanks to <a href="https://github.com/zedeus/nitter">Nitter</a>, <a href="https://github.com/redlib-org/redlib">Redlib</a>, <a href="https://github.com/iv-org/invidious">Invidious</a>, <a href="https://github.com/TeamPiped/Piped">Piped</a>, <a href="https://github.com/zyachel/libremdb">LibreMDB</a>, <a href="https://sr.ht/~edwardloveall/Scribe">Scribe</a>, <a href="https://github.com/Metastem/wikiless">Wikiless</a>, <a href="https://github.com/nesaku/BiblioReads">BiblioReads</a>, <a href="https://github.com/rramiachraf/dumb">Dumb</a>, <a href="https://github.com/Insprill/intellectual">Intellectual</a>, <a href="https://github.com/neofelix/gothub">GotHub</a>, <a href="https://github.com/httpjamesm/AnonymousOverflow">AnonymousOverflow</a>, <a href="https://github.com/syeopite/priviblur">Priviblur</a>, <a href="https://codeberg.org/zortazert/rural-dictionary">RuralDictionary</a>, <a href="https://codeberg.org/rimgo">rimgo</a>, and <a href="https://breezewiki.com">BreezeWiki</a>.
         """.trimIndent()
 
         val spanned = Html.fromHtml(creditsHtml, Html.FROM_HTML_MODE_LEGACY) as Spannable

@@ -822,6 +822,8 @@ class MainActivity : AppCompatActivity() {
                     putExtra(WebViewActivity.EXTRA_URL, finalRedirectUrl)
                 }
                 startActivity(webIntent)
+            } else if (SettingsUtils.shouldUseCustomTabs(this)) {
+                SettingsUtils.openUrlWithCustomTabs(this, finalRedirectUrl)
             } else {
                 launchExternalIntent(finalRedirectUrl)
             }

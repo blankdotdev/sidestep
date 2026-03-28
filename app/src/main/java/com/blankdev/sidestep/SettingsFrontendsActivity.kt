@@ -97,6 +97,7 @@ class SettingsFrontendsActivity : AppCompatActivity() {
         setupPlatformToggle(R.id.toggleTumblrMode, R.id.tumblrDomainContainer, SettingsActivity.KEY_TUMBLR_CLEAN_ONLY, "tumblr.com", R.id.btnTumblrClean, R.id.btnTumblrRedirect, SettingsActivity.KEY_TUMBLR_DOMAIN, SettingsActivity.DEFAULT_TUMBLR_DOMAIN)
         setupPlatformToggle(R.id.toggleRuralDictionaryMode, R.id.rural_dictionaryDomainContainer, SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, "urbandictionary.com", R.id.btnRuralDictionaryClean, R.id.btnRuralDictionaryRedirect, SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN)
         setupPlatformToggle(R.id.toggleRimgoMode, R.id.rimgoDomainContainer, SettingsActivity.KEY_RIMGO_CLEAN_ONLY, "imgur.com", R.id.btnRimgoClean, R.id.btnRimgoRedirect, SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN)
+        setupPlatformToggle(R.id.toggleFandomMode, R.id.fandomDomainContainer, SettingsActivity.KEY_FANDOM_CLEAN_ONLY, "fandom.com", R.id.btnFandomClean, R.id.btnFandomRedirect, SettingsActivity.KEY_FANDOM_DOMAIN, SettingsActivity.DEFAULT_FANDOM_DOMAIN)
         setupPlatformToggle(R.id.toggleGoogleMapsMode, R.id.googlemapsDomainContainer, SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, "google.com", R.id.btnGoogleMapsClean, R.id.btnGoogleMapsRedirect, SettingsActivity.KEY_GOOGLE_MAPS_DOMAIN, SettingsActivity.DEFAULT_GOOGLE_MAPS_DOMAIN)
     }
 
@@ -330,6 +331,7 @@ class SettingsFrontendsActivity : AppCompatActivity() {
         setupPlatformInput(R.id.inputTumblrDomain, R.id.btnSelectTumblr, SettingsActivity.KEY_TUMBLR_DOMAIN, SettingsActivity.DEFAULT_TUMBLR_DOMAIN, "tumblr")
         setupPlatformInput(R.id.inputRuralDictionaryDomain, R.id.btnSelectRuralDictionary, SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN, "rural-dictionary")
         setupPlatformInput(R.id.inputRimgoDomain, R.id.btnSelectRimgo, SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN, "rimgo")
+        setupPlatformInput(R.id.inputFandomDomain, R.id.btnSelectFandom, SettingsActivity.KEY_FANDOM_DOMAIN, SettingsActivity.DEFAULT_FANDOM_DOMAIN, "breezewiki")
     }
 
     private fun setupPlatformInput(inputId: Int, buttonId: Int, prefKey: String, default: String, type: String) {
@@ -347,6 +349,7 @@ class SettingsFrontendsActivity : AppCompatActivity() {
                 "stackoverflow" -> AlternativeInstancesFetcher.getAnonymousOverflowDefaults()
                 "tumblr" -> AlternativeInstancesFetcher.getPriviblurDefaults()
                 "rural-dictionary" -> AlternativeInstancesFetcher.getRuralDictionaryDefaults()
+                "breezewiki" -> AlternativeInstancesFetcher.getBreezeWikiDefaults()
                 else -> null
             }
             if (defaults != null) {
