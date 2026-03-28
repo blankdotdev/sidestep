@@ -1,3 +1,21 @@
+## [1.2.4] - 2026-03-27
+
+### Added
+- **Fandom → BreezeWiki redirection:** Fandom wiki links are now automatically redirected to BreezeWiki, with support for custom instance URLs and a toggle to enable/disable per-platform.
+- **Android Custom Tabs:** New option to open processed links inside the app using Chrome Custom Tabs instead of launching an external browser, for a more seamless experience.
+- **Old Reddit support:** Added interception of `old.reddit.com` links alongside regular Reddit URLs.
+- **Privacy Policy:** Added `PRIVACY.md` documenting the app's zero-data-collection, local-processing approach.
+
+### Changed
+- Expanded Settings UI with additional frontend toggles and custom domain inputs for Fandom/BreezeWiki.
+- Upgraded Android Gradle Plugin to 9.1.0.
+- Upgraded Gradle wrapper to 9.4.1.
+- Upgraded `androidx.core:core-ktx` to 1.18.0.
+- Upgraded `kotlin-test` to 2.3.20.
+
+### Fixed
+- Broadened URL cleaning coverage with additional test cases for multiple alternative frontends.
+
 ## [1.2.3] - 2026-03-04
 
 ### Fixed
