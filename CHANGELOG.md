@@ -1,3 +1,10 @@
+## [1.2.5] - 2026-03-29
+
+### Fixed
+- Shortened Fastlane summary to meet F-Droid's 80-character limit.
+- Updated F-Droid metadata to resolve reproducible build mismatches.
+- Applied canonical formatting to the F-Droid metadata file.
+
 ## [1.2.4] - 2026-03-27
 
 ### Added
