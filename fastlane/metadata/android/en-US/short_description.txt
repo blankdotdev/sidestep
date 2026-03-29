@@ -1,1 +1,1 @@
-Intercept URLs, remove tracking, redirect to alternative frontends. No apps/accounts needed.
+Intercept URLs, remove tracking, and redirect to privacy-friendly frontends.
