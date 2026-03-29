@@ -13,9 +13,9 @@ Repo: https://github.com/blankdotdev/sidestep
 Binaries: https://github.com/blankdotdev/sidestep/releases/download/v%v/app-release.apk
 
 Builds:
-  - versionName: 1.2.4
-    versionCode: 16
-    commit: 1a4d5e74d426f7aa5f063506b97b3511897e48c5
+  - versionName: 1.2.5
+    versionCode: 17
+    commit: f1e93b1bc633c50bee08586ad3755996f344edc0
     subdir: app
     gradle:
       - yes
@@ -24,5 +24,5 @@ AllowedAPKSigningKeys: d5699817ccce5ff60b8c4b1afaa7e8a861e3a6eac0bf40c6fcea210ef
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.2.4
-CurrentVersionCode: 16
+CurrentVersion: 1.2.5
+CurrentVersionCode: 17
