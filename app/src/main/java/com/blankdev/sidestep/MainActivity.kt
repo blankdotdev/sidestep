@@ -53,6 +53,7 @@ object NetworkClient {
     val client = OkHttpClient.Builder()
         .connectTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .readTimeout(NETWORK_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .followRedirects(false)
         .build()
 }
 
@@ -754,9 +755,18 @@ class MainActivity : AppCompatActivity() {
         // Step 1: Unshorten
         val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
         val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
+        val reduceFingerprinting = prefs.getBoolean(SettingsActivity.KEY_REDUCE_FINGERPRINTING, true)
+        val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
+
+        val urlToUnshorten = if (shouldRemoveTracking) {
+            UrlCleaner.stripTrackingParams(url)
+        } else {
+            url
+        }
+
         val unshortenedUrl = if (shouldUnshorten) {
             try {
-                UrlUnshortener.unshorten(url, resolveHtml)
+                UrlUnshortener.unshorten(urlToUnshorten, resolveHtml, reduceFingerprinting)
             } catch (e: java.io.IOException) {
                 url
             }
@@ -768,7 +778,6 @@ class MainActivity : AppCompatActivity() {
         val initialTitle = fetchInitialTitle(unshortenedUrl)
 
         // Step 3: Determine Redirect URL
-        val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
         val cleanedUrl = if (shouldRemoveTracking) {
             UrlCleaner.cleanUrl(unshortenedUrl)
         } else {
@@ -1135,10 +1144,11 @@ class MainActivity : AppCompatActivity() {
     private fun fetchPreview(entry: HistoryManager.HistoryEntry) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         if (!prefs.getBoolean(SettingsActivity.KEY_PREVIEW_FETCH, true)) return
+        val reduceFingerprinting = prefs.getBoolean(SettingsActivity.KEY_REDUCE_FINGERPRINTING, true)
 
         lifecycleScope.launch(Dispatchers.IO) {
             val fetchUrl = entry.cleanedUrl
-            val data = PreviewFetcher.fetchPreview(url = fetchUrl)
+            val data = PreviewFetcher.fetchPreview(url = fetchUrl, reduceFingerprinting = reduceFingerprinting)
             
             // Protect manually extracted usernames from being overwritten by generic alternative frontend SEO titles
             val isSocial = isTwitterOrXUrl(fetchUrl) || UrlCleaner.isTikTokUrl(fetchUrl) || 

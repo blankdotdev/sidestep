@@ -46,7 +46,8 @@ Automatically removes tracking parameters from all URLs:
 - Analytics parameters
 
 Granular control over how URLs are processed:
-- **Unshorten URLs**: Automatically resolves shortened links (bit.ly, t.co, etc.)
+- **Unshorten URLs**: Automatically resolves shortened links (bit.ly, t.co, share.google, etc.) with tracking parameters pre-stripped before the request is made
+- **Reduce Fingerprinting**: Uses generic browser headers and strips tracking headers during link resolution and preview fetching
 - **Remove Tracking**: Strip analytics and tracking parameters
 - **Immediate Navigation**: Automatically open the processed URL in your browser
 - **Clean Only Mode**: Remove tracking without redirecting
@@ -56,6 +57,8 @@ Granular control over how URLs are processed:
 
 ### Tracking-proof
 - Previews fetched via DuckDuckGo (optional)
+- Fingerprint reduction: Outbound link resolution and previews use generic signatures to minimize external device fingerprinting
+- Pre-request tracker stripping: Tracking query parameters are stripped before contacting external shorteners
 - No Data Collection: Zero analytics, zero tracking
 - Local Processing: All URL cleaning happens on-device
 

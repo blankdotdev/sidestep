@@ -108,6 +108,17 @@
                     android:textColor="?android:attr/textColorSecondary"
                     android:textSize="12sp" />
 
+                <TextView
+                    android:id="@+id/tvUnshortenNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/unshorten_urls_note"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="11sp"
+                    android:fontFamily="sans-serif"
+                    android:visibility="gone" />
+
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchResolveHtml"
                     android:layout_width="match_parent"
@@ -124,6 +135,17 @@
                     android:textColor="?android:attr/textColorSecondary"
                     android:textSize="12sp" />
 
+                <TextView
+                    android:id="@+id/tvResolveHtmlNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/resolve_html_note"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="11sp"
+                    android:fontFamily="sans-serif"
+                    android:visibility="gone" />
+
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchRemoveTracking"
                     android:layout_width="match_parent"
@@ -139,6 +161,37 @@
                     android:text="@string/remove_tracking_desc"
                     android:textColor="?android:attr/textColorSecondary"
                     android:textSize="12sp" />
+
+                <!-- Fingerprint reduction toggle — visible only when network features are on -->
+                <LinearLayout
+                    android:id="@+id/fingerprintContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="16dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="0dp"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="8dp"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:visibility="gone">
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchReduceFingerprinting"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reduce_fingerprinting_title"
+                        android:textColor="?android:attr/textColorPrimary"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/reduce_fingerprinting_desc"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/switchImmediateNavigation"

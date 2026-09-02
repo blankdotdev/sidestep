@@ -112,11 +112,19 @@ class RedirectActivity : AppCompatActivity() {
         val sanitizedUrl = UrlCleaner.ensureProtocol(url)
         val shouldUnshorten = prefs.getBoolean(SettingsActivity.KEY_UNSHORTEN_URLS, true)
         val resolveHtml = prefs.getBoolean(SettingsActivity.KEY_RESOLVE_HTML_REDIRECTS, true)
+        val reduceFingerprinting = prefs.getBoolean(SettingsActivity.KEY_REDUCE_FINGERPRINTING, true)
+        val shouldRemoveTracking = prefs.getBoolean(SettingsActivity.KEY_REMOVE_TRACKING, true)
+
+        val urlToUnshorten = if (shouldRemoveTracking) {
+            UrlCleaner.stripTrackingParams(sanitizedUrl)
+        } else {
+            sanitizedUrl
+        }
 
         return if (shouldUnshorten) {
             try {
                 kotlinx.coroutines.withTimeout(UNSHORTEN_TIMEOUT_MS) {
-                     UrlUnshortener.unshorten(sanitizedUrl, resolveHtml)
+                     UrlUnshortener.unshorten(urlToUnshorten, resolveHtml, reduceFingerprinting)
                  }
             } catch (ignored: kotlinx.coroutines.TimeoutCancellationException) {
                  sanitizedUrl

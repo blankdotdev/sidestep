@@ -54,6 +54,13 @@ class SettingsActivity : AppCompatActivity() {
         setupAutomationButtons()
         setupNavigationButtons()
         setupFooterButtons()
+        setupFingerprintToggle()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh fingerprint toggle visibility — user may have toggled Previews on the Privacy screen
+        updateFingerprintVisibility()
     }
 
     private fun setupNavigationButtons() {
@@ -101,6 +108,8 @@ class SettingsActivity : AppCompatActivity() {
                 prefs.edit { putBoolean(KEY_UNSHORTEN_URLS, isChecked) }
                 // Disable dependent toggle
                 switchResolveHtml?.isEnabled = isChecked
+                // Show/hide fingerprint container and disclosure notes
+                updateFingerprintVisibility()
             }
         }
 
@@ -274,6 +283,32 @@ class SettingsActivity : AppCompatActivity() {
         return true
     }
 
+    private fun setupFingerprintToggle() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val switch = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchReduceFingerprinting)
+        switch?.isChecked = prefs.getBoolean(KEY_REDUCE_FINGERPRINTING, true)
+        switch?.setOnCheckedChangeListener { _, isChecked ->
+            prefs.edit { putBoolean(KEY_REDUCE_FINGERPRINTING, isChecked) }
+        }
+        updateFingerprintVisibility()
+    }
+
+    private fun updateFingerprintVisibility() {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val unshortenOn = prefs.getBoolean(KEY_UNSHORTEN_URLS, true)
+        val previewOn = prefs.getBoolean(KEY_PREVIEW_FETCH, true)
+        val networkFeaturesActive = unshortenOn || previewOn
+
+        val fingerprintContainer = findViewById<android.view.View>(R.id.fingerprintContainer)
+        val tvUnshortenNote = findViewById<android.view.View>(R.id.tvUnshortenNote)
+        val tvResolveHtmlNote = findViewById<android.view.View>(R.id.tvResolveHtmlNote)
+
+        val vis = if (networkFeaturesActive) android.view.View.VISIBLE else android.view.View.GONE
+        fingerprintContainer?.visibility = vis
+        tvUnshortenNote?.visibility = if (unshortenOn) android.view.View.VISIBLE else android.view.View.GONE
+        tvResolveHtmlNote?.visibility = if (unshortenOn) android.view.View.VISIBLE else android.view.View.GONE
+    }
+
     private fun setupFooterButtons() {
         findViewById<android.view.View>(R.id.btnAbout)?.setOnClickListener {
             SettingsUtils.showAboutDialog(this)
@@ -380,5 +415,6 @@ class SettingsActivity : AppCompatActivity() {
 
         const val KEY_CUSTOM_REDIRECTS = "custom_redirects"
         const val KEY_USE_CUSTOM_TABS = "use_custom_tabs"
+        const val KEY_REDUCE_FINGERPRINTING = "reduce_fingerprinting"
     }
 }

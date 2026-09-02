@@ -25,10 +25,16 @@ Builds:
     subdir: app
     gradle:
       - yes
+  - versionName: 1.2.7
+    versionCode: 19
+    commit: v1.2.7
+    subdir: app
+    gradle:
+      - yes
 
 AllowedAPKSigningKeys: d5699817ccce5ff60b8c4b1afaa7e8a861e3a6eac0bf40c6fcea210efc574056
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.2.6
-CurrentVersionCode: 18
+CurrentVersion: 1.2.7
+CurrentVersionCode: 19

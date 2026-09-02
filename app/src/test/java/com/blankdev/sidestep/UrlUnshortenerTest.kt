@@ -126,6 +126,21 @@ class UrlUnshortenerTest {
         assertEquals("https://www.example.com/article", result)
     }
 
+    @Test
+    fun testIsShortenedUrl_shareGoogle() {
+        assertTrue(UrlUnshortener_isShortenedUrl("https://share.google/TUr7VccRA6abG4xrB"))
+        assertTrue(UrlUnshortener_isShortenedUrl("https://share.google/abc123XYZ"))
+    }
+
+    @Test
+    fun testUnshorten_nonShortenedUrlBypassesNetwork() = runBlocking {
+        val original = "https://example.com/article?page=1"
+        val unshortenedWithHardening = UrlUnshortener.unshorten(original, resolveHtml = true, reduceFingerprinting = true)
+        val unshortenedWithoutHardening = UrlUnshortener.unshorten(original, resolveHtml = true, reduceFingerprinting = false)
+        assertEquals(original, unshortenedWithHardening)
+        assertEquals(original, unshortenedWithoutHardening)
+    }
+
     // Helper to call private method for testing (since it's an object)
     private fun UrlUnshortener_isShortenedUrl(url: String): Boolean {
         val method = UrlUnshortener::class.java.getDeclaredMethod("isShortenedUrl", String::class.java)

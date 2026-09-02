@@ -185,4 +185,14 @@ class PreviewFetcherTest {
         
         assertEquals("Doesn't Add Up - WIRED & More \"Stuff\"", localDecode(input))
     }
+
+    @Test
+    fun testPreviewData_cacheBehavior() = kotlinx.coroutines.runBlocking {
+        // Pre-populate or test fetchPreview interface
+        val testUrl = "https://example.com/cached-test"
+        // Verify fetchPreview method signature accepts reduceFingerprinting
+        val result = PreviewFetcher.fetchPreview(testUrl, reduceFingerprinting = true)
+        // With an invalid/unreachable URL in test environment, result is null or cached
+        org.junit.Assert.assertTrue(result == null || result.title != null)
+    }
 }

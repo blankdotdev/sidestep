@@ -497,4 +497,46 @@ class UrlCleanerTest {
         assertFalse("utm_source should be stripped", cleaned.contains("utm_source"))
         assertEquals("https://www.instagram.com/reel/ABC123/", cleaned)
     }
+
+    @Test
+    fun testStripTrackingParams_removesTrackingOnly() {
+        val url = "https://share.google/TUr7VccRA6abG4xrB?utm_source=share&fbclid=12345"
+        val preCleaned = UrlCleaner.stripTrackingParams(url)
+        assertEquals("https://share.google/TUr7VccRA6abG4xrB", preCleaned)
+    }
+
+    @Test
+    fun testStripTrackingParams_preservesEssentialQueryParams() {
+        val url = "https://example.com/search?q=test&utm_source=newsletter"
+        val preCleaned = UrlCleaner.stripTrackingParams(url)
+        assertEquals("https://example.com/search?q=test", preCleaned)
+    }
+
+    @Test
+    fun testStripTrackingParams_preservesShortenerPathWithoutNormalizing() {
+        val url = "https://bit.ly/3xYZaBc?s=20&t=xyz"
+        val preCleaned = UrlCleaner.stripTrackingParams(url)
+        assertEquals("https://bit.ly/3xYZaBc", preCleaned)
+    }
+
+    @Test
+    fun testStripTrackingParams_noQueryParams() {
+        val url = "https://share.google/TUr7VccRA6abG4xrB"
+        val preCleaned = UrlCleaner.stripTrackingParams(url)
+        assertEquals("https://share.google/TUr7VccRA6abG4xrB", preCleaned)
+    }
+
+    @Test
+    fun testStripTrackingParams_multiplePlatformTrackers() {
+        val url = "https://share.google/TUr7VccRA6abG4xrB?utm_source=twitter&utm_medium=social&gclid=Cj0KCQ&fbclid=IwAR2&ttclid=E_123&si=yt123&srsltid=AfmBO"
+        val preCleaned = UrlCleaner.stripTrackingParams(url)
+        assertEquals("https://share.google/TUr7VccRA6abG4xrB", preCleaned)
+    }
+
+    @Test
+    fun testStripTrackingParams_urbanDictionaryPreservesTerm() {
+        val url = "https://www.urbandictionary.com/define.php?term=sidestep&utm_source=share"
+        val preCleaned = UrlCleaner.stripTrackingParams(url)
+        assertEquals("https://www.urbandictionary.com/define.php?term=sidestep", preCleaned)
+    }
 }

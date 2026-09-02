@@ -94,6 +94,7 @@
     <string name="privacy_title">History &amp; Previews</string>
     <string name="enable_previews_title">Destination Previews</string>
     <string name="enable_previews_desc">Fetch previews of the original URL using DuckDuckGo.</string>
+    <string name="enable_previews_note">Looks up a preview using DuckDuckGo — they see the link, but not who you are.</string>
     <string name="resolve_html_title">Fetch canonical links</string>
     <string name="resolve_html_desc">Unshorten thoroughly; reads page in background</string>
     <string name="about_title">About</string>
@@ -101,11 +102,17 @@
 
     <!-- Automation Settings -->
     <string name="unshorten_urls_title">Unshorten URLs</string>
-    <string name="unshorten_urls_desc">Resolve shortened links like bit.ly, t.co, etc</string>
+    <string name="unshorten_urls_desc">Resolve shortened links like bit.ly, t.co, share.google, etc.</string>
+    <string name="unshorten_urls_note">When on, Sidestep contacts the link shortener\'s server to follow where the link leads. That server can see your device\'s network address.</string>
+    <string name="resolve_html_note">Reads the destination page to find the true link — uses the same connection as above.</string>
     <string name="remove_tracking_title">Remove tracking parameters</string>
     <string name="remove_tracking_desc">Strip UTM and other tracking tags from URLs</string>
     <string name="immediate_navigation_title">Immediate navigation</string>
     <string name="immediate_navigation_desc">Automatically navigate after processing links</string>
     <string name="custom_tabs_title">Open in Custom Tab</string>
     <string name="custom_tabs_desc">Use your browser\'s in-app tab instead of the system chooser</string>
+
+    <!-- Fingerprint reduction -->
+    <string name="reduce_fingerprinting_title">Reduce fingerprinting while fetching</string>
+    <string name="reduce_fingerprinting_desc">Uses a generic browser identity when contacting external servers, so they learn less about your device. Turn off only if link resolution stops working for a specific site.</string>
 </resources>

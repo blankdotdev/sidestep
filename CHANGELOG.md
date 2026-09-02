@@ -1,3 +1,13 @@
+## [1.2.7] - 2026-09-01
+
+### Added
+- **Pre-cleaning before unshortening:** Strip tracking query parameters before sending requests to external link shorteners (such as `share.google`, `bit.ly`, etc.) so tracking tokens never reach shortener servers.
+- **Fingerprint reduction for outbound requests:** Added a new "Reduce fingerprinting while fetching" toggle (enabled by default) that replaces device-specific User-Agents and detailed locale headers with generic ones and drops unnecessary `Referer` headers when resolving links or fetching previews via DuckDuckGo.
+- **In-app privacy disclosures:** Added plain-language, non-technical explanations in Settings beneath network-touching toggles explaining when and why external servers are contacted.
+
+### Changed
+- **Network client hardening:** Set `followRedirects(false)` on base `NetworkClient` for safer and strictly controlled redirect following.
+
 ## [1.2.6] - 2026-09-01
 
 ### Added

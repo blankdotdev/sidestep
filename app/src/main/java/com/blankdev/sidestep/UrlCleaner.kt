@@ -158,6 +158,22 @@ object UrlCleaner {
     )
     
     /**
+     * Strips tracking query parameters from a URL without performing path cleaning or domain normalization.
+     * Useful for pre-cleaning URLs prior to unshortening requests.
+     */
+    fun stripTrackingParams(url: String): String {
+        return try {
+            val uri = URI(url)
+            val query = uri.query ?: return url
+            val newQuery = filterQueryParams(query, url)
+            URI(uri.scheme, uri.authority, uri.path, newQuery, uri.fragment).toString()
+        } catch (e: URISyntaxException) {
+            Log.e(TAG, "Failed to parse URI for stripping tracking params: $url", e)
+            url
+        }
+    }
+
+    /**
      * Clean a URL by removing tracking parameters while preserving essential ones
      */
     fun cleanUrl(url: String): String {

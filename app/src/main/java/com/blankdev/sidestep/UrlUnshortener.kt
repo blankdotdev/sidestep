@@ -20,7 +20,10 @@ object UrlUnshortener {
     /**
      * Resolves a shortened URL to its final destination using HEAD requests to follow redirects.
      */
-    suspend fun unshorten(url: String, resolveHtml: Boolean = true): String = withContext(Dispatchers.IO) {
+    /**
+     * Resolves a shortened URL to its final destination using HEAD requests to follow redirects.
+     */
+    suspend fun unshorten(url: String, resolveHtml: Boolean = true, reduceFingerprinting: Boolean = true): String = withContext(Dispatchers.IO) {
         var currentUrl = ensureProtocol(url)
         if (!isShortenedUrl(currentUrl)) return@withContext currentUrl
         
@@ -32,7 +35,7 @@ object UrlUnshortener {
             var shouldContinue = true
             
             while (hops < maxHops && shouldContinue) {
-                val result = processUnshorteningHop(currentUrl, resolveHtml)
+                val result = processUnshorteningHop(currentUrl, resolveHtml, reduceFingerprinting)
                 
                 if (result.newUrl != null && result.newUrl != currentUrl) {
                     currentUrl = result.newUrl
@@ -61,8 +64,8 @@ object UrlUnshortener {
         val shouldContinue: Boolean
     )
     
-    private fun processUnshorteningHop(currentUrl: String, resolveHtml: Boolean): UnshorteningResult {
-        return makeRequest(currentUrl)?.use { response ->
+    private fun processUnshorteningHop(currentUrl: String, resolveHtml: Boolean, reduceFingerprinting: Boolean): UnshorteningResult {
+        return makeRequest(currentUrl, reduceFingerprinting)?.use { response ->
             val newUrl = response.request.url.toString()
             if (newUrl != currentUrl) {
                 println("Sidestep: Redirected to $newUrl")
@@ -87,19 +90,23 @@ object UrlUnshortener {
     }
 
 
-    private fun makeRequest(url: String): okhttp3.Response? {
+    private fun makeRequest(url: String, reduceFingerprinting: Boolean = true): okhttp3.Response? {
         val userAgent = if (url.contains("facebook.com")) {
             "Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1"
+        } else if (reduceFingerprinting) {
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         } else {
             "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
         }
+
+        val acceptLanguage = if (reduceFingerprinting) "en" else "en-US,en;q=0.5"
         
         val request = okhttp3.Request.Builder()
             .url(url)
             .get()
             .header("User-Agent", userAgent)
             .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
-            .header("Accept-Language", "en-US,en;q=0.5")
+            .header("Accept-Language", acceptLanguage)
             .build()
             
         return try {

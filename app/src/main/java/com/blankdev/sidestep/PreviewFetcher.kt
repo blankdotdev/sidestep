@@ -41,31 +41,40 @@ object PreviewFetcher {
     /**
      * Fetches preview data for a URL using DuckDuckGo search results.
      */
-    suspend fun fetchPreview(url: String): PreviewData? = withContext(Dispatchers.IO) {
+    suspend fun fetchPreview(url: String, reduceFingerprinting: Boolean = true): PreviewData? = withContext(Dispatchers.IO) {
         cache[url]?.let { return@withContext it }
         
-        val data = fetchViaDuckDuckGo(url)
+        val data = fetchViaDuckDuckGo(url, reduceFingerprinting)
         if (data != null) {
             cache[url] = data
         }
         return@withContext data
     }
     
-    private fun fetchViaDuckDuckGo(targetUrl: String): PreviewData? {
+    private fun fetchViaDuckDuckGo(targetUrl: String, reduceFingerprinting: Boolean = true): PreviewData? {
         return try {
             // Searching and matching of exact URLs is better without quotes for many domains like Yahoo and Grayzone
             val query = java.net.URLEncoder.encode(targetUrl, "UTF-8")
             val searchUrl = "https://html.duckduckgo.com/html?q=$query"
             
-            // Mobile-style headers to avoid bot detection and potentially get Lite version classes
-            val userAgent = "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
-            val request = okhttp3.Request.Builder()
+            val userAgent = if (reduceFingerprinting) {
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            } else {
+                "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Mobile Safari/537.36"
+            }
+            val acceptLanguage = if (reduceFingerprinting) "en" else "en-US,en;q=0.5"
+
+            val requestBuilder = okhttp3.Request.Builder()
                 .url(searchUrl)
                 .header("User-Agent", userAgent)
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
-                .header("Accept-Language", "en-US,en;q=0.5")
-                .header("Referer", "https://html.duckduckgo.com/")
-                .build()
+                .header("Accept-Language", acceptLanguage)
+
+            if (!reduceFingerprinting) {
+                requestBuilder.header("Referer", "https://html.duckduckgo.com/")
+            }
+
+            val request = requestBuilder.build()
             
             println("Sidestep: Fetching preview from $searchUrl")
             val response = NetworkClient.client.newCall(request).execute()
