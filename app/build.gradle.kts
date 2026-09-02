@@ -100,7 +100,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("com.squareup.okhttp3:okhttp:5.4.0")
-    implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.browser:browser:1.10.0")
     
     // Testing
     testImplementation("junit:junit:4.13.2")
