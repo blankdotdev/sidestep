@@ -98,6 +98,7 @@ class SettingsFrontendsActivity : AppCompatActivity() {
         setupPlatformToggle(R.id.toggleRuralDictionaryMode, R.id.rural_dictionaryDomainContainer, SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, "urbandictionary.com", R.id.btnRuralDictionaryClean, R.id.btnRuralDictionaryRedirect, SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN)
         setupPlatformToggle(R.id.toggleRimgoMode, R.id.rimgoDomainContainer, SettingsActivity.KEY_RIMGO_CLEAN_ONLY, "imgur.com", R.id.btnRimgoClean, R.id.btnRimgoRedirect, SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN)
         setupPlatformToggle(R.id.toggleFandomMode, R.id.fandomDomainContainer, SettingsActivity.KEY_FANDOM_CLEAN_ONLY, "fandom.com", R.id.btnFandomClean, R.id.btnFandomRedirect, SettingsActivity.KEY_FANDOM_DOMAIN, SettingsActivity.DEFAULT_FANDOM_DOMAIN)
+        setupPlatformToggle(R.id.togglePixivMode, R.id.pixivDomainContainer, SettingsActivity.KEY_PIXIV_CLEAN_ONLY, "pixiv.net", R.id.btnPixivClean, R.id.btnPixivRedirect, SettingsActivity.KEY_PIXIV_DOMAIN, SettingsActivity.DEFAULT_PIXIV_DOMAIN)
         setupPlatformToggle(R.id.toggleGoogleMapsMode, R.id.googlemapsDomainContainer, SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, "google.com", R.id.btnGoogleMapsClean, R.id.btnGoogleMapsRedirect, SettingsActivity.KEY_GOOGLE_MAPS_DOMAIN, SettingsActivity.DEFAULT_GOOGLE_MAPS_DOMAIN)
     }
 
@@ -332,6 +333,7 @@ class SettingsFrontendsActivity : AppCompatActivity() {
         setupPlatformInput(R.id.inputRuralDictionaryDomain, R.id.btnSelectRuralDictionary, SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN, "rural-dictionary")
         setupPlatformInput(R.id.inputRimgoDomain, R.id.btnSelectRimgo, SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN, "rimgo")
         setupPlatformInput(R.id.inputFandomDomain, R.id.btnSelectFandom, SettingsActivity.KEY_FANDOM_DOMAIN, SettingsActivity.DEFAULT_FANDOM_DOMAIN, "breezewiki")
+        setupPlatformInput(R.id.inputPixivDomain, R.id.btnSelectPixiv, SettingsActivity.KEY_PIXIV_DOMAIN, SettingsActivity.DEFAULT_PIXIV_DOMAIN, "pixivfe")
     }
 
     private fun setupPlatformInput(inputId: Int, buttonId: Int, prefKey: String, default: String, type: String) {
@@ -350,6 +352,7 @@ class SettingsFrontendsActivity : AppCompatActivity() {
                 "tumblr" -> AlternativeInstancesFetcher.getPriviblurDefaults()
                 "rural-dictionary" -> AlternativeInstancesFetcher.getRuralDictionaryDefaults()
                 "breezewiki" -> AlternativeInstancesFetcher.getBreezeWikiDefaults()
+                "pixivfe" -> AlternativeInstancesFetcher.getPixivfeDefaults()
                 else -> null
             }
             if (defaults != null) {

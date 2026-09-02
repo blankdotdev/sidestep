@@ -173,6 +173,13 @@
                 <data android:host="fandom.com" />
                 <data android:host="www.fandom.com" />
 
+                <!-- Pixiv -->
+                <data android:host="pixiv.net" />
+                <data android:host="www.pixiv.net" />
+                <data android:host="touch.pixiv.net" />
+                <data android:host="m.pixiv.net" />
+                <data android:host="pixiv.me" />
+
                 <!-- Google Share -->
                 <data android:host="share.google" />
 

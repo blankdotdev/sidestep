@@ -142,7 +142,7 @@ object SettingsUtils {
             "twitter", "youtube", "piped", "reddit", "medium",
             "goodreads", "genius", "intellectual", "github",
             "stackoverflow", "wikipedia", "imdb", "tumblr",
-            "rural-dictionary", "rimgo", "breezewiki"
+            "rural-dictionary", "rimgo", "breezewiki", "pixivfe"
         )
     }
 
@@ -175,6 +175,7 @@ object SettingsUtils {
             "urbandictionary.com" -> listOf("urbandictionary.com", "www.urbandictionary.com")
             "imgur.com" -> listOf("imgur.com", "www.imgur.com")
             "fandom.com" -> listOf("fandom.com", "www.fandom.com")
+            "pixiv.net" -> listOf("pixiv.net", "www.pixiv.net", "touch.pixiv.net", "m.pixiv.net", "pixiv.me")
             "maps.google.com", "google.com" -> listOf("maps.google.com", "www.maps.google.com")
             else -> listOf(domain)
         }
@@ -267,6 +268,7 @@ object SettingsUtils {
             UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, false)
             UrlCleaner.isImgurUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_RIMGO_CLEAN_ONLY, false)
             UrlCleaner.isFandomUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_FANDOM_CLEAN_ONLY, false)
+            UrlCleaner.isPixivUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_PIXIV_CLEAN_ONLY, false)
             UrlCleaner.isGoogleMapsUrl(unshortenedUrl) -> prefs.getBoolean(SettingsActivity.KEY_GOOGLE_MAPS_CLEAN_ONLY, false)
             else -> false
         }
@@ -335,7 +337,8 @@ object SettingsUtils {
         "rimgo" to ServiceHandler({ AlternativeInstancesFetcher.fetchRimgoInstances() }, { AlternativeInstancesFetcher.getRimgoDefaults() }),
         "tumblr" to ServiceHandler({ AlternativeInstancesFetcher.fetchPriviblurInstances() }, { AlternativeInstancesFetcher.getPriviblurDefaults() }),
         "intellectual" to ServiceHandler({ AlternativeInstancesFetcher.fetchIntellectualInstances() }, { AlternativeInstancesFetcher.getIntellectualDefaults() }),
-        "breezewiki" to ServiceHandler({ AlternativeInstancesFetcher.fetchBreezeWikiInstances() }, { AlternativeInstancesFetcher.getBreezeWikiDefaults() })
+        "breezewiki" to ServiceHandler({ AlternativeInstancesFetcher.fetchBreezeWikiInstances() }, { AlternativeInstancesFetcher.getBreezeWikiDefaults() }),
+        "pixivfe" to ServiceHandler({ AlternativeInstancesFetcher.fetchPixivfeInstances() }, { AlternativeInstancesFetcher.getPixivfeDefaults() })
     )
 
     fun fetchLatestInstances(activity: AppCompatActivity, type: String, onFetched: (List<AlternativeInstancesFetcher.Instance>) -> Unit) {
@@ -513,7 +516,8 @@ object SettingsUtils {
                 Pair({ UrlCleaner.isTumblrUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_TUMBLR_CLEAN_ONLY, Pair(SettingsActivity.KEY_TUMBLR_DOMAIN, SettingsActivity.DEFAULT_TUMBLR_DOMAIN))),
                 Pair({ UrlCleaner.isUrbanDictionaryUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_RURAL_DICTIONARY_CLEAN_ONLY, Pair(SettingsActivity.KEY_RURAL_DICTIONARY_DOMAIN, SettingsActivity.DEFAULT_RURAL_DICTIONARY_DOMAIN))),
                 Pair({ UrlCleaner.isImgurUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_RIMGO_CLEAN_ONLY, Pair(SettingsActivity.KEY_RIMGO_DOMAIN, SettingsActivity.DEFAULT_RIMGO_DOMAIN))),
-                Pair({ UrlCleaner.isFandomUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_FANDOM_CLEAN_ONLY, Pair(SettingsActivity.KEY_FANDOM_DOMAIN, SettingsActivity.DEFAULT_FANDOM_DOMAIN)))
+                Pair({ UrlCleaner.isFandomUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_FANDOM_CLEAN_ONLY, Pair(SettingsActivity.KEY_FANDOM_DOMAIN, SettingsActivity.DEFAULT_FANDOM_DOMAIN))),
+                Pair({ UrlCleaner.isPixivUrl(unshortenedUrl) }, Pair(SettingsActivity.KEY_PIXIV_CLEAN_ONLY, Pair(SettingsActivity.KEY_PIXIV_DOMAIN, SettingsActivity.DEFAULT_PIXIV_DOMAIN)))
             )
 
             for ((condition, settings) in domainMapping) {
@@ -553,7 +557,7 @@ object SettingsUtils {
         val creditsHtml = """
             Sidestep is built upon the labor of many privacy-focused developers whose work adds a layer of protection from the surveillance industry. Alternative frontends allow for a less cluttered web experience; bypassing closed ecosystems and promoting a more open internet.
             <br><br>
-            Special thanks to <a href="https://github.com/zedeus/nitter">Nitter</a>, <a href="https://github.com/redlib-org/redlib">Redlib</a>, <a href="https://github.com/iv-org/invidious">Invidious</a>, <a href="https://github.com/TeamPiped/Piped">Piped</a>, <a href="https://github.com/zyachel/libremdb">LibreMDB</a>, <a href="https://sr.ht/~edwardloveall/Scribe">Scribe</a>, <a href="https://github.com/Metastem/wikiless">Wikiless</a>, <a href="https://github.com/nesaku/BiblioReads">BiblioReads</a>, <a href="https://github.com/rramiachraf/dumb">Dumb</a>, <a href="https://github.com/Insprill/intellectual">Intellectual</a>, <a href="https://github.com/neofelix/gothub">GotHub</a>, <a href="https://github.com/httpjamesm/AnonymousOverflow">AnonymousOverflow</a>, <a href="https://github.com/syeopite/priviblur">Priviblur</a>, <a href="https://codeberg.org/zortazert/rural-dictionary">RuralDictionary</a>, <a href="https://codeberg.org/rimgo">rimgo</a>, and <a href="https://breezewiki.com">BreezeWiki</a>.
+            Special thanks to <a href="https://github.com/zedeus/nitter">Nitter</a>, <a href="https://github.com/redlib-org/redlib">Redlib</a>, <a href="https://github.com/iv-org/invidious">Invidious</a>, <a href="https://github.com/TeamPiped/Piped">Piped</a>, <a href="https://github.com/zyachel/libremdb">LibreMDB</a>, <a href="https://sr.ht/~edwardloveall/Scribe">Scribe</a>, <a href="https://github.com/Metastem/wikiless">Wikiless</a>, <a href="https://github.com/nesaku/BiblioReads">BiblioReads</a>, <a href="https://github.com/rramiachraf/dumb">Dumb</a>, <a href="https://github.com/Insprill/intellectual">Intellectual</a>, <a href="https://github.com/neofelix/gothub">GotHub</a>, <a href="https://github.com/httpjamesm/AnonymousOverflow">AnonymousOverflow</a>, <a href="https://github.com/syeopite/priviblur">Priviblur</a>, <a href="https://codeberg.org/zortazert/rural-dictionary">RuralDictionary</a>, <a href="https://codeberg.org/rimgo">rimgo</a>, <a href="https://breezewiki.com">BreezeWiki</a>, and <a href="https://codeberg.org/PixivFE/PixivFE">PixivFE</a>.
         """.trimIndent()
 
         val spanned = Html.fromHtml(creditsHtml, Html.FROM_HTML_MODE_LEGACY) as Spannable

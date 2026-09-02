@@ -120,6 +120,10 @@ object AlternativeInstancesFetcher {
         "breeze.mint.lgbt", "z.opnxng.com", "breezewiki.hyperreal.coffee"
     )
 
+    private val PIXIVFE_FALLBACK_DOMAINS = listOf(
+        "pixivfe.exozy.me", "pixivfe.drgns.space", "pixiv.perennialte.ch", "pix.chaotic.ninja", "pixivfe.thebunny.zone"
+    )
+
     fun getWikilessDefaults(): List<Instance> = WIKILESS_FALLBACK_DOMAINS.map { Instance(it) }
     fun getBiblioReadsDefaults(): List<Instance> = BIBLIOREADS_FALLBACK_DOMAINS.map { Instance(it) }
     fun getDumbDefaults(): List<Instance> = DUMB_FALLBACK_DOMAINS.map { Instance(it) }
@@ -129,6 +133,7 @@ object AlternativeInstancesFetcher {
     fun getRimgoDefaults(): List<Instance> = RIMGO_FALLBACK_DOMAINS.map { Instance(it) }
     fun getIntellectualDefaults(): List<Instance> = INTELLECTUAL_FALLBACK_DOMAINS.map { Instance(it) }
     fun getBreezeWikiDefaults(): List<Instance> = BREEZEWIKI_FALLBACK_DOMAINS.map { Instance(it) }
+    fun getPixivfeDefaults(): List<Instance> = PIXIVFE_FALLBACK_DOMAINS.map { Instance(it) }
 
     suspend fun fetchNitterInstances(): List<Instance> = withContext(Dispatchers.IO) {
         val results = mutableListOf<Instance>()
@@ -336,6 +341,11 @@ object AlternativeInstancesFetcher {
         return if (fetched.isEmpty()) getBreezeWikiDefaults() else fetched
     }
 
+    suspend fun fetchPixivfeInstances(): List<Instance> {
+        val fetched = fetchLibRedirectInstances("pixivfe")
+        return if (fetched.isEmpty()) getPixivfeDefaults() else fetched
+    }
+
     suspend fun fetchPriviblurInstances(): List<Instance> = withContext(Dispatchers.IO) {
         val instances = mutableListOf<Instance>()
         try {
@@ -532,7 +542,8 @@ object AlternativeInstancesFetcher {
             "priviblur", "pb.", "tumblr",
             "ruraldictionary", "urbandictionary",
             "rimgo", "imgur",
-            "intellectual", "breezewiki", "antifandom"
+            "intellectual", "breezewiki", "antifandom",
+            "pixivfe", "pixiv"
         )
 
         
@@ -542,7 +553,8 @@ object AlternativeInstancesFetcher {
             "yewtu.be", "pipedapi.kavin.rocks",
             "imdb.rivo.cc", "scribe.nixnet.services",
             "tb.opnxng.com", "rd.vern.cc", "rd.bloat.cat",
-            "imgur.artemislena.eu", "bw.artemislena.eu", "breeze.mint.lgbt", "z.opnxng.com"
+            "imgur.artemislena.eu", "bw.artemislena.eu", "breeze.mint.lgbt", "z.opnxng.com",
+            "pixivfe.exozy.me", "pixivfe.drgns.space", "pixiv.perennialte.ch", "pix.chaotic.ninja", "pixivfe.thebunny.zone"
         )
 
         

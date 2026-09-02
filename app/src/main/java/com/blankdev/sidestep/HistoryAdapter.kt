@@ -113,6 +113,7 @@ class HistoryAdapter(
         PlatformIconRule({ UrlCleaner.isTumblrUrl(it) }, R.drawable.ic_tumblr_logo),
         PlatformIconRule({ UrlCleaner.isImgurUrl(it) }, R.drawable.ic_imgur_logo),
         PlatformIconRule({ UrlCleaner.isUrbanDictionaryUrl(it) }, R.drawable.ic_urbandictionary_logo),
+        PlatformIconRule({ UrlCleaner.isPixivUrl(it) }, R.drawable.ic_pixiv_logo),
         PlatformIconRule({ UrlCleaner.isGoogleMapsUrl(it) }, R.drawable.ic_google_maps_logo)
     )
 

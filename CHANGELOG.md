@@ -1,3 +1,12 @@
+## [1.2.6] - 2026-09-01
+
+### Added
+- **Pixiv → PixivFE redirection:** Pixiv links are now automatically redirected to [PixivFE](https://codeberg.org/PixivFE/PixivFE), with support for custom instance URLs and a clean-only toggle.
+- **Instagram `igsi` tracking parameter removal:** Added `igsi` to the list of stripped tracking parameters.
+
+### Fixed
+- **URL unshortener:** Preserved the redirected URL when HTML parsing finds no canonical link (e.g. JS-rendered pages like TikTok short links), preventing silent link loss.
+
 ## [1.2.5] - 2026-03-29
 
 ### Fixed

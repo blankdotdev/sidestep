@@ -62,10 +62,6 @@ object UrlUnshortener {
     )
     
     private fun processUnshorteningHop(currentUrl: String, resolveHtml: Boolean): UnshorteningResult {
-        if (shouldStopUnshortening(currentUrl)) {
-            return UnshorteningResult(null, shouldStop = true, shouldContinue = false)
-        }
-
         return makeRequest(currentUrl)?.use { response ->
             val newUrl = response.request.url.toString()
             if (newUrl != currentUrl) {
@@ -80,7 +76,9 @@ object UrlUnshortener {
                 if (resolved != null && resolved != newUrl) {
                     UnshorteningResult(resolved, shouldStop = false, shouldContinue = true)
                 } else {
-                    UnshorteningResult(null, shouldStop = true, shouldContinue = false)
+                    // HTML parsing found no canonical link (e.g. JS-rendered page like TikTok),
+                    // but we still have the redirected URL — don't discard it.
+                    UnshorteningResult(newUrl, shouldStop = true, shouldContinue = false)
                 }
             } else {
                 UnshorteningResult(newUrl, shouldStop = true, shouldContinue = false)
@@ -88,9 +86,6 @@ object UrlUnshortener {
         } ?: UnshorteningResult(null, shouldStop = true, shouldContinue = false)
     }
 
-    private fun shouldStopUnshortening(url: String): Boolean {
-        return url.contains("/video/") || url.contains("/reels/") || url.contains("/watch?v=")
-    }
 
     private fun makeRequest(url: String): okhttp3.Response? {
         val userAgent = if (url.contains("facebook.com")) {

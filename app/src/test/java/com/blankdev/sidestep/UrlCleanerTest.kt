@@ -455,4 +455,46 @@ class UrlCleanerTest {
         val result = UrlCleaner.replaceDomain(url, "breezewiki.com")
         assertEquals("https://breezewiki.com/marvel/", result)
     }
+
+    @Test
+    fun testIsPixivUrl() {
+        assertTrue(UrlCleaner.isPixivUrl("https://www.pixiv.net/artworks/12345678"))
+        assertTrue(UrlCleaner.isPixivUrl("https://pixiv.net/en/artworks/12345678"))
+        assertTrue(UrlCleaner.isPixivUrl("https://touch.pixiv.net/member_illust.php?mode=medium&illust_id=12345678"))
+        assertTrue(UrlCleaner.isPixivUrl("https://pixiv.me/artistname"))
+        org.junit.Assert.assertFalse(UrlCleaner.isPixivUrl("https://example.com"))
+    }
+
+    @Test
+    fun testGetServiceName_pixiv() {
+        assertEquals("Pixiv", UrlCleaner.getServiceName("https://www.pixiv.net/artworks/12345678"))
+        assertEquals("Pixiv", UrlCleaner.getServiceName("https://pixiv.me/artistname"))
+    }
+
+    @Test
+    fun testReplaceDomain_pixiv() {
+        val url = "https://www.pixiv.net/artworks/12345678"
+        val result = UrlCleaner.replaceDomain(url, "pixivfe.exozy.me")
+        assertEquals("https://pixivfe.exozy.me/artworks/12345678", result)
+    }
+
+    @Test
+    fun testCleanUrl_removesInstagramIgsi() {
+        val url = "https://www.instagram.com/p/ABC123/?igsi=abcdefghijk&igsh=xyz"
+        val cleaned = UrlCleaner.cleanUrl(url)
+        assertFalse("igsi should be stripped", cleaned.contains("igsi"))
+        assertFalse("igsh should be stripped", cleaned.contains("igsh"))
+        assertEquals("https://www.instagram.com/p/ABC123/", cleaned)
+    }
+
+    @Test
+    fun testCleanUrl_removesInstagramIgsiInAppendMode() {
+        // Simulates what append-mode custom redirect produces before cleaning:
+        // the cleanedUrl fed into "$base$cleanedUrl" must not contain igsi
+        val url = "https://www.instagram.com/reel/ABC123/?igsi=someid&utm_source=ig_web_copy_link"
+        val cleaned = UrlCleaner.cleanUrl(url)
+        assertFalse("igsi should be stripped before append", cleaned.contains("igsi"))
+        assertFalse("utm_source should be stripped", cleaned.contains("utm_source"))
+        assertEquals("https://www.instagram.com/reel/ABC123/", cleaned)
+    }
 }

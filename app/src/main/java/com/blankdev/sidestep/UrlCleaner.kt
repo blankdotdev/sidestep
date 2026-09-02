@@ -76,7 +76,7 @@ object UrlCleaner {
         "s", "t", "twsrc", "twgr", "tweetid",
         
         // ===== Facebook/Instagram/Meta Tracking =====
-        "igshid", "igsh", "ig_rid", "ig_web_copy_link",
+        "igshid", "igsh", "igsi", "ig_rid", "ig_web_copy_link",
         "vanity", "mibextid", "rdid", "share_url",
         "action_object_map", "action_ref_map", "action_type_map",
         
@@ -488,6 +488,15 @@ object UrlCleaner {
     }
 
     /**
+     * Check if a URL is a Pixiv URL
+     */
+    fun isPixivUrl(url: String?): Boolean {
+        if (url == null) return false
+        val host = getHost(url)
+        return host.contains("pixiv.net") || host.contains("pixiv.me")
+    }
+
+    /**
      * Convert Google Maps URL to OpenStreetMap URL
      */
     fun convertGoogleMapsToOsm(url: String): String {
@@ -677,6 +686,7 @@ object UrlCleaner {
         PlatformRule("UrbanDictionary", listOf("urbandictionary.com")),
         PlatformRule("Imgur", listOf("imgur.com")),
         PlatformRule("Fandom", listOf("fandom.com")),
+        PlatformRule("Pixiv", listOf("pixiv.net", "pixiv.me")),
         PlatformRule("Spotify", listOf("spotify.com")),
         PlatformRule("Apple Podcasts", listOf("podcasts.apple.com"))
     )

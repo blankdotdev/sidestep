@@ -374,6 +374,10 @@ class SettingsActivity : AppCompatActivity() {
         const val DEFAULT_FANDOM_DOMAIN = "breezewiki.com"
         const val KEY_FANDOM_CLEAN_ONLY = "fandom_clean_only"
 
+        const val KEY_PIXIV_DOMAIN = "pixiv_domain"
+        const val DEFAULT_PIXIV_DOMAIN = "pixivfe.exozy.me"
+        const val KEY_PIXIV_CLEAN_ONLY = "pixiv_clean_only"
+
         const val KEY_CUSTOM_REDIRECTS = "custom_redirects"
         const val KEY_USE_CUSTOM_TABS = "use_custom_tabs"
     }

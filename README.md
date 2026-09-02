@@ -34,13 +34,14 @@ Bypass closed ecosystems and access a more open internet - with a less cluttered
 | **UrbanDictionary** | [RuralDictionary](https://codeberg.org/zortazert/rural-dictionary)       |
 | **Imgur**           | [Rimgo](https://codeberg.org/rimgo/rimgo)                 |
 | **Fandom**          | [BreezeWiki](https://breezewiki.com)                      |
+| **Pixiv**           | [PixivFE](https://codeberg.org/PixivFE/PixivFE)           |
 | **GitHub**          | [GotHub](https://github.com/neofelix/gothub)                |
 | **StackOverflow**   | [AnonymousOverflow](https://github.com/httpjamesm/AnonymousOverflow)     |
 
 ### Flexible Configuration & Smart URL Cleaning
 Automatically removes tracking parameters from all URLs:
 - UTM parameters (`utm_source`, `utm_medium`, etc.)
-- Platform-specific trackers (Twitter `s`/`t`, YouTube `si`, Instagram `igsh`)
+- Platform-specific trackers (Twitter `s`/`t`, YouTube `si`, Instagram `igsh`/`igsi`)
 - E-commerce tracking (Amazon, affiliate links)
 - Analytics parameters
 

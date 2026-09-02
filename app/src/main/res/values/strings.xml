@@ -50,6 +50,8 @@
     <string name="rimgo_instance">rimgo Instance</string>
     <string name="fandom">Fandom</string>
     <string name="breezewiki_instance">BreezeWiki Instance</string>
+    <string name="pixiv">Pixiv</string>
+    <string name="pixivfe_instance">PixivFE Instance</string>
 
     
     <plurals name="label_sidesteps_performed">

@@ -156,4 +156,11 @@ class AlternativeInstancesFetcherTest {
         val endTime = System.currentTimeMillis()
         assertTrue("Regex should complete in under 500ms", (endTime - startTime) < 500)
     }
+
+    @Test
+    fun testPixivfeDefaults() {
+        val defaults = AlternativeInstancesFetcher.getPixivfeDefaults()
+        assertTrue(defaults.isNotEmpty())
+        assertTrue(defaults.any { it.domain == "pixivfe.exozy.me" })
+    }
 }
